@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0274AEC33070080800128966 /* MainActor_DispatchQueue_RunLoop.html in Resources */ = {isa = PBXBuildFile; fileRef = 0274AEC23070080800128966 /* MainActor_DispatchQueue_RunLoop.html */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0274AEA6307006A500128966 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		0274AE98307006A300128966 /* MainActor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MainActor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0274AEA5307006A500128966 /* MainActorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MainActorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0274AEAF307006A500128966 /* MainActorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MainActorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0274AEC23070080800128966 /* MainActor_DispatchQueue_RunLoop.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = MainActor_DispatchQueue_RunLoop.html; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +80,7 @@
 		0274AE8F307006A300128966 = {
 			isa = PBXGroup;
 			children = (
+				0274AEC23070080800128966 /* MainActor_DispatchQueue_RunLoop.html */,
 				0274AE9A307006A300128966 /* MainActor */,
 				0274AEA8307006A500128966 /* MainActorTests */,
 				0274AEB2307006A500128966 /* MainActorUITests */,
@@ -212,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0274AEC33070080800128966 /* MainActor_DispatchQueue_RunLoop.html in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
