@@ -37,7 +37,7 @@ GitHub Pages 会把根目录的 `index.html` 作为首页。之后每次推送�
 
 ## 演示工程
 
-`MainActor.xcodeproj` 是一个 SwiftUI App（iOS 26，Xcode 26），用 11 个页面演示指南里的概念，每个页面都会记录代码执行时所在的线程和时间：
+`MainActor.xcodeproj` 是一个 SwiftUI App（iOS 26，Xcode 26），用 12 个页面演示指南里的概念，每个页面都会记录代码执行时所在的线程和时间：
 
 | 页面 | 文件 |
 |---|---|
@@ -52,7 +52,6 @@ GitHub Pages 会把根目录的 `index.html` 作为首页。之后每次推送�
 | OperationQueue | `MainActor/Demos/OperationQueueDemo.swift` |
 | 数据竞争与锁 | `MainActor/Demos/DataRaceDemo.swift` |
 | `.task` 与生命周期 | `MainActor/Demos/SwiftUITaskDemo.swift` |
+| AsyncSequence vs Combine | `MainActor/Demos/AsyncSequenceCombineDemo.swift` |
 
 工程开启了 *Default Actor Isolation = MainActor* 与 *Approachable Concurrency*，`SWIFT_VERSION` 为 5.0（Swift 6.2 编译器，未启用 Swift 6 语言模式）。用 Xcode 打开工程，选择 iOS 模拟器运行即可。
-
-`MainActor_DispatchQueue_RunLoop.pdf` 是早期版本的导出，内容不如在线页面新，请以网页为准。

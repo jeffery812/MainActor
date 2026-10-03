@@ -58,6 +58,12 @@ struct ContentView: View {
                         SwiftUITaskDemo()
                     }
                 }
+
+                Section("Combine") {
+                    DemoLink(title: "12. AsyncSequence vs Combine", subtitle: "推送 vs 拉取、缓冲、生命周期、取消、错误处理、互相转换", icon: "arrow.triangle.merge") {
+                        AsyncSequenceCombineDemo()
+                    }
+                }
             }
             .navigationTitle("Swift 并发演示")
         }
