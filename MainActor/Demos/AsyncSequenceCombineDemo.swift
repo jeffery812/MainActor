@@ -292,17 +292,25 @@ final class CombineAsyncLab {
         }
     }
 
-    /// 标准库没有定时器序列，用 AsyncStream + Task.sleep 实现
+    /// 标准库没有定时器序列，用 AsyncStream + Task.sleep 实现。
+    /// 生产者跑在协作线程池上，Task.sleep 不依赖 RunLoop，所以拖动列表不会影响它。
     private nonisolated static func ticks(
         every interval: Duration,
         onTermination: (@Sendable (AsyncStream<Void>.Continuation.Termination) -> Void)? = nil
     ) -> AsyncStream<Void> {
         AsyncStream { continuation in
             let producer = Task {
+                // 睡到绝对截止时间，而不是每轮 sleep(for: interval)：
+                // 后者每次的唤醒延迟会累加，越往后越晚
+                let clock = ContinuousClock()
+                var next = clock.now + interval
                 while true {
                     // 被取消时 sleep 抛错，直接退出；用 try? 吞掉错误会多发一个值
-                    do { try await Task.sleep(for: interval) } catch { break }
+                    do { try await Task.sleep(until: next, clock: clock) } catch { break }
                     continuation.yield(())
+                    next += interval
+                    // 落后超过一个周期（例如进程被挂起过）时跳过，不连续补发
+                    while next <= clock.now { next += interval }
                 }
             }
             continuation.onTermination = { reason in
