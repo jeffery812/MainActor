@@ -2,7 +2,7 @@
 //  GCDToolsDemo.swift
 //  MainActor
 //
-//  对应文档 §4、§6.2：GCD 的各种工具，以及 GCD 线程池 vs Swift Concurrency 协作式线程池。
+//  对应文档 §5、§7.2：GCD 的各种工具，以及 GCD 线程池 vs Swift Concurrency 协作式线程池。
 //
 
 import SwiftUI

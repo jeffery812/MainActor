@@ -2,7 +2,7 @@
 //  ActorReentrancyDemo.swift
 //  MainActor
 //
-//  对应文档 §6.11、§13：actor 保证串行访问，但在 await 处可重入。
+//  对应文档 §7.10、§14：actor 保证串行访问，但在 await 处可重入。
 //
 
 import SwiftUI

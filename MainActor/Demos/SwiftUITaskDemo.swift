@@ -2,7 +2,7 @@
 //  SwiftUITaskDemo.swift
 //  MainActor
 //
-//  对应文档 §9、§13：.task 与视图生命周期绑定；onAppear { Task {} } 不会自动取消；
+//  对应文档 §8、§14：.task 与视图生命周期绑定；onAppear { Task {} } 不会自动取消；
 //  .task(id:) 防抖 vs DispatchWorkItem 防抖。
 //
 

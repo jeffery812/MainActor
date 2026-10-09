@@ -2,7 +2,7 @@
 //  OperationQueueDemo.swift
 //  MainActor
 //
-//  对应文档 §5：依赖、最大并发数、取消、暂停。
+//  对应文档 §4：依赖、最大并发数、取消、暂停。
 //
 
 import SwiftUI

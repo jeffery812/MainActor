@@ -2,7 +2,7 @@
 //  BridgingDemo.swift
 //  MainActor
 //
-//  对应文档 §6.12、§6.15、§6.16：把回调 / 事件流桥接到 async 世界。
+//  对应文档 §7.11、§7.14、§7.15：把回调 / 事件流桥接到 async 世界。
 //
 
 import SwiftUI

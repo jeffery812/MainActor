@@ -2,7 +2,7 @@
 //  TaskInheritanceDemo.swift
 //  MainActor
 //
-//  对应文档 §6.3、§6.4、§6.8、§6.10、§10.2：
+//  对应文档 §7.3、§7.4、§7.7、§7.9、§11.2：
 //  Task / Task.detached / DispatchQueue.global / async let / TaskGroup 分别继承了什么。
 //
 

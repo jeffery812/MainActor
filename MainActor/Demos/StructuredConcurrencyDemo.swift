@@ -2,7 +2,7 @@
 //  StructuredConcurrencyDemo.swift
 //  MainActor
 //
-//  对应文档 §6.6、§6.7、§6.8：顺序 await / async let / TaskGroup / 限流 / 错误导致的取消。
+//  对应文档 §7.5、§7.6、§7.7：顺序 await / async let / TaskGroup / 限流 / 错误导致的取消。
 //
 
 import SwiftUI
