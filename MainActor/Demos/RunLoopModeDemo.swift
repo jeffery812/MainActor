@@ -2,7 +2,7 @@
 //  RunLoopModeDemo.swift
 //  MainActor
 //
-//  对应文档 §3、§6、§11.4、§12.2：RunLoop Mode 对滚动期间执行的影响。
+//  对应文档 §3、§6、§11.4、§12.1、§12.3：RunLoop Mode 对滚动期间执行的影响。
 //
 
 import Combine
