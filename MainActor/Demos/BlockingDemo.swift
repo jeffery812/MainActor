@@ -2,7 +2,7 @@
 //  BlockingDemo.swift
 //  MainActor
 //
-//  对应文档 §6.3、§6.4、§6.17、§13：哪些写法会把耗时工作留在主线程。
+//  对应文档 §6.3、§6.4、§6.18、§13：哪些写法会把耗时工作留在主线程。
 //  本工程开启了 Default Actor Isolation = MainActor 与 Approachable Concurrency。
 //
 
