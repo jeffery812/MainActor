@@ -47,22 +47,52 @@ private struct PeriodicCard: View {
     var body: some View {
         DemoCard(
             title: "① 每秒刷新：.periodic(from:by:)",
-            code: "TimelineView(.periodic(from: .now, by: 1)) { context in … }",
+            code: """
+            A: .contentTransition(.numericText())
+               .animation(.default, value: context.date)
+            B: .contentTransition(.numericText(value: context.date.timeIntervalSinceReferenceDate))
+               .animation(.snappy(duration: 0.25), value: context.date)
+            """,
             note: """
-            按固定间隔刷新，适合时钟、倒计时。context.cadence 表示系统建议的刷新粒度，用于 watchOS 抬腕前等降频场景，\
-            可据此隐藏秒数这类变化太快的内容。实测 iOS 26 模拟器上所有调度表报告的都是 .minutes（即使每帧刷新），所以 iOS 上不要依据它做判断。
+            按固定间隔刷新，适合时钟、倒计时。A、B 每秒都只刷新一次，区别只在数字变化的动画：\
+            .numericText() 总是按「数字增加」的方向滚动；.numericText(value:) 根据 value 变大还是变小决定滚动方向。时间只会增加，所以两者方向相同。\
+            .default 是比较柔和的弹簧动画，.snappy(duration: 0.25) 更短、更干脆，所以 B 的数字切换得更快。
+            context.cadence 表示系统建议的刷新粒度，用于 watchOS 抬腕前等降频场景。\
+            实测 iOS 26 模拟器上所有调度表报告的都是 .minutes（即使每帧刷新），所以 iOS 上不要依据它做判断。
             """
         ) {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let count = meter.tick(context.date)
-                VStack(spacing: 4) {
-                    Text(context.date.formatted(.dateTime.hour().minute().second()))
-                        .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
-                        .contentTransition(.numericText())
-                        .animation(.default, value: context.date)
-                    Text("cadence: \(context.cadence.name) · 已刷新 \(count) 次")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+            VStack(spacing: 12) {
+                VStack(spacing: 2) {
+                    Text("A：numericText() + .default").font(.caption.weight(.semibold))
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        let count = meter.tick(context.date)
+                        VStack(spacing: 4) {
+                            Text(context.date.formatted(.dateTime.hour().minute().second()))
+                                .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
+                                .contentTransition(.numericText())
+                                .animation(.default, value: context.date)
+                            Text("cadence: \(context.cadence.name) · 已刷新 \(count) 次")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Divider()
+
+                VStack(spacing: 2) {
+                    Text("B：numericText(value:) + .snappy(duration: 0.25)").font(.caption.weight(.semibold))
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        VStack(spacing: 4) {
+                            Text(context.date.formatted(.dateTime.hour().minute().second()))
+                                .font(.system(size: 44, weight: .semibold, design: .rounded).monospacedDigit())
+                                .contentTransition(.numericText(value: context.date.timeIntervalSinceReferenceDate))
+                                .animation(.snappy(duration: 0.25), value: context.date)
+                            Text("cadence: \(context.cadence.name)")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
         }
