@@ -64,6 +64,12 @@ struct ContentView: View {
                         AsyncSequenceCombineDemo()
                     }
                 }
+
+                Section("SwiftUI · 按时间刷新") {
+                    DemoLink(title: "13. TimelineView", subtitle: "periodic / everyMinute / animation / explicit / 自定义调度表，秒表、Canvas、cadence", icon: "clock.arrow.2.circlepath") {
+                        TimelineViewDemo()
+                    }
+                }
             }
             .navigationTitle("Swift 并发演示")
         }
