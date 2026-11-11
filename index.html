@@ -490,6 +490,146 @@ h4 { font: 700 16.5px/1.5 var(--serif); margin: 30px 0 8px; max-width: 790px; co
 .toc li.has-sub.open > .toc-caret svg { transform: rotate(90deg); }
 .toc li.has-sub > .toc-sub { display: none; }
 .toc li.has-sub.open > .toc-sub { display: block; }
+
+/* ───────── page switch (guide ⇄ WWDC25-268) ───────── */
+.page[hidden], .toc-lists[hidden] { display: none !important; }
+.page-switch { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line2); border-radius: 4px; overflow: hidden; margin: 0 0 6px; }
+.page-tab {
+  display: block; padding: 8px 10px 7px; text-decoration: none; color: var(--ink3); line-height: 1.25;
+  font: 500 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; transition: background .2s, color .2s;
+}
+.page-tab + .page-tab { border-left: 1px solid var(--line2); }
+.page-tab b { display: block; white-space: nowrap; font: 700 12.5px/1.3 var(--serif); letter-spacing: 0; text-transform: none; color: var(--ink2); margin-top: 2px; }
+.page-tab:hover { color: var(--ink2); background: var(--panel); }
+.page-tab:hover b { color: var(--ink); }
+.page-tab[aria-current="page"] { background: var(--ink); color: var(--bg); }
+.page-tab[aria-current="page"] b { color: var(--bg); }
+.page-tab[data-page="wwdc"][aria-current="page"] { background: var(--tk); }
+.page-tab:focus-visible { outline: 2px solid var(--main); outline-offset: -2px; }
+@media (max-width: 900px) { .page-switch { margin: 12px 0 0; } }
+
+/* ───────── WWDC page ───────── */
+#wwdc25-268 { --w: var(--tk); --w-dim: color-mix(in srgb, var(--tk) 14%, transparent); }
+#wwdc25-268 strong { background: linear-gradient(transparent 62%, var(--w-dim) 62%); }
+#wwdc25-268 .sec-h2 { border-top-color: var(--line); }
+#wwdc25-268 .sec-num { -webkit-text-stroke-color: var(--w); opacity: .75; }
+#wwdc25-268 h3 .h3-num { color: var(--w); border-color: var(--w-dim); background: var(--w-dim); }
+#wwdc25-268 .fig::before, #wwdc25-268 .fig::after { border-color: var(--w); }
+#wwdc25-268 .eyebrow::before { background: var(--w); }
+
+.w-hero { padding: 72px 0 30px; max-width: 1080px; position: relative; }
+.w-hero h1 { font: 900 clamp(46px, 7.6vw, 108px)/1 var(--serif); letter-spacing: -.02em; margin: 22px 0 6px; }
+.w-hero .w-en { font: italic 400 clamp(28px, 4.2vw, 56px)/1.1 var(--display); color: var(--w); margin: 0 0 26px; }
+.w-hero .lede { max-width: 760px; color: var(--ink2); font-size: 15px; line-height: 1.9; }
+.w-meta { display: flex; flex-wrap: wrap; gap: 0; margin: 26px 0 0; border: 1px solid var(--line2); border-radius: 4px; width: fit-content; max-width: 100%; background: var(--panel); }
+.w-meta > * { padding: 9px 14px; font: 500 12px/1.4 var(--mono); color: var(--ink2); border-right: 1px solid var(--line2); }
+.w-meta > *:last-child { border-right: 0; }
+.w-meta small { display: block; font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink3); }
+.w-meta a { text-decoration: none; color: var(--w); font-weight: 600; transition: background .2s; }
+.w-meta a:hover { background: var(--w-dim); }
+.w-ghost { position: absolute; right: -10px; top: 40px; font: italic 400 clamp(120px, 22vw, 300px)/1 var(--display); color: transparent; -webkit-text-stroke: 1px var(--line2); pointer-events: none; user-select: none; z-index: -1; }
+
+/* staircase: the four steps of the journey */
+.w-stairs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: end; margin: 48px 0 10px; max-width: 1080px; counter-reset: st; }
+.w-step {
+  position: relative; border: 1px solid var(--line2); border-top: 3px solid var(--c, var(--w)); background: var(--panel);
+  border-radius: 4px; padding: 14px 14px 16px; text-decoration: none; color: inherit; display: block;
+  transition: transform .25s cubic-bezier(.2, .7, .2, 1), border-color .25s, box-shadow .25s;
+}
+.w-step:nth-child(1) { --c: var(--main); margin-bottom: 0; }
+.w-step:nth-child(2) { --c: var(--rl); margin-bottom: 34px; }
+.w-step:nth-child(3) { --c: var(--bgt); margin-bottom: 68px; }
+.w-step:nth-child(4) { --c: var(--tn); margin-bottom: 102px; }
+.w-step:hover { transform: translateY(-4px); box-shadow: 0 22px 40px -28px rgba(0, 0, 0, .7); }
+.w-step .n { font: italic 400 46px/.8 var(--display); color: var(--c); display: block; margin-bottom: 10px; }
+.w-step h4 { margin: 0 0 6px; font: 700 17px/1.35 var(--serif); }
+.w-step .when { font: 12.5px/1.65 var(--sans); color: var(--ink2); margin: 0 0 10px; }
+.w-step .tools { display: flex; flex-wrap: wrap; gap: 5px; }
+.w-step .tools code { font-size: 11px; color: var(--c); border-color: color-mix(in srgb, var(--c) 35%, transparent); background: color-mix(in srgb, var(--c) 9%, transparent); }
+.w-step::after { content: "→"; position: absolute; right: -12px; top: 18px; font: 14px var(--mono); color: var(--ink3); z-index: 1; }
+.w-step:last-child::after { content: none; }
+.w-stairs-axis { display: flex; justify-content: space-between; max-width: 1080px; font: 500 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink3); border-top: 1px dashed var(--line2); padding-top: 8px; }
+
+/* key-takeaway cards */
+.w-keys { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; max-width: 1040px; margin: 22px 0; }
+.w-key { border: 1px solid var(--line); background: var(--panel); border-radius: 4px; padding: 14px 16px; }
+.w-key b { display: block; font: 600 11px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--w); margin-bottom: 4px; }
+.w-key p { margin: 0; font-size: 14.5px; line-height: 1.75; }
+
+.w-note { font: 12px/1.6 var(--mono); color: var(--ink3); max-width: 790px; margin: -10px 0 20px; }
+.w-quote { position: relative; max-width: 790px; margin: 26px 0; padding: 6px 0 6px 26px; border-left: 2px solid var(--w); font: 400 17px/1.8 var(--serif); color: var(--ink); }
+.w-quote::before { content: "“"; position: absolute; left: -2px; top: -26px; font: italic 400 72px/1 var(--display); color: var(--w); opacity: .55; }
+.w-quote cite { display: block; font: 500 11px var(--mono); color: var(--ink3); font-style: normal; margin-top: 6px; letter-spacing: .06em; }
+.w-quote .en { display: block; font: italic 400 15px/1.6 var(--display); color: var(--ink2); margin-top: 4px; }
+
+/* Fig. W1 — journey lanes */
+.wj-lanes { position: relative; display: grid; grid-template-columns: 150px minmax(0, 1fr); }
+.wj-lane-h { grid-column: 1; height: 44px; display: flex; flex-direction: column; justify-content: center; font: 600 11.5px/1.3 var(--mono); border-bottom: 1px dashed var(--line); padding-right: 10px; }
+.wj-lane-h small { font-weight: 400; color: var(--ink3); font-size: 10.5px; }
+.wj-lane-h[data-l="main"] { color: var(--main); }
+.wj-lane-h[data-l="sys"] { color: var(--rl); }
+.wj-lane-h[data-l="pool"] { color: var(--bgt); }
+.wj-lane-h[data-l="actor"] { color: var(--tn); }
+.wj-track { grid-column: 2; grid-row: 1 / span 4; position: relative; background-image: linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 10% 100%; border-left: 1px solid var(--line2); }
+.wj-track::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(transparent 0 43px, var(--line) 43px 44px); opacity: .5; pointer-events: none; }
+.wj-blk {
+  position: absolute; height: 30px; margin-top: 7px; border-radius: 3px; display: flex; align-items: center; padding: 0 8px; overflow: hidden;
+  font: 600 11px/1 var(--mono); white-space: nowrap; color: var(--bg); background: var(--c); opacity: 0;
+  transition: left .6s cubic-bezier(.2, .7, .2, 1), width .6s cubic-bezier(.2, .7, .2, 1), top .6s cubic-bezier(.2, .7, .2, 1), opacity .35s, background .4s;
+}
+.wj-blk.on { opacity: 1; }
+.wj-blk.hop { box-shadow: inset -2px 0 var(--panel); background: repeating-linear-gradient(135deg, var(--bad) 0 6px, color-mix(in srgb, var(--bad) 70%, transparent) 6px 12px); }
+.wj-blk.ghost { background: transparent; color: var(--c); border: 1px dashed var(--c); }
+.wj-stats { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; align-items: center; gap: 0; margin-top: 16px; font: 12px var(--mono); color: var(--ink2); }
+.wj-stats .bar { height: 8px; border-radius: 99px; background: var(--panel2); border: 1px solid var(--line); overflow: hidden; }
+.wj-stats .bar i { display: block; height: 100%; width: 0; background: var(--main); transition: width .6s cubic-bezier(.2, .7, .2, 1), background .4s; }
+.wj-stats b { font: 600 15px var(--mono); padding-left: 12px; font-variant-numeric: tabular-nums; min-width: 66px; text-align: right; }
+.wj-narr { border-left-color: var(--w); }
+@media (max-width: 900px) {
+  .wj-lanes, .wj-stats { grid-template-columns: 92px minmax(0, 1fr); }
+  .wj-stats b { grid-column: 2; padding-left: 0; text-align: left; }
+  .wj-blk { font-size: 9.5px; padding: 0 4px; }
+}
+
+/* Fig. W2 — interleaving */
+.wi { display: grid; grid-template-columns: 150px minmax(0, 1fr); row-gap: 8px; }
+.wi-h { font: 600 11.5px/1.3 var(--mono); display: flex; align-items: center; min-height: 34px; }
+.wi-row { position: relative; height: 34px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg2); overflow: hidden; }
+.wi-seg { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; font: 600 10.5px/26px var(--mono); padding: 0 6px; overflow: hidden; white-space: nowrap; color: var(--bg); transition: left .6s cubic-bezier(.2, .7, .2, 1), width .6s cubic-bezier(.2, .7, .2, 1); }
+.wi-seg.a { background: var(--bgt); }
+.wi-seg.b { background: var(--rl); }
+.wi-seg.net { background: transparent; border: 1px dashed currentColor; }
+.wi-seg.net.a { color: var(--bgt); } .wi-seg.net.b { color: var(--rl); }
+.wi-head { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--w); left: 0; box-shadow: 0 0 10px var(--w); opacity: 0; }
+.wi.play .wi-head { animation: wi-sweep 3.2s linear forwards; }
+@keyframes wi-sweep { 0% { left: 0; opacity: 1; } 96% { opacity: 1; } 100% { left: calc(100% - 2px); opacity: 0; } }
+.wi-key { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font: 12px var(--mono); color: var(--ink2); }
+.wi-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+@media (max-width: 900px) { .wi { grid-template-columns: 92px minmax(0, 1fr); } .wi-seg { font-size: 9px; padding: 0 3px; } }
+
+/* Fig. W3 — value vs reference */
+.wv { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.wv-col { border: 1px solid var(--line); border-radius: 4px; padding: 14px; background: var(--bg2); }
+.wv-col h5 { margin: 0 0 12px; font: 600 12px var(--mono); letter-spacing: .06em; display: flex; justify-content: space-between; gap: 8px; }
+.wv-col[data-k="ok"] h5 { color: var(--main); } .wv-col[data-k="bad"] h5 { color: var(--bad); }
+.wv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; font: 11.5px/1.5 var(--mono); }
+.wv-th { color: var(--ink3); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.wv-var { border: 1px solid var(--line2); border-radius: 3px; padding: 6px 8px; background: var(--panel); }
+.wv-obj { grid-column: 1 / -1; border: 1px solid var(--bad); border-radius: 3px; padding: 8px 10px; background: var(--bad-dim); color: var(--ink); text-align: center; position: relative; }
+.wv-obj::before, .wv-obj::after { content: "↓"; position: absolute; top: -20px; color: var(--bad); font-size: 13px; }
+.wv-obj::before { left: 24%; } .wv-obj::after { right: 24%; }
+.wv-col[data-k="ok"] .wv-var { border-color: color-mix(in srgb, var(--main) 50%, transparent); }
+.wv-col p { margin: 12px 0 0; font-size: 13px; line-height: 1.7; color: var(--ink2); }
+@media (max-width: 720px) { .wv { grid-template-columns: 1fr; } .w-keys { grid-template-columns: 1fr; } }
+
+@media (max-width: 900px) {
+  .w-hero { padding-top: 40px; }
+  .w-stairs { grid-template-columns: 1fr 1fr; }
+  .w-step:nth-child(n) { margin-bottom: 0; }
+  .w-step::after { content: none; }
+  .w-ghost { display: none; }
+}
+@media (max-width: 520px) { .w-stairs { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -499,11 +639,17 @@ h4 { font: 700 16.5px/1.5 var(--serif); margin: 30px 0 8px; max-width: 790px; co
       <div class="toc-brand"><b>Concurrency</b>Field Guide</div>
       <div><button class="toc-toggle" type="button">目录</button> <button class="theme-btn" id="theme-btn" type="button" aria-label="切换明暗主题">◐</button></div>
     </div>
-    <div class="toc-lists">
+    <nav class="page-switch" aria-label="页面"><a class="page-tab" data-page="guide" href="#guide">Field Guide<b>并发全景指南</b></a><a class="page-tab" data-page="wwdc" href="#wwdc25-268">WWDC25 · 268<b>拥抱 Swift 并发</b></a></nav>
+    <div class="toc-lists" data-page="guide">
       <div class="toc-label">章节</div><ol><li><a href="#status" data-sec="status"><span>★</span><span>现状：哪些过时，哪些推荐</span></a></li><li><a href="#s0" data-sec="s0"><span>0</span><span>全景图：各概念所在的层次</span></a></li><li><a href="#s1" data-sec="s1"><span>1</span><span>基础概念</span></a></li><li class="has-sub"><a href="#s2" data-sec="s2"><span>2</span><span>Thread</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「Thread」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s2-1" data-sub="s2-1"><span>2.1</span><span>是什么</span></a></li><li><a href="#s2-2" data-sub="s2-2"><span>2.2</span><span>何时使用</span></a></li><li><a href="#s2-3" data-sub="s2-3"><span>2.3</span><span>注意</span></a></li><li><a href="#s2-4" data-sub="s2-4"><span>2.4</span><span>Thread 的闭包在哪个线程执行？</span></a></li></ol></li><li class="has-sub"><a href="#s3" data-sec="s3"><span>3</span><span>RunLoop</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「RunLoop」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s3-1" data-sub="s3-1"><span>3.1</span><span>是什么</span></a></li><li><a href="#s3-2" data-sub="s3-2"><span>3.2</span><span>典型场景</span></a></li><li><a href="#s3-3" data-sub="s3-3"><span>3.3</span><span>特点</span></a></li></ol></li><li class="has-sub"><a href="#s4" data-sec="s4"><span>4</span><span>OperationQueue</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「OperationQueue」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s4-1" data-sub="s4-1"><span>4.1</span><span>是什么</span></a></li><li><a href="#s4-2" data-sub="s4-2"><span>4.2</span><span>何时使用</span></a></li></ol></li><li class="has-sub"><a href="#s5" data-sec="s5"><span>5</span><span>GCD（Grand Central Dispatch）</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「GCD（Grand Central Dispatch）」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s5-1" data-sub="s5-1"><span>5.1</span><span>三种队列</span></a></li><li><a href="#s5-2" data-sub="s5-2"><span>5.2</span><span>DispatchQueue.main</span></a></li><li><a href="#s5-3" data-sub="s5-3"><span>5.3</span><span>DispatchQueue.global(qos:)</span></a></li><li><a href="#s5-4" data-sub="s5-4"><span>5.4</span><span>自定义串行队列：保护共享状态</span></a></li><li><a href="#s5-5" data-sub="s5-5"><span>5.5</span><span>并发队列 + barrier：读写锁</span></a></li><li><a href="#s5-6" data-sub="s5-6"><span>5.6</span><span>DispatchGroup：等待一组任务完成</span></a></li><li><a href="#s5-7" data-sub="s5-7"><span>5.7</span><span>DispatchSemaphore：限制并发数 / 同步等待</span></a></li><li><a href="#s5-8" data-sub="s5-8"><span>5.8</span><span>DispatchWorkItem：可取消的任务（如防抖）</span></a></li><li><a href="#s5-9" data-sub="s5-9"><span>5.9</span><span>DispatchSource：系统事件 / 高精度定时器</span></a></li><li><a href="#s5-10" data-sub="s5-10"><span>5.10</span><span>DispatchQueue.concurrentPerform：并行循环</span></a></li><li><a href="#s5-11" data-sub="s5-11"><span>5.11</span><span>sync vs async 小结</span></a></li></ol></li><li><a href="#s6" data-sec="s6"><span>6</span><span>Combine 中的 Scheduler</span></a></li><li class="has-sub"><a href="#s7" data-sec="s7"><span>7</span><span>Swift Concurrency</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「Swift Concurrency」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s7-1" data-sub="s7-1"><span>7.1</span><span>async / await</span></a></li><li><a href="#s7-2" data-sub="s7-2"><span>7.2</span><span>协作式线程池（Cooperative Thread Pool）</span></a></li><li><a href="#s7-3" data-sub="s7-3"><span>7.3</span><span>Task：非结构化任务</span></a></li><li><a href="#s7-4" data-sub="s7-4"><span>7.4</span><span>Task.detached：脱离上下文的任务</span></a></li><li><a href="#s7-5" data-sub="s7-5"><span>7.5</span><span>async let：并行的固定数量子任务（结构化）</span></a></li><li><a href="#s7-6" data-sub="s7-6"><span>7.6</span><span>TaskGroup：动态数量的子任务（结构化）</span></a></li><li><a href="#s7-7" data-sub="s7-7"><span>7.7</span><span>取消（Cancellation）</span></a></li><li><a href="#s7-8" data-sub="s7-8"><span>7.8</span><span>优先级与睡眠/让出</span></a></li><li><a href="#s7-9" data-sub="s7-9"><span>7.9</span><span>TaskLocal：任务级"上下文变量"</span></a></li><li><a href="#s7-10" data-sub="s7-10"><span>7.10</span><span>actor：保护可变状态</span></a></li><li><a href="#s7-11" data-sub="s7-11"><span>7.11</span><span>MainActor 与全局 actor</span></a></li><li><a href="#s7-12" data-sub="s7-12"><span>7.12</span><span>isolated 与 nonisolated：代码归属哪个 actor</span></a></li><li><a href="#s7-13" data-sub="s7-13"><span>7.13</span><span>Sendable：跨隔离域传值的安全标记</span></a></li><li><a href="#s7-14" data-sub="s7-14"><span>7.14</span><span>Continuation：桥接回调式 API</span></a></li><li><a href="#s7-15" data-sub="s7-15"><span>7.15</span><span>AsyncSequence / AsyncStream：异步序列</span></a></li><li><a href="#s7-16" data-sub="s7-16"><span>7.16</span><span>Executor（执行器）</span></a></li></ol></li><li class="has-sub"><a href="#s8" data-sec="s8"><span>8</span><span>SwiftUI 中与并发相关的 API</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「SwiftUI 中与并发相关的 API」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s8-1" data-sub="s8-1"><span>8.1</span><span>.task / .task(id:)</span></a></li><li><a href="#s8-2" data-sub="s8-2"><span>8.2</span><span>搜索防抖（用 .task(id:) 替代 DispatchWorkItem / Combine debounce）</span></a></li><li><a href="#s8-3" data-sub="s8-3"><span>8.3</span><span>.refreshable</span></a></li><li><a href="#s8-4" data-sub="s8-4"><span>8.4</span><span>TimelineView：按时间表重绘（替代很多 Timer 用法）</span></a></li><li><a href="#s8-5" data-sub="s8-5"><span>8.5</span><span>Button 中触发异步操作</span></a></li><li><a href="#s8-6" data-sub="s8-6"><span>8.6</span><span>状态更新的线程要求</span></a></li></ol></li><li class="has-sub"><a href="#s9" data-sec="s9"><span>9</span><span>Swift 6 / 6.2：更严格，也更易用</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「Swift 6 / 6.2：更严格，也更易用」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s9-1" data-sub="s9-1"><span>9.1</span><span>变化一览</span></a></li><li><a href="#s9-2" data-sub="s9-2"><span>9.2</span><span>Task.immediate（Swift 6.2，iOS 26+）</span></a></li></ol></li><li><a href="#s10" data-sec="s10"><span>10</span><span>锁与同步原语</span></a></li><li class="has-sub"><a href="#s11" data-sec="s11"><span>11</span><span>横向对比</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「横向对比」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s11-1" data-sub="s11-1"><span>11.1</span><span>三代并发 API</span></a></li><li><a href="#s11-2" data-sub="s11-2"><span>11.2</span><span>Task vs Task.detached vs DispatchQueue.global vs async let vs TaskGroup</span></a></li><li><a href="#s11-3" data-sub="s11-3"><span>11.3</span><span>切到主线程的各种方式</span></a></li><li><a href="#s11-4" data-sub="s11-4"><span>11.4</span><span>定时 / 延迟的各种方式</span></a></li></ol></li><li class="has-sub"><a href="#s12" data-sec="s12"><span>12</span><span>执行时机与滚动行为</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「执行时机与滚动行为」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s12-1" data-sub="s12-1"><span>12.1</span><span>主线程上的三层：RunLoop.main、DispatchQueue.main、MainActor</span></a></li><li><a href="#s12-2" data-sub="s12-2"><span>12.2</span><span>执行顺序示例</span></a></li><li><a href="#s12-3" data-sub="s12-3"><span>12.3</span><span>滚动期间的差异</span></a></li></ol></li><li><a href="#s13" data-sec="s13"><span>13</span><span>GCD → Swift Concurrency 迁移对照</span></a></li><li><a href="#s14" data-sec="s14"><span>14</span><span>常见陷阱</span></a></li><li><a href="#s15" data-sec="s15"><span>15</span><span>选择指南</span></a></li><li><a href="#s16" data-sec="s16"><span>16</span><span>一句话总结</span></a></li><li><a href="#s17" data-sec="s17"><span>17</span><span>演示工程</span></a></li></ol><div class="toc-label">交互动画</div><ol><li><a class="fig-link" href="#fig-runloop"><span>1</span><span>RunLoop.main 与 Mode</span></a></li><li><a class="fig-link" href="#fig-ordering"><span>2</span><span>调度时机回放</span></a></li><li><a class="fig-link" href="#fig-blocking"><span>3</span><span>阻塞 vs 挂起</span></a></li><li><a class="fig-link" href="#fig-pools"><span>4</span><span>线程爆炸 vs 协作式线程池</span></a></li><li><a class="fig-link" href="#fig-structured"><span>5</span><span>结构化并发与取消</span></a></li><li><a class="fig-link" href="#fig-actor"><span>6</span><span>actor 重入</span></a></li></ol>
+    </div>
+    <div class="toc-lists" data-page="wwdc" hidden>
+      <div class="toc-label">WWDC25 · 268 拥抱 Swift 并发</div><ol><li><a href="#w0" data-sec="w0"><span>★</span><span>一页速览</span></a></li><li><a href="#w1" data-sec="w1"><span>1</span><span>从单线程开始</span></a></li><li><a href="#w2" data-sec="w2"><span>2</span><span>异步任务：隐藏延迟</span></a></li><li><a href="#w3" data-sec="w3"><span>3</span><span>引入并发：<code>@concurrent</code></span></a></li><li><a href="#w4" data-sec="w4"><span>4</span><span>跨线程共享数据：Sendable</span></a></li><li><a href="#w5" data-sec="w5"><span>5</span><span>actor：把数据移出主线程</span></a></li><li><a href="#w6" data-sec="w6"><span>6</span><span>推荐的构建设置</span></a></li><li><a href="#w7" data-sec="w7"><span>7</span><span>与本指南的对照</span></a></li></ol>
+      <div class="toc-label">交互动画</div><ol><li><a class="fig-link" href="#fig-w-journey"><span>W1</span><span>四个阶段：工作落在哪条线程</span></a></li><li><a class="fig-link" href="#fig-w-interleave"><span>W2</span><span>两个任务在主线程上交错</span></a></li><li><a class="fig-link" href="#fig-w-share"><span>W3</span><span>值类型副本 vs 共享的类实例</span></a></li></ol>
     </div>
   </nav>
   <main>
+    <div class="page" id="guide" data-page="guide">
     <header class="hero">
       <div class="eyebrow reveal">Swift · SwiftUI · Concurrency</div>
       <h1 class="reveal d1">Swift / SwiftUI<br>多任务与并发<br><em>全景指南</em></h1>
@@ -1160,6 +1306,284 @@ publisher.receive(on: <span class="t-t">RunLoop</span>.main)                <spa
 ├─ 旧 SDK 回调切回主线程（线程未知）────→ Task { @MainActor in … } / DispatchQueue.main.async
 ├─ 旧 SDK 回调（文档保证已在主线程）────→ MainActor.assumeIsolated（只断言，不切换线程）
 └─ 需要专用长期线程 + RunLoop ──────────→ Thread（极少）</pre></div></section><section class="sec" id="s16"><div class="sec-h2"><span class="sec-num">16</span><h2>一句话总结</h2></div><div class="table-wrap"><table><thead><tr><th>概念</th><th>一句话</th></tr></thead><tbody><tr><td><strong>Thread</strong><span class="badge b-legacy">遗留</span></td><td>最底层的线程，几乎不用直接操作。</td></tr><tr><td><strong>RunLoop.main</strong><span class="badge b-niche">按需</span></td><td>主线程的事件循环，用于 Timer/DisplayLink，有 Mode，滚动时行为不同。</td></tr><tr><td><strong>DispatchQueue.main</strong><span class="badge b-niche">按需</span></td><td>GCD 主串行队列，"把 block 排到主线程执行"，适合遗留回调。</td></tr><tr><td><strong>DispatchQueue.global</strong><span class="badge b-legacy">遗留</span></td><td>GCD 共享并发后台队列，按 QoS 分级，阻塞过多会线程爆炸。</td></tr><tr><td><strong>自定义 DispatchQueue</strong><span class="badge b-legacy">遗留</span></td><td>串行队列做锁，并发队列 + barrier 做读写锁。</td></tr><tr><td><strong>DispatchGroup / Semaphore / WorkItem / Source</strong><span class="badge b-legacy">多数遗留</span></td><td>等待一组任务 / 限流 / 可取消任务 / 系统事件与定时器。</td></tr><tr><td><strong>OperationQueue</strong><span class="badge b-niche">按需</span></td><td>面向对象的任务队列，支持依赖、取消、并发数控制。</td></tr><tr><td><strong>async/await</strong><span class="badge b-rec">推荐</span></td><td>以线性代码书写异步逻辑，挂起不阻塞线程。</td></tr><tr><td><strong>Task</strong><span class="badge b-rec">推荐</span></td><td>非结构化任务，继承 actor/优先级/TaskLocal，不随父任务取消。</td></tr><tr><td><strong>Task.detached</strong><span class="badge b-niche">按需</span></td><td>什么都不继承的非结构化任务，最后手段。</td></tr><tr><td><strong>Task.immediate</strong><span class="badge b-niche">按需</span></td><td>立即在当前上下文同步开始执行的任务（Swift 6.2）。</td></tr><tr><td><strong>async let / TaskGroup</strong><span class="badge b-rec">推荐</span></td><td>结构化子任务，自动等待、自动取消传播。</td></tr><tr><td><strong>actor</strong><span class="badge b-rec">推荐</span></td><td>串行访问的状态容器，消除数据竞争，注意重入。</td></tr><tr><td><strong>MainActor</strong><span class="badge b-rec">推荐</span></td><td>主线程的全局 actor，编译器保证 UI 代码在主线程，SwiftUI 首选。</td></tr><tr><td><strong>Sendable</strong><span class="badge b-rec">推荐</span></td><td>跨并发域传值的安全证明。</td></tr><tr><td><strong>Continuation / AsyncStream</strong><span class="badge b-rec">推荐</span></td><td>把回调 / 事件流桥接到 async 世界。</td></tr><tr><td><strong>Mutex / Atomic / 锁</strong><span class="badge b-rec">Mutex/Atomic 推荐</span></td><td>同步的小临界区保护，不能跨 await。</td></tr><tr><td><strong><code>.task</code> (SwiftUI)</strong><span class="badge b-rec">推荐</span></td><td>与视图生命周期绑定、自动取消的异步入口。</td></tr></tbody></table></div></section><section class="sec" id="s17"><div class="sec-h2"><span class="sec-num">17</span><h2>演示工程</h2></div><p>本仓库的 <code>MainActor</code> Xcode 工程（iOS 26，开启了 <em>Default Actor Isolation = MainActor</em> 与 <em>Approachable Concurrency</em>）对上述概念逐一做了可运行的演示。每个页面上半部分是按钮，下半部分是日志：日志在调用的那一刻记录线程（绿色 <code>main</code> / 橙色 <code>T线程号</code>）和相对时间，所以显示顺序就是真实的执行顺序。</p><blockquote><strong>适用范围：</strong> 工程的 <code>SWIFT_VERSION</code> 是 5.0，即用 Swift 6.2 编译器，但<strong>没有启用 Swift 6 语言模式</strong>。实测的运行时行为（nonsending、线程数、执行顺序）由已开启的 Approachable Concurrency 等设置决定；文中关于 Swift 6 严格编译检查的说法来自 Swift 文档，演示工程并未验证。线程数和执行顺序都是该环境下的观测值，不是 API 保证。</blockquote><div class="table-wrap"><table><thead><tr><th>页面</th><th>文件</th><th>演示内容</th><th>对应章节</th></tr></thead><tbody><tr><td>1. 执行时机</td><td><code>Demos/OrderingDemo.swift</code></td><td><code>DispatchQueue.main.async</code> / <code>Task {}</code> / <code>Task.immediate</code> / <code>RunLoop.main.perform</code> / <code>OperationQueue.main</code> / <code>Task.detached</code> / <code>global</code> 的执行顺序</td><td>§11.3、§12.2</td></tr><tr><td>2. 阻塞 vs 挂起</td><td><code>Demos/BlockingDemo.swift</code></td><td>逐帧旋转的图标 + 7 种写法：哪些会卡住主线程（<code>Task {}</code> 同步计算、<code>nonisolated(nonsending)</code>），哪些不会（<code>@concurrent</code>、<code>Task.detached</code>、<code>global</code>、<code>Task.sleep</code>）</td><td>§7.3、§7.4、§9.1</td></tr><tr><td>3. RunLoop Mode 与滚动</td><td><code>Demos/RunLoopModeDemo.swift</code></td><td>7 个计数器 + 可拖动列表：<code>Timer(.default)</code>、<code>receive(on: RunLoop.main)</code>、<code>perform(inModes: [.default])</code> 在滚动时暂停</td><td>§3、§6、§12.3</td></tr><tr><td>4. Task 继承了什么</td><td><code>Demos/TaskInheritanceDemo.swift</code></td><td>actor 隔离、优先级、<code>TaskLocal</code>、取消传播</td><td>§7.3–§7.9、§11.2</td></tr><tr><td>5. 结构化并发</td><td><code>Demos/StructuredConcurrencyDemo.swift</code></td><td>顺序 <code>await</code>（约 3s） vs <code>async let</code>（约 1s）；<code>TaskGroup</code> 限流；一个子任务出错时其余被取消</td><td>§7.5–§7.7</td></tr><tr><td>6. actor 串行与重入</td><td><code>Demos/ActorReentrancyDemo.swift</code></td><td>actor 同步方法不交错；朴素缓存因重入下载 5 次，缓存进行中的 <code>Task</code> 后只下载 1 次</td><td>§7.10</td></tr><tr><td>7. 桥接旧 API</td><td><code>Demos/BridgingDemo.swift</code></td><td><code>withCheckedThrowingContinuation</code>、<code>AsyncStream</code> 与 <code>onTermination</code>、<code>MainActor.assumeIsolated</code></td><td>§7.11、§7.14、§7.15</td></tr><tr><td>8. GCD 工具箱</td><td><code>Demos/GCDToolsDemo.swift</code></td><td><code>DispatchGroup</code>、<code>DispatchSemaphore</code>、串行 vs 并发队列、barrier、<code>concurrentPerform</code>、<code>main.sync</code>；线程爆炸 vs 协作式线程池</td><td>§5、§7.2</td></tr><tr><td>9. OperationQueue</td><td><code>Demos/OperationQueueDemo.swift</code></td><td>依赖、<code>maxConcurrentOperationCount</code>、取消、暂停 / 恢复</td><td>§4</td></tr><tr><td>10. 数据竞争与锁</td><td><code>Demos/DataRaceDemo.swift</code></td><td>无保护 vs <code>NSLock</code> / <code>Mutex</code> / <code>Atomic</code> / 串行队列 / actor 的结果与耗时</td><td>§10</td></tr><tr><td>11. .task 与生命周期</td><td><code>Demos/SwiftUITaskDemo.swift</code></td><td><code>.task</code> 自动取消 vs <code>onAppear { Task {} }</code> 泄漏；<code>.task(id:)</code> 与 <code>DispatchWorkItem</code> 防抖</td><td>§8</td></tr><tr><td>12. AsyncSequence vs Combine</td><td><code>Demos/AsyncSequenceCombineDemo.swift</code></td><td>同一件事两种写法：变换管道、定时器、通知、慢消费者的缓冲策略、忘记保存句柄、取消、错误处理、互相转换</td><td>§6、§7.15</td></tr><tr><td>13. TimelineView</td><td><code>Demos/TimelineViewDemo.swift</code></td><td>可视化演示（没有日志）：<code>.periodic</code>、<code>.everyMinute</code>、<code>.animation</code>（限帧与暂停）、<code>.explicit</code>、自定义调度表；跳秒与扫秒、Canvas 波形、秒表、<code>cadence</code>，以及会自己更新的 <code>Text</code> / <code>ProgressView</code></td><td>§8.4</td></tr></tbody></table></div><p>公共代码在 <code>Support/</code>：<code>Console.swift</code>（基于 <code>Mutex</code> 的线程安全日志与界面组件），<code>Work.swift</code>（模拟耗时工作，以及 <code>nonisolated(nonsending)</code> 与 <code>@concurrent</code> 函数）。</p><p>以下数据于 2026-10-02 在 iPhone 17 Pro 模拟器（iOS 26.0，12 核 Mac，Debug 构建）上用临时的 Swift Testing 测试重新测量，测试串行执行、互不干扰。数字只代表这个环境，不是 API 保证。</p><ul><li><strong><code>nonisolated(nonsending)</code> 与 <code>@concurrent</code></strong>（10 次）：从 MainActor 调用时，前者 10/10 在主线程执行，后者 10/10 在后台线程执行。</li><li><strong>同步上下文的执行顺序</strong>（30 次）：主线程输出 30/30 都是 <code>1 → Task.immediate → 2 → 3 → RunLoop.perform → main.async → Task {} → OperationQueue.main</code>。<code>Task.detached</code> 在后台，27 次出现在 <code>3</code> 之后，1 次出现在 <code>2</code> 和 <code>3</code> 之间，2 次排在 <code>main.async</code> 之后——印证了“后台任务可能穿插在任何位置”。</li><li><strong><code>await MainActor.run</code></strong>（30 次）：30/30 都是 <code>A → Task @MainActor → B → C → D</code>，即之前排队的 <code>Task { @MainActor }</code> 先于 <code>MainActor.run</code> 的闭包执行。结果稳定，但这仍是实现行为，不要依赖。</li><li><strong>滚动（UITrackingRunLoopMode）期间</strong>（嵌套运行主 RunLoop 0.4 秒）：<code>DispatchQueue.main.async</code>、<code>Task { @MainActor }</code>、<code>OperationQueue.main</code>、<code>receive(on: DispatchQueue.main)</code>、<code>perform(inModes: [.common])</code> 都照常执行；<code>RunLoop.main.perform</code>（默认）、<code>perform(inModes: [.default])</code>、<code>receive(on: RunLoop.main)</code> 都推迟到回到 default mode 后才执行。<code>.default</code> 的 Timer 在 tracking 期间触发 0 次、回到 default 后也没有补发，<code>.common</code> 的 Timer 照常触发。</li><li><strong>继承</strong>：<code>Task {}</code> 继承 MainActor、优先级（low）和 TaskLocal；<code>async let</code> 继承优先级但在后台执行；<code>Task.detached</code> 三者都不继承（优先级为 medium）；GCD 读不到 TaskLocal。</li><li><strong>取消传播</strong>：父任务在 300ms 取消后，<code>async let</code> 与 <code>TaskGroup</code> 子任务在约 301ms 被取消；<code>Task {}</code> 与 <code>Task.detached</code> 在约 1006ms 正常完成。</li><li><strong>结构化并发耗时</strong>：顺序 <code>await</code> 3027ms、<code>async let</code> 1010ms、<code>TaskGroup</code>（8 个任务、限 3 个）3086ms、ThrowingTaskGroup 出错 507ms（A、B 随即被取消）。</li><li><strong>线程爆炸</strong>（100 个各阻塞 100ms 的任务，分开测各 3 次）：GCD 3 次都用了 <strong>64</strong> 个线程（约 210ms）；<code>TaskGroup</code> 的协作式线程池 3 次都只用了 <strong>12</strong> 个（等于核心数，约 927ms）。</li><li><strong>数据竞争</strong>（4 个线程 × 50,000 次 <code>+= 1</code>，3 次）：无保护结果为 80,246 ~ 129,400（期望 200,000，每次都不同）；<code>Atomic</code> 14 ~ 16ms、<code>Mutex</code> 31 ~ 32ms、<code>NSLock</code> 36 ~ 48ms、actor 76 ~ 77ms、串行队列 <code>sync</code> 574 ~ 608ms。</li><li><strong>actor 重入</strong>（3 次）：朴素缓存每次都下载 5 次，去重缓存每次都只下载 1 次。</li></ul></section>
+    </div>
+    <div class="page" id="wwdc25-268" data-page="wwdc" data-title="拥抱 Swift 并发 · WWDC25 Session 268" hidden>
+    <header class="w-hero">
+      <div class="w-ghost" aria-hidden="true">268</div>
+      <div class="eyebrow reveal">WWDC25 · Session 268 · 视频笔记</div>
+      <h1 class="reveal d1">拥抱 Swift 并发</h1>
+      <p class="w-en reveal d1">Embrace Swift concurrency</p>
+      <p class="lede reveal d2">Swift 团队的 Doug 用一个图片加载的小例子，把一个 App 从<strong>纯单线程</strong>一步步带到<strong>异步</strong>、<strong>并发</strong>、再到<strong>自定义 actor</strong>。这场讲座的核心观点只有一句：<strong>并发是按需引入的工具，不是起点</strong>。每一步都回答四个问题：什么时候该迈这一步、用什么语言特性、怎么用、为什么这样设计。下面按视频顺序整理，代码根据讲解重建，用来说明意思，不是视频里的逐字源码。</p>
+      <div class="w-meta reveal d3">
+        <span><small>Speaker</small>Doug · Swift 团队</span>
+        <span><small>适用</small>Swift 6.2 · Xcode 26</span>
+        <span><small>配套</small>Code-along 实战讲座</span>
+        <a href="https://developer.apple.com/videos/play/wwdc2025/268/" target="_blank" rel="noopener"><small>Video</small>观看原视频 ↗</a>
+      </div>
+      <nav class="w-stairs reveal d4" aria-label="四个阶段">
+        <a class="w-step" href="#w1"><span class="n">1</span><h4>单线程</h4><p class="when">一切都在主线程。只要每个操作都够快，就停在这里。</p><span class="tools"><code>@MainActor</code><code>默认隔离</code></span></a>
+        <a class="w-step" href="#w2"><span class="n">2</span><h4>异步</h4><p class="when">要等网络、等磁盘，又不想卡住 UI。</p><span class="tools"><code>async</code><code>await</code><code>Task</code></span></a>
+        <a class="w-step" href="#w3"><span class="n">3</span><h4>并发</h4><p class="when">Instruments 显示主线程上的计算太重，且无法再优化。</p><span class="tools"><code>@concurrent</code><code>nonisolated</code><code>Sendable</code></span></a>
+        <a class="w-step" href="#w5"><span class="n">4</span><h4>actor</h4><p class="when">主线程上的数据太多，后台任务频繁回主线程“报到”。</p><span class="tools"><code>actor</code></span></a>
+      </nav>
+      <div class="w-stairs-axis reveal d4"><span>更简单</span><span>只在需要时往上走</span><span>更多并发</span></div>
+    </header>
+
+    <section class="sec" id="w0"><div class="sec-h2"><span class="sec-num">★</span><h2>一页速览</h2></div>
+      <p>视频开头就给了一个容易被忽略的前提：<strong>很多 App 只需要少量并发，有些根本不需要</strong>。并发代码比单线程代码复杂，所以应该在真正遇到性能问题时才引入。大型 App 最后可能长成“主线程 + 后台任务 + 若干 actor”的结构，但没有人从那里起步，也不是每个 App 都要走到那一步。</p>
+      <div class="w-keys">
+        <div class="w-key"><b>起点</b><p>所有代码默认跑在主线程上。新建的 Xcode 26 App 项目已默认开启“main actor 隔离”模式。</p></div>
+        <div class="w-key"><b>异步 ≠ 并发</b><p>把函数改成 <code>async</code>、调用 <code>await</code>，就能在等待时让出主线程。自己的代码仍是单线程的，后台工作由 URLSession 这类库替你完成。</p></div>
+        <div class="w-key"><b>先测再搬</b><p>UI 卡顿时先用 Instruments 找原因；能不靠并发提速就先提速，实在不行才用 <code>@concurrent</code> 把工作移到后台。</p></div>
+        <div class="w-key"><b>编译器把关</b><p>值在 actor 与任务之间传递时，编译器做 Sendable 检查，在编译期指出数据竞争，而不是等到运行时崩溃。</p></div>
+        <div class="w-key"><b>actor 是最后一步</b><p>只有当主线程上的数据多到引发争用时，才把某个非 UI 子系统（比如网络管理）拆成自己的 actor。</p></div>
+        <div class="w-key"><b>两个构建设置</b><p>所有项目开启 Approachable Concurrency；以 UI 为主的模块（例如 App 主模块）把默认 actor 隔离设为 MainActor。</p></div>
+      </div>
+      <figure class="fig" id="fig-w-journey">
+        <div class="fig-head"><div><div class="fig-tag">Fig. W1 · 四个阶段</div><div class="fig-title">fetchAndDisplayImage 的工作落在哪条线程上</div></div>
+          <div class="controls"><div class="tabs" role="tablist"><button class="tab" data-key="s1" type="button">① 单线程</button><button class="tab" data-key="s2" type="button">② 异步</button><button class="tab" data-key="s3" type="button">③ 并发</button><button class="tab" data-key="s3b" type="button">③′ 主线程争用</button><button class="tab" data-key="s4" type="button">④ actor</button></div></div></div>
+        <div class="fig-body">
+          <div class="wj-lanes">
+            <div class="wj-lane-h" data-l="main">主线程<small>main actor</small></div>
+            <div class="wj-lane-h" data-l="sys">系统库<small>URLSession 内部</small></div>
+            <div class="wj-lane-h" data-l="pool">并发线程池<small>@concurrent</small></div>
+            <div class="wj-lane-h" data-l="actor">NetworkManager<small>actor</small></div>
+            <div class="wj-track" aria-hidden="true"></div>
+          </div>
+          <div class="wj-stats"><span>主线程占用</span><span class="bar"><i></i></span><b>–</b></div>
+          <p class="narr wj-narr" aria-live="polite"></p>
+        </div>
+        <figcaption class="fig-cap">横轴是时间。<b>实心块</b>表示该线程正在执行代码，<b>虚线块</b>表示在等待（不占线程），<b>红色斜纹</b>表示为了访问主线程上的数据而“跳回”主线程。切换标签看同一个操作在每一阶段如何被重新分配。</figcaption>
+      </figure>
+    </section>
+
+    <section class="sec" id="w1"><div class="sec-h2"><span class="sec-num">01</span><h2>从单线程开始</h2></div>
+      <p>程序启动时，代码在主线程上运行；只要你不明确引入并发，新增的代码也一直留在主线程上。单线程代码同一时间只做一件事，最容易写也最容易维护。主线程同时负责接收 UI 事件并刷新 UI，所以<strong>如果 App 没有大量计算，把所有东西都放在主线程上完全没问题</strong>。</p>
+      <h3 id="w1-1"><span class="h3-num">1.1</span>main actor：主线程及其数据</h3>
+      <p>在 Swift 并发模型里，主线程和它的所有数据由 <strong>main actor</strong> 代表。main actor 上没有并发，因为能运行它的只有一条主线程。用 <code>@MainActor</code> 标注的代码或数据，Swift 保证只在主线程上运行、只从主线程访问，这叫作代码被<strong>隔离（isolated）到 main actor</strong>。</p>
+      <h3 id="w1-2"><span class="h3-num">1.2</span>默认 main actor 隔离</h3>
+      <p>开启这个模式后，相当于编译器替你在模块里的每个声明上都写了 <code>@MainActor</code>。这样你可以从任何地方随意访问静态变量这类共享状态，在真正引入并发之前不用操心并发访问。这个模式由构建设置控制，<strong>Xcode 26 新建的 App 项目默认开启</strong>，主要用于 App 主模块和以 UI 交互为主的模块。视频后面的所有示例都假设它已开启。</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">// 默认 main actor 隔离：等价于整个类型都标了 @MainActor
+final class ImageModel {
+    var cachedImage: [URL: Image] = [:]
+
+    func fetchAndDisplayImage(url: URL) throws {
+        let data = try Data(contentsOf: url)   // 读本地文件
+        let image = decodeImage(data)          // 解码
+        view.displayImage(image)               // 显示
+    }
+}</code></pre></div>
+      <p>整个函数一口气在主线程上跑完，没有任何并发。只要每一步都够快，这就是最好的写法。</p>
+    </section>
+
+    <section class="sec" id="w2"><div class="sec-h2"><span class="sec-num">02</span><h2>异步任务：隐藏延迟</h2></div>
+      <p>本地文件换成网络地址后，就得用 URLSession 下载。如果在主线程上同步等待下载，UI 会一直冻结到数据返回。保持 App 响应的原则是：<strong>不要让主线程长时间被占住</strong>。等待数据这类高延迟操作，正是异步任务的用武之地。</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">func fetchAndDisplayImage(url: URL) async throws {
+    let (data, _) = try await URLSession.shared.data(from: url)  // ← 可能挂起
+    let image = decodeImage(data)
+    view.displayImage(image)
+}</code></pre></div>
+      <h3 id="w2-1"><span class="h3-num">2.1</span>await：把函数切成两段</h3>
+      <p><code>await</code> 标出函数<strong>可能挂起</strong>的位置：函数在当前线程上停下，等它在等的事件发生后再继续执行。可以把函数想成被切成两段，一段运行到开始下载为止，另一段在下载完成后运行。两段之间，主线程可以去做别的事，UI 因此保持响应。</p>
+      <p>值得注意的是，到这一步<strong>我们自己的代码仍然没有引入并发</strong>。URLSession 这类库会在内部把工作放到后台，我们只是采用了 async/await。</p>
+      <h3 id="w2-2"><span class="h3-num">2.2</span>Task：端到端完成一个操作</h3>
+      <p>async 函数运行在<strong>任务（task）</strong>中。任务独立于其他代码执行，应当为一个具体操作从头到尾创建，常见的做法是响应某个事件，比如按钮点击。</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">Button("加载") {
+    Task {   // 继承 main actor：除了下载，其余步骤都在主线程上
+        try await model.fetchAndDisplayImage(url: url)
+    }
+}</code></pre></div>
+      <h3 id="w2-3"><span class="h3-num">2.3</span>交错执行（interleaving）</h3>
+      <p>App 里可以同时有很多异步任务。比如再加一个“抓取新闻 → 显示 → 等待刷新”的任务。下载在后台进行，但两个任务的其余步骤都在主线程上，一次只能跑一个。任务彼此独立，于是<strong>轮流使用主线程</strong>：哪个任务的下一段先准备好，主线程就先跑哪个。单条线程在多个任务之间切换，就叫<strong>交错执行</strong>。它让线程不必空等某一个操作，从而更充分地利用系统资源。</p>
+      <figure class="fig" id="fig-w-interleave">
+        <div class="fig-head"><div><div class="fig-tag">Fig. W2 · 交错执行</div><div class="fig-title">两个独立任务轮流使用同一条主线程</div></div>
+          <div class="controls"><div class="tabs" role="tablist"><button class="tab" data-key="img" type="button">图片先下载完</button><button class="tab" data-key="news" type="button">新闻先下载完</button></div><button class="btn" data-act="replay" type="button">↻ 重播</button></div></div>
+        <div class="fig-body">
+          <div class="wi">
+            <div class="wi-h" style="color:var(--rl)">网络（系统）</div><div class="wi-row" data-row="net"></div>
+            <div class="wi-h" style="color:var(--main)">主线程</div><div class="wi-row" data-row="main"><span class="wi-head"></span></div>
+          </div>
+          <div class="wi-key"><span><i style="background:var(--bgt)"></i>任务 A：图片（下载 → 解码 → 显示）</span><span><i style="background:var(--rl)"></i>任务 B：新闻（下载 → 显示 → 等待刷新）</span><span><i style="border:1px dashed var(--ink3)"></i>等待中，不占主线程</span></div>
+          <p class="narr wj-narr" aria-live="polite"></p>
+        </div>
+        <figcaption class="fig-cap">每个任务内部的步骤严格按顺序执行；不同任务之间的先后取决于谁的数据先回来。<b>需要固定顺序的工作，应放进同一个任务里。</b></figcaption>
+      </figure>
+      <blockquote>异步、单线程，对很多 App 来说已经足够。</blockquote>
+    </section>
+
+    <section class="sec" id="w3"><div class="sec-h2"><span class="sec-num">03</span><h2>引入并发：<code>@concurrent</code></h2></div>
+      <p>现在下载已在后台，但解码还在主线程上。图片很大时，解码可能导致 UI 卡顿。视频给出的判断顺序是：</p>
+      <ol>
+        <li>App 不够流畅，说明主线程上的工作太多。用 <strong>Instruments</strong> 找出时间花在哪里。</li>
+        <li>如果能<strong>不靠并发</strong>让它变快，先这么做。</li>
+        <li>实在快不了，再引入并发：让一部分代码在后台线程上与主线程并行运行，同时也能用上更多 CPU 核心。</li>
+      </ol>
+      <h3 id="w3-1"><span class="h3-num">3.1</span>给函数加 <code>@concurrent</code></h3>
+      <p>在默认 main actor 模式下，<code>fetchAndDisplayImage</code> 和 <code>decodeImage</code> 都隔离在 main actor 上。给 <code>decodeImage</code> 加上 <code>@concurrent</code>，就是告诉 Swift：<strong>这个函数在后台运行</strong>。</p>
+      <p>函数挪了位置，它能访问的状态也随之改变。<code>decodeImage</code> 原本会查一个存放在 main actor 上的缓存字典，这只在主线程上安全，于是<strong>编译器直接指出了这处对 main actor 数据的访问</strong>。这正是安全引入并发所需要的信息。</p>
+      <h3 id="w3-2"><span class="h3-num">3.2</span>解开与 main actor 绑定的三种方法</h3>
+      <div class="table-wrap"><table><thead><tr><th>做法</th><th>适用场景</th><th>本例</th></tr></thead><tbody>
+        <tr><td>把 main actor 代码<strong>移到调用方</strong></td><td>调用方本来就在 main actor 上，且希望这部分工作同步完成</td><td>把缓存检查挪进 <code>fetchAndDisplayImage</code>（采用）</td></tr>
+        <tr><td>在并发代码里用 <code>await</code> 异步访问 main actor</td><td>后台代码偶尔需要读写主线程状态</td><td>见 §4 中 <code>await view.displayImage(...)</code></td></tr>
+        <tr><td>标记为 <code>nonisolated</code></td><td>这段代码根本不需要在 main actor 上</td><td>见 §3.4 库 API 的建议</td></tr>
+      </tbody></table></div>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">func fetchAndDisplayImage(url: URL) async throws {
+    // 先在 main actor 上同步查缓存：命中就直接显示，完全不挂起
+    if let image = cachedImage[url] {
+        view.displayImage(image)
+        return
+    }
+    let (data, _) = try await URLSession.shared.data(from: url)
+    let image = await decodeImage(data)   // 切到后台解码，等结果回来
+    view.displayImage(image)
+}
+
+@concurrent
+func decodeImage(_ data: Data) async -> Image {
+    // 运行在并发线程池上，不能直接访问 main actor 的状态
+    // 不再需要 url 参数，缓存逻辑已经移到调用方
+}</code></pre></div>
+      <p>在发起任何异步调用之前先查缓存，可以消除延迟：命中时函数同步完成，结果立刻交给 UI；只有图片不在缓存里时才会挂起。</p>
+      <h3 id="w3-3"><span class="h3-num">3.3</span><code>@concurrent</code> 与 <code>nonisolated</code> 的区别</h3>
+      <div class="table-wrap"><table><thead><tr><th>标注</th><th>从 main actor 调用</th><th>从后台线程调用</th><th>适合</th></tr></thead><tbody>
+        <tr><td><code>@concurrent</code></td><td>切到后台线程池</td><td>在后台线程池</td><td>App 内明确要卸载的重活</td></tr>
+        <tr><td><code>nonisolated</code></td><td>留在 main actor</td><td>留在后台线程</td><td>通用库 API，让调用方决定</td></tr>
+      </tbody></table></div>
+      <p><code>@concurrent</code> 函数<strong>总会离开当前 actor</strong> 去运行；如果希望函数留在调用它的那个 actor 上，就用 <code>nonisolated</code>。</p>
+      <p class="w-note">注：对 async 函数而言，“nonisolated 留在调用方的 actor 上”是 Swift 6.2 的 nonisolated(nonsending) 语义，由 Approachable Concurrency 设置中的 NonisolatedNonsendingByDefault 开启。旧行为下 nonisolated async 函数会切到全局执行器。</p>
+      <h3 id="w3-4"><span class="h3-num">3.4</span>写库的人：优先 <code>nonisolated</code></h3>
+      <p>如果解码是一个供许多客户端使用的库 API，<code>@concurrent</code> 未必是好选择。解码耗时取决于数据量，小数据在主线程上解码完全可以。<strong>对库来说，最好提供 nonisolated API，让调用方决定要不要卸载到后台。</strong>nonisolated 代码在哪儿调用就在哪儿运行，非常灵活，是通用库的好默认值。</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">// 库：不替调用方做决定
+nonisolated func decode(_ data: Data) -> Image { /* ... */ }
+
+// App：自己决定在后台调用
+@concurrent
+func decodeInBackground(_ data: Data) async -> Image {
+    decode(data)
+}</code></pre></div>
+      <h3 id="w3-5"><span class="h3-num">3.5</span>并发线程池</h3>
+      <p>工作被卸载到后台后，由系统负责调度到某条后台线程上。<strong>并发线程池</strong>包含系统的全部后台线程，数量不定：Apple Watch 这类小设备可能只有一两条，核心更多的大设备线程也更多。任务跑在哪条后台线程上并不重要：任务挂起时，原线程会去运行其他就绪的任务；任务恢复时，可以在池中任意空闲线程上继续，<strong>不一定是它最初所在的那条</strong>。更多细节见视频推荐的 “Beyond the basics of structured concurrency”，以及本指南 <a href="#s7-2">§7.2 协作式线程池</a>、<a href="#fig-pools">Fig. 2</a>。</p>
+    </section>
+
+    <section class="sec" id="w4"><div class="sec-h2"><span class="sec-num">04</span><h2>跨线程共享数据：Sendable</h2></div>
+      <p>有了并发，数据就会在线程之间流动。在 main actor 和并发线程池之间每来回一次，就是一次跨线程共享：URL 从 UI 传到后台去下载，下载得到的 Data 交给解码，解码得到的 image 连同 <code>self</code> 再回到 main actor。共享可变状态是出了名的易错，<strong>Swift 会在编译期就把这类错误找出来</strong>。</p>
+      <h3 id="w4-1"><span class="h3-num">4.1</span>值类型：其实没有在“共享”</h3>
+      <p>URL 是值类型。复制到后台线程时，后台拿到的是一份独立副本；用户在 UI 上输入新 URL，主线程随意修改自己的副本，后台那份不受影响。字符串、整数、日期这些基础类型都是值类型；元素为值类型的数组、字典也是；只存值类型的 struct 和 enum（比如 <code>Post</code>）同样如此。</p>
+      <figure class="fig" id="fig-w-share">
+        <div class="fig-head"><div><div class="fig-tag">Fig. W3 · 复制还是共享</div><div class="fig-title">值类型各持一份，类实例共用一个对象</div></div></div>
+        <div class="fig-body"><div class="wv">
+          <div class="wv-col" data-k="ok"><h5><span>struct URL（值类型）</span><span>Sendable ✓</span></h5>
+            <div class="wv-grid"><span class="wv-th">主线程</span><span class="wv-th">后台线程</span>
+              <span class="wv-var">url = "…/cat.png"<br><span style="color:var(--ink3)">用户改成 dog.png</span></span><span class="wv-var">url = "…/cat.png"<br><span style="color:var(--ink3)">仍是自己的副本</span></span></div>
+            <p>复制即独立。修改只影响自己那一份，不存在竞争。</p></div>
+          <div class="wv-col" data-k="bad"><h5><span>class Image（引用类型）</span><span>非 Sendable ✗</span></h5>
+            <div class="wv-grid"><span class="wv-th">主线程</span><span class="wv-th">后台线程</span>
+              <span class="wv-var">image →<br><span style="color:var(--ink3)">按旧宽高遍历像素</span></span><span class="wv-var">image →<br><span style="color:var(--ink3)">缩放：改宽高、换像素</span></span>
+              <span class="wv-obj" style="margin-top:14px">同一个 Image 对象 🐈</span></div>
+            <p>两个变量指向同一块内存。一边改、一边读，结果可能是 UI 错乱，更可能是数组越界崩溃。</p></div>
+        </div></div>
+        <figcaption class="fig-cap">这正是 Swift 6 编译器要拦截的场景：<b>把非 Sendable 的值同时交给两个并发域</b>。</figcaption>
+      </figure>
+      <h3 id="w4-2"><span class="h3-num">4.2</span>什么是 Sendable</h3>
+      <p>总能安全并发共享的类型叫 <strong>Sendable</strong>。它是一个协议，遵循它的类型可以安全共享：</p>
+      <ul>
+        <li>Array 等集合是<strong>条件遵循</strong>：元素是 Sendable，集合就是 Sendable。</li>
+        <li>struct 和 enum 的所有实例数据都是 Sendable 时，可以标为 Sendable。</li>
+        <li><strong>main actor 类型隐式就是 Sendable</strong>，不用显式声明。</li>
+        <li>actor（包括 main actor）通过“同一时刻只允许一个任务访问”来保护非 Sendable 状态。值传入或传出 actor 时，编译器都会检查它能否安全地交给并发代码。</li>
+      </ul>
+      <p>以 <code>await decodeImage(data)</code> 为例：有两个值被送出 main actor，一个结果被送回来。</p>
+      <div class="table-wrap"><table><thead><tr><th>值</th><th>方向</th><th>为什么安全</th></tr></thead><tbody>
+        <tr><td><code>self</code>（ImageModel）</td><td>送出</td><td>main actor 类，可变状态由 main actor 保护，传引用到后台是安全的</td></tr>
+        <tr><td><code>data</code>（Data）</td><td>送出</td><td>值类型，Sendable</td></tr>
+        <tr><td><code>image</code>（Image 类）</td><td>送回</td><td>非 Sendable，但它是在后台<strong>新建</strong>的，没有任何并发代码引用它，所以可以安全地交给 main actor</td></tr>
+      </tbody></table></div>
+      <h3 id="w4-3"><span class="h3-num">4.3</span>数据竞争是怎么被拦下的</h3>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">func scaleAndDisplay(imageName: String) {
+    let image = loadImage(imageName)
+    Task { @concurrent in
+        image.scaleImage(by: 0.5)   // 后台线程修改 image
+    }
+    view.displayImage(image)        // 主线程同时读取 image
+    // ❌ 编译错误：并发任务捕获了 image，而 main actor 也在使用它
+}</code></pre></div>
+      <p>如果希望缩放效果显示在 UI 上，正确做法是<strong>等缩放完成再显示</strong>：把三个操作都放进同一个任务，保证顺序。<code>displayImage</code> 必须在 main actor 上运行，所以在并发任务里用 <code>await</code> 调用它。如果 <code>scaleAndDisplay</code> 本身可以是 async 的，连新任务都不用建：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">@concurrent
+func scaleAndDisplay(imageName: String) async {
+    let image = loadImage(imageName)
+    image.scaleImage(by: 0.5)
+    await view.displayImage(image)   // 送给 main actor 之前完成所有修改
+    // image.applyAnotherEffect()    // ❌ 已送出，main actor 可能已缓存它
+}</code></pre></div>
+      <p>image 一旦送给 main actor，main actor 就可以保存它的引用（比如放进缓存）。之后再修改它，编译器会报“不安全的并发访问”。解决办法是<strong>在送出之前完成所有修改</strong>。</p>
+      <h3 id="w4-4"><span class="h3-num">4.4</span>模型类与闭包</h3>
+      <ul>
+        <li><strong>模型类</strong>一开始通常在 main actor 上，便于直接给 UI 展示。如果后来需要在后台处理，就把它们标为 <code>nonisolated</code>，但<strong>大概率不应该让它们 Sendable</strong>。你不希望一部分模型在主线程更新、另一部分在后台更新；保持非 Sendable 就能阻止这种并发修改。而且让类 Sendable 通常要用锁这类底层同步机制，反而更麻烦。</li>
+        <li><strong>闭包</strong>和类一样会制造共享状态。例如把一个缩放 image 的闭包传给 <code>perform(afterDelay:)</code>，闭包就<strong>捕获</strong>了 image 的另一个引用。只要闭包不被并发调用，这就是安全的。<strong>只有确实需要并发共享时，才把函数类型标为 Sendable。</strong></li>
+      </ul>
+      <div class="callout c-niche"><div class="callout-h">小结</div><p>常见类型大多是 Sendable，可以在并发任务间自由共享。类和闭包可能带着可变状态，一次只在一个任务里用它们。对象可以从一个任务送到另一个任务，但要在送出前完成全部修改。</p></div>
+    </section>
+
+    <section class="sec" id="w5"><div class="sec-h2"><span class="sec-num">05</span><h2>actor：把数据移出主线程</h2></div>
+      <p>App 越长越大，main actor 上的状态也越来越多。新加的子系统，比如管理网络访问的 network manager，会把“当前打开的连接”这类状态也放在 main actor 上。于是原本想在后台运行的 fetch-and-display 任务，不得不频繁<strong>跳回主线程</strong>去读这些数据。单个操作也许很快，但许多任务同时这样做就会形成<strong>争用（contention）</strong>，累积成 UI 卡顿（切到 Fig. W1 的 ③′ 看看）。</p>
+      <p>之前用 <code>@concurrent</code> 把<em>代码</em>移出主线程；这一次要移出的是<em>数据</em>，所以引入自己的 actor：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">actor NetworkManager {
+    var openConnections: [URL: Connection] = [:]
+
+    func openConnection(for url: URL) async -> Connection {
+        if let connection = openConnections[url] { return connection }
+        let connection = Connection(url: url)
+        openConnections[url] = connection
+        return connection
+    }
+}</code></pre></div>
+      <div class="table-wrap"><table><thead><tr><th></th><th>main actor</th><th>自定义 actor</th></tr></thead><tbody>
+        <tr><td>隔离数据，同一时刻只有一条线程访问</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+        <tr><td>Sendable，可以自由传递引用</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+        <tr><td>实例数量</td><td>全局唯一</td><td>任意多个，彼此独立</td></tr>
+        <tr><td>绑定线程</td><td>主线程</td><td>不绑定，在后台线程上运行</td></tr>
+      </tbody></table></div>
+      <h3 id="w5-1"><span class="h3-num">5.1</span>什么时候用 actor，什么时候不用</h3>
+      <ul>
+        <li><span class="ok">用：</span>发现把数据放在 main actor 上导致太多代码在主线程上运行时，把某个<strong>非 UI 部分</strong>的数据（例如网络管理）拆进一个新 actor。</li>
+        <li><span class="no">不用：</span>App 里<strong>大多数类都不该是 actor</strong>。面向 UI 的类应留在 main actor 上，以便直接操作 UI 状态。</li>
+        <li><span class="no">不用：</span>模型类一般和 UI 一起放在 main actor 上，或者保持非 Sendable，避免鼓励对模型的大量并发访问。</li>
+      </ul>
+    </section>
+
+    <section class="sec" id="w6"><div class="sec-h2"><span class="sec-num">06</span><h2>推荐的构建设置</h2></div>
+      <div class="table-wrap"><table><thead><tr><th>Xcode 设置</th><th>构建设置键</th><th>建议</th></tr></thead><tbody>
+        <tr><td><strong>Approachable Concurrency</strong></td><td><code>SWIFT_APPROACHABLE_CONCURRENCY = YES</code></td><td>开启一组让并发更易用的 upcoming features。<strong>所有项目都建议开启。</strong></td></tr>
+        <tr><td><strong>Default Actor Isolation</strong></td><td><code>SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor</code></td><td>以 UI 交互为主的模块（如 App 主模块）设为 MainActor：除非另有声明，代码都在 main actor 上。</td></tr>
+      </tbody></table></div>
+      <p>两者配合，让单线程 App 更好写，也给按需引入并发留出一条平缓的路。Swift Package 中对应的写法：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">.target(
+    name: "MyAppUI",
+    swiftSettings: [
+        .defaultIsolation(MainActor.self),
+        .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
+        .enableUpcomingFeature("InferIsolatedConformances"),
+    ]
+)</code></pre></div>
+      <p class="w-note">SwiftPM 没有 Approachable Concurrency 这个总开关，需要逐项开启 upcoming feature；上面列的是其中最相关的两项。</p>
+      <div class="w-quote">并发是帮你改进 App 的工具。当你发现性能问题时，再用它引入异步或并发代码。<span class="en">Swift concurrency is a tool designed to help improve your app.</span><cite>— Doug，WWDC25 Session 268</cite></div>
+      <p>视频最后推荐了 Swift 6 迁移指南（Swift 6 migration guide），以及演示这些概念如何落到真实 App 中的配套 code-along 讲座。</p>
+    </section>
+
+    <section class="sec" id="w7"><div class="sec-h2"><span class="sec-num">07</span><h2>与本指南的对照</h2></div>
+      <p>视频讲的是“为什么、什么时候”，本指南的全景页更偏“是什么、怎么调度”。想深入某个概念，可以跳过去：</p>
+      <div class="table-wrap"><table><thead><tr><th>视频里的概念</th><th>指南对应章节</th></tr></thead><tbody>
+        <tr><td>main actor、全局 actor</td><td><a href="#s7-11">§7.11 MainActor 与全局 actor</a></td></tr>
+        <tr><td>async / await、挂起点</td><td><a href="#s7-1">§7.1 async / await</a> · <a href="#fig-blocking">Fig. 3 阻塞 vs 挂起</a></td></tr>
+        <tr><td>Task 与任务创建</td><td><a href="#s7-3">§7.3 Task：非结构化任务</a> · <a href="#s9-2">§9.2 Task.immediate</a></td></tr>
+        <tr><td>交错执行、调度顺序</td><td><a href="#fig-ordering">Fig. 6 调度时机回放</a></td></tr>
+        <tr><td>并发线程池</td><td><a href="#s7-2">§7.2 协作式线程池</a> · <a href="#fig-pools">Fig. 2 线程爆炸 vs 协作式线程池</a></td></tr>
+        <tr><td><code>@concurrent</code>、<code>nonisolated</code></td><td><a href="#s7-12">§7.12 isolated 与 nonisolated</a> · <a href="#s9">§9 Swift 6 / 6.2</a></td></tr>
+        <tr><td>Sendable</td><td><a href="#s7-13">§7.13 Sendable</a></td></tr>
+        <tr><td>actor</td><td><a href="#s7-10">§7.10 actor</a> · <a href="#fig-actor">Fig. 5 actor 重入</a></td></tr>
+      </tbody></table></div>
+    </section>
+    </div>
   </main>
 </div>
 <script>
@@ -1307,7 +1731,7 @@ publisher.receive(on: <span class="t-t">RunLoop</span>.main)                <spa
       if (r.top < nr.top + 60 || r.bottom > nr.bottom - 60) toc.scrollTop += r.top - nr.top - toc.clientHeight / 3;
     };
     // 滚动高亮：取视口上方 30% 处之前最后一个章节 / 小节
-    const secs = $$('section.sec'), heads = $$('h3[id]').filter(e => subLinks.has(e.id));
+    let secs = [], heads = [];
     let curSec = null, curSub = null, ticking = false;
     const lastAbove = (els, y) => { let hit = null; for (const e of els) { if (e.getBoundingClientRect().top <= y) hit = e; else break; } return hit; };
     function spy() {
@@ -1328,7 +1752,40 @@ publisher.receive(on: <span class="t-t">RunLoop</span>.main)                <spa
       }
     }
     addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(spy); } }, { passive: true });
-    spy();
+
+    // 页面切换：全景指南 ⇄ WWDC25-268，由 URL hash 决定显示哪一页
+    const pages = $$('main > .page'), pageTabs = $$('.page-tab'), tocLists = $$('.toc-lists[data-page]');
+    const baseTitle = document.title;
+    let curPage = null;
+    function showPage(name) {
+      if (name === curPage) return false;
+      curPage = name;
+      const page = pages.find(p => p.dataset.page === name);
+      pages.forEach(p => { p.hidden = p !== page; });
+      tocLists.forEach(l => { l.hidden = l.dataset.page !== name; });
+      pageTabs.forEach(t => { if (t.dataset.page === name) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
+      document.title = page.dataset.title || baseTitle;
+      secs = $$('section.sec', page);
+      heads = $$('h3[id]', page).filter(e => subLinks.has(e.id));
+      curSec = curSub = undefined;
+      toc.scrollTop = 0;
+      return true;
+    }
+    function route(initial) {
+      const id = decodeURIComponent(location.hash.slice(1));
+      const target = id ? document.getElementById(id) : null;
+      const page = target?.closest('main > .page');
+      const changed = showPage(page ? page.dataset.page : (curPage || 'guide'));
+      if (changed && !initial) {
+        if (target && target !== page) target.scrollIntoView();
+        else scrollTo(0, 0);
+      } else if (changed && target && target !== page) {
+        requestAnimationFrame(() => target.scrollIntoView());
+      } else if (target === page && !initial) scrollTo(0, 0);
+      spy();
+    }
+    addEventListener('hashchange', () => route(false));
+    route(true);
 
     $$('.code').forEach(block => {
       const btn = h('button', { class: 'copy', type: 'button' }, '复制');
@@ -1859,9 +2316,112 @@ publisher.receive(on: <span class="t-t">RunLoop</span>.main)                <spa
     initTabs(fig, k => player.load(k === 'naive' ? naiveSteps() : dedupSteps()));
   }
 
+
+  /* ═════════ WWDC25-268 page ═════════ */
+  function initWwdcCode() {
+    $$('code.w-hl').forEach(c => { c.innerHTML = hl(c.textContent); });
+  }
+
+  /* Fig. W1 — journey lanes: main 0 · sys 1 · pool 2 · actor 3 */
+  function initWwdcJourney() {
+    const fig = $('#fig-w-journey'); if (!fig) return;
+    const track = $('.wj-track', fig), narr = $('.wj-narr', fig);
+    const bar = $('.wj-stats .bar i', fig), pct = $('.wj-stats b', fig);
+    const LANE_H = 44;
+    const COL = { 0: '--main', 1: '--rl', 2: '--bgt', 3: '--tn' };
+    // [id, lane, start, end, label, kind]   kind: '' 执行 | 'ghost' 等待 | 'hop' 跳回主线程
+    const STAGES = {
+      s1: {
+        blocks: [['fetch', 0, 0, 24, '读文件'], ['dec', 0, 24, 66, 'decodeImage'], ['disp', 0, 66, 80, '显示']],
+        narr: '一切都在主线程上顺序执行，没有任何并发。只要每一步都够快，这就是最简单、最好维护的写法。',
+      },
+      s2: {
+        blocks: [['chk', 0, 0, 6, '发起'], ['ghost', 0, 6, 52, 'await · 主线程空闲', 'ghost'], ['fetch', 1, 6, 52, 'URLSession 下载'],
+                 ['dec', 0, 52, 84, 'decodeImage'], ['disp', 0, 84, 94, '显示']],
+        narr: 'await 把函数切成两段：下载期间主线程空出来处理别的事件。后台工作是 URLSession 替我们做的，我们自己的代码仍然是单线程的。但解码大图时，主线程还是会卡。',
+      },
+      s3: {
+        blocks: [['chk', 0, 0, 5, '查缓存'], ['ghost', 0, 5, 82, '空闲 · UI 保持响应', 'ghost'], ['fetch', 1, 5, 51, 'URLSession 下载'],
+                 ['dec', 2, 51, 82, '@concurrent decodeImage'], ['disp', 0, 82, 92, '显示']],
+        narr: 'decodeImage 标上 @concurrent，在并发线程池上运行。缓存检查挪到调用方，在 main actor 上同步完成；命中缓存时根本不会挂起。',
+      },
+      s3b: {
+        blocks: [['chk', 2, 0, 6, '准备'], ['oth1', 0, 4, 12, '任务 B', 'hop'], ['hop1', 0, 12, 20, '读连接表', 'hop'], ['oth2', 0, 20, 28, '任务 C', 'hop'],
+                 ['fetch', 1, 20, 56, 'URLSession 下载'], ['hop2', 0, 56, 62, '写连接表', 'hop'], ['oth3', 0, 62, 70, '任务 D', 'hop'],
+                 ['dec', 2, 62, 88, '@concurrent decodeImage'], ['disp', 0, 88, 96, '显示']],
+        narr: 'App 变大后，NetworkManager 的连接表也放在 main actor 上。后台任务每次访问都得跳回主线程，而且要和其他任务排队。单次操作很快，累积起来就是 UI 卡顿。',
+      },
+      s4: {
+        blocks: [['chk', 2, 0, 6, '准备'], ['act1', 3, 6, 14, '打开连接'], ['fetch', 1, 14, 50, 'URLSession 下载'], ['act2', 3, 50, 56, '更新连接'],
+                 ['dec', 2, 56, 82, '@concurrent decodeImage'], ['ghost', 0, 0, 82, '空闲 · UI 保持响应', 'ghost'], ['disp', 0, 82, 90, '显示']],
+        narr: '把连接表搬进 actor NetworkManager：它像 main actor 一样隔离数据，但不绑定主线程，在后台运行。主线程只剩最后的显示。',
+      },
+    };
+    const ids = [...new Set(Object.values(STAGES).flatMap(s => s.blocks.map(b => b[0])))];
+    const els = new Map(ids.map(id => { const e = h('div', { class: 'wj-blk' }); track.append(e); return [id, e]; }));
+    function show(key) {
+      const st = STAGES[key], used = new Set();
+      let busy = 0, end = 0;
+      for (const [id, lane, a, b, label, kind = ''] of st.blocks) {
+        const e = els.get(id); used.add(id);
+        e.className = `wj-blk on ${kind}`;
+        e.textContent = label; e.title = label;
+        e.style.setProperty('--c', `var(${COL[lane]})`);
+        Object.assign(e.style, { left: `${a}%`, width: `${b - a}%`, top: `${lane * LANE_H}px` });
+        if (lane === 0 && kind !== 'ghost') busy += b - a;
+        end = Math.max(end, b);
+      }
+      els.forEach((e, id) => { if (!used.has(id)) e.classList.remove('on'); });
+      const p = Math.round(busy / end * 100);
+      bar.style.width = `${p}%`;
+      bar.style.background = `var(${p > 60 ? '--bad' : p > 30 ? '--bgt' : '--main'})`;
+      pct.textContent = `${p}%`;
+      narr.textContent = st.narr;
+    }
+    initTabs(fig, show);
+  }
+
+  /* Fig. W2 — interleaving of two tasks on the main thread */
+  function initWwdcInterleave() {
+    const fig = $('#fig-w-interleave'); if (!fig) return;
+    const wrap = $('.wi', fig), net = $('[data-row="net"]', fig), main = $('[data-row="main"]', fig), narr = $('.wj-narr', fig);
+    net.style.height = '54px';
+    // [row, task, start, end, label, isWait]
+    const MODES = {
+      img: {
+        segs: [['net', 'a', 2, 40, 'A 下载图片', 1], ['net', 'b', 4, 62, 'B 下载新闻', 1], ['net', 'b', 76, 100, 'B 等待刷新', 1],
+               ['main', 'a', 0, 2, 'A'], ['main', 'b', 2, 4, 'B'], ['main', 'a', 40, 58, 'A 解码'], ['main', 'a', 58, 66, 'A 显示'], ['main', 'b', 66, 76, 'B 显示']],
+        narr: '图片先下载完：主线程先解码、显示图片。新闻在 62% 时就绪，但主线程正忙着任务 A，于是等到 66% 才轮到任务 B。',
+      },
+      news: {
+        segs: [['net', 'a', 2, 62, 'A 下载图片', 1], ['net', 'b', 4, 36, 'B 下载新闻', 1], ['net', 'b', 46, 100, 'B 等待刷新', 1],
+               ['main', 'a', 0, 2, 'A'], ['main', 'b', 2, 4, 'B'], ['main', 'b', 36, 46, 'B 显示'], ['main', 'a', 62, 80, 'A 解码'], ['main', 'a', 80, 88, 'A 显示']],
+        narr: '新闻先下载完：主线程先显示新闻，再去解码图片。两个任务各自内部的顺序不变，任务之间谁先谁后由数据何时返回决定。',
+      },
+    };
+    const pools = { net: [], main: [] };
+    const seg = (row, i) => pools[row][i] || (pools[row][i] = (row === 'net' ? net : main).appendChild(h('span', { class: 'wi-seg' })));
+    function show(key) {
+      const count = { net: 0, main: 0 };
+      for (const [row, task, a, b, label, wait] of MODES[key].segs) {
+        const e = seg(row, count[row]++);
+        e.className = `wi-seg ${task}${wait ? ' net' : ''}`;
+        e.textContent = label; e.title = label;
+        Object.assign(e.style, { left: `${a}%`, width: `${b - a}%`, display: '' });
+        if (row === 'net') Object.assign(e.style, { top: task === 'a' ? '3px' : '28px', bottom: 'auto', height: '22px', lineHeight: '20px' });
+      }
+      for (const row of ['net', 'main']) pools[row].slice(count[row]).forEach(e => { e.style.display = 'none'; });
+      narr.textContent = MODES[key].narr;
+      replay();
+    }
+    function replay() { wrap.classList.remove('play'); void wrap.offsetWidth; if (!RM) wrap.classList.add('play'); }
+    $('[data-act="replay"]', fig).addEventListener('click', replay);
+    initTabs(fig, show);
+  }
+
   /* ───────── boot ───────── */
   initChrome();
-  for (const init of [initRunLoop, initOrdering, initBlocking, initPools, initStructured, initActor]) {
+  for (const init of [initRunLoop, initOrdering, initBlocking, initPools, initStructured, initActor, initWwdcCode, initWwdcJourney, initWwdcInterleave]) {
     try { init(); } catch (err) { console.error(init.name, err); }
   }
 })();
