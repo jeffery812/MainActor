@@ -1820,7 +1820,7 @@ func scaleAndDisplay(imageName: String) async {
         <tr><td><code>TheMetStore</code></td><td><code>fetchObjects(for:)</code></td><td>遍历 ID，逐个取回藏品追加到 <code>objects</code> 数组</td></tr>
         <tr><td><code>ContentView</code></td><td><code>.task</code></td><td>出现时和每次换查询词时调用 <code>fetchObjects</code></td></tr>
       </tbody></table></div>
-      <div class="callout"><div class="callout-h">⚠ 示例项目里的一处错误</div><p>教程素材中 <code>TheMetService</code> 按 ID 取单件藏品时，URL 拼错了 endpoint，用的是 <code>"search"</code>。大都会博物馆 API 的单件藏品接口是 <code>/objects/[objectID]</code>，<code>/search</code> 只用来按关键词查 ID 列表。需要改成 <code>"objects"</code>，否则取不到藏品数据：</p>
+      <div class="callout"><div class="callout-h">⚠ 示例项目里的一处错误</div><p>教程素材中 <code>TheMetService</code> 按 ID 取单件藏品时，URL 旧的 endpoint 停用了，用的是 <code>"search"</code>。大都会博物馆 API 的单件藏品接口是 <code>/objects/[objectID]</code>，<code>/search</code> 只用来按关键词查 ID 列表。需要改成 <code>"objects"</code>，否则取不到藏品数据：</p>
 <div class="code"><span class="lang">swift</span><pre><code class="w-hl">// ✗ 素材原文
 var urlComponents = URLComponents(string: baseURLString + "search")
 
