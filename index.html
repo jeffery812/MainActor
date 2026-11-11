@@ -2012,7 +2012,56 @@ struct NewThreadingDemonstrator {
         return Thread.current
     }
 }</code></pre></div>
-      <h3 id="l4-2"><span class="h3-num">4.2</span>例子里没写 <code>nonisolated</code>，为什么说它是 nonisolated？</h3>
+      <h3 id="l4-ext"><span class="h3-num">4.2</span>这个 Thread 扩展在做什么</h3>
+      <p>它只有一个作用：<strong>绕过编译器的限制，让 async 函数里也能拿到当前线程</strong>，方便打印调试。</p>
+      <h4>为什么 async 函数里不能直接用 <code>Thread.current</code></h4>
+      <p><code>Thread.current</code> 被标记为在 async 上下文中不可用，大致相当于：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">@available(*, noasync, message: "Thread.current cannot be used from async contexts.")
+class var current: Thread { get }
+
+func performAsync() async {
+    print(Thread.current)
+    // ❌ Class property 'current' is unavailable from asynchronous contexts
+}</code></pre></div>
+      <p>原因是 async 函数每遇到一个 <code>await</code> 就可能挂起，<strong>恢复时可能换了一条线程</strong>。依赖“当前线程”的代码，比如线程局部存储、按线程判断身份、在一个线程加锁另一个线程解锁，在 async 代码里都会出隐蔽的 bug。所以 Swift 干脆不让直接用，引导你用 actor 隔离而不是线程来思考。</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">func work() async {
+    let t1 = Thread.current   // 假设是线程 5
+    await something()         // 挂起
+    let t2 = Thread.current   // 可能已经是线程 8
+}</code></pre></div>
+      <h4>为什么包一层就能绕过去</h4>
+      <p><code>noasync</code> 检查是<strong>语法层面</strong>的，只看调用写在哪里。<code>currentThread</code> 的 getter 是普通同步代码，在里面调用 <code>Thread.current</code> 合法；<code>currentThread</code> 自己没有被标记 <code>noasync</code>，所以 async 函数可以调用它。</p>
+      <div class="table-wrap"><table><thead><tr><th>调用位置</th><th><code>Thread.current</code></th><th><code>Thread.currentThread</code></th></tr></thead><tbody>
+        <tr><td>直接写在 async 函数里</td><td class="no">✗ 报错</td><td class="ok">✓ 允许</td></tr>
+        <tr><td>写在同步 getter 里</td><td class="ok">✓ 允许</td><td>—</td></tr>
+      </tbody></table></div>
+      <ul>
+        <li><code>extension Thread</code>：给 Foundation 的 <code>Thread</code> 类加成员。</li>
+        <li><code>static var currentThread: Thread { … }</code>：类型级的只读计算属性，用法 <code>Thread.currentThread</code>，和 <code>Thread.current</code> 一样。</li>
+        <li><code>public</code>：对这个例子无关紧要，只是让别的模块也能用。</li>
+      </ul>
+      <h4>拿到的值可信吗</h4>
+      <p><strong>在调用的那一瞬间是准确的</strong>：getter 同步执行，中间没有挂起点，返回的就是此刻运行这段代码的线程。所以拿来打印“这一行跑在哪条线程上”没问题。但它<strong>不保证下一行还是这条线程</strong>，过了一个 <code>await</code> 就可能变。只适合调试和日志，不要写进业务逻辑。</p>
+      <div class="callout"><div class="callout-h">坑：默认 MainActor 隔离下要加 nonisolated</div><p>模块开了 Default Actor Isolation = MainActor 时，不加修饰的扩展会被推断为 <code>@MainActor</code>。读这个属性要先跳到主线程，于是<strong>测出来永远是主线程</strong>，完全失去意义。<a href="#m4-1">Kodeco 教程</a>写成 <code>nonisolated extension Thread</code> 就是这个原因：加上 <code>nonisolated</code> 后，getter 在调用方当前所在的线程上执行，测到的才是真实情况。SwiftLee 的例子没开默认 MainActor，所以不加也没问题。</p></div>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">// ✗ 默认 MainActor 隔离下被推断为 @MainActor
+extension Thread {
+    static var currentThread: Thread { Thread.current }
+}
+
+@concurrent func work() async {
+    print(await Thread.currentThread)   // 先切到主线程才能读 → 永远打印主线程
+}
+
+// ✓ 两种设置下都测得准
+nonisolated extension Thread {
+    static var currentThread: Thread { Thread.current }
+}</code></pre></div>
+      <h4>只想确认在不在主 actor 上？</h4>
+      <p>更推荐用隔离相关的 API，而不是看线程。另外 <code>Thread.isMainThread</code> 同样被标记了 <code>noasync</code>，本站的实验也是用同样的办法包了一层 <code>Thread.isMain</code>。</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">MainActor.assertIsolated()        // 不在 MainActor 上就崩溃（Debug）
+MainActor.preconditionIsolated()  // Release 下也检查
+print(#isolation)                 // 当前隔离：MainActor / 某个 actor / nil</code></pre></div>
+      <h3 id="l4-2"><span class="h3-num">4.3</span>例子里没写 <code>nonisolated</code>，为什么说它是 nonisolated？</h3>
       <p><code>func performAsync() async</code> 确实没有写 <code>nonisolated</code> 关键字。一个声明属于哪个隔离域，按下面的顺序判断，<strong>先命中的为准</strong>：</p>
       <ol class="iso-steps">
         <li><div><strong>有显式标注</strong>（<code>@MainActor</code>、<code>nonisolated</code>、<code>@concurrent</code>…）就按标注来。<br><span class="tl-note">performAsync：没有标注 → 继续</span></div></li>
@@ -2020,7 +2069,7 @@ struct NewThreadingDemonstrator {
         <li class="hit"><div><strong>看模块的默认隔离</strong>：swift.org 默认是 <code>nonisolated</code>；开了 SE-0466 / Xcode 26 新项目则是 <code>MainActor</code>。<br><span class="tl-note">文章的环境是默认值 → performAsync 隐式 nonisolated</span></div></li>
       </ol>
       <p>所以文中的 <code>performAsync()</code> 和显式写成 <code>nonisolated func performAsync() async</code> 完全等价。<strong>反过来</strong>：如果模块开了默认 MainActor 隔离，同一行声明会被推断成 <code>@MainActor</code>，不管 SE-0461 开没开都在主线程上运行（见下图 D）。</p>
-      <h3 id="l4-3"><span class="h3-num">4.3</span>本机复现：六种编译设置</h3>
+      <h3 id="l4-3"><span class="h3-num">4.4</span>本机复现：六种编译设置</h3>
       <p>把文中的例子精简成可直接运行的程序（只把线程打印换成 main / background），用 Swift 6.4 工具链分别编译：</p>
       <figure class="fig" id="fig-l-run">
         <div class="fig-head"><div><div class="fig-tag">Fig. S1 · 实测</div><div class="fig-title">同一段代码，performAsync 跑在哪</div></div>
