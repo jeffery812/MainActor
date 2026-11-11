@@ -493,29 +493,30 @@ h4 { font: 700 16.5px/1.5 var(--serif); margin: 30px 0 8px; max-width: 790px; co
 
 /* ───────── page switch (guide ⇄ WWDC25-268) ───────── */
 .page[hidden], .toc-lists[hidden] { display: none !important; }
-.page-switch { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line2); border-radius: 4px; overflow: hidden; margin: 0 0 6px; }
+.page-switch { display: grid; border: 1px solid var(--line2); border-radius: 4px; overflow: hidden; margin: 0 0 6px; }
 .page-tab {
-  display: block; padding: 8px 10px 7px; text-decoration: none; color: var(--ink3); line-height: 1.25;
-  font: 500 10px var(--mono); letter-spacing: .12em; text-transform: uppercase; transition: background .2s, color .2s;
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 8px 11px 7px; text-decoration: none; color: var(--ink3); line-height: 1.25;
+  font: 500 9.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; transition: background .2s, color .2s; position: relative;
 }
-.page-tab + .page-tab { border-left: 1px solid var(--line2); }
-.page-tab b { display: block; white-space: nowrap; font: 700 12.5px/1.3 var(--serif); letter-spacing: 0; text-transform: none; color: var(--ink2); margin-top: 2px; }
+.page-tab + .page-tab { border-top: 1px solid var(--line2); }
+.page-tab b { order: -1; white-space: nowrap; font: 700 13px/1.3 var(--serif); letter-spacing: 0; text-transform: none; color: var(--ink2); }
 .page-tab:hover { color: var(--ink2); background: var(--panel); }
 .page-tab:hover b { color: var(--ink); }
 .page-tab[aria-current="page"] { background: var(--ink); color: var(--bg); }
 .page-tab[aria-current="page"] b { color: var(--bg); }
 .page-tab[data-page="wwdc"][aria-current="page"] { background: var(--tk); }
+.page-tab[data-page="mig"][aria-current="page"] { background: var(--rl); }
 .page-tab:focus-visible { outline: 2px solid var(--main); outline-offset: -2px; }
 @media (max-width: 900px) { .page-switch { margin: 12px 0 0; } }
 
 /* ───────── WWDC page ───────── */
 #wwdc25-268 { --w: var(--tk); --w-dim: color-mix(in srgb, var(--tk) 14%, transparent); }
-#wwdc25-268 strong { background: linear-gradient(transparent 62%, var(--w-dim) 62%); }
-#wwdc25-268 .sec-h2 { border-top-color: var(--line); }
-#wwdc25-268 .sec-num { -webkit-text-stroke-color: var(--w); opacity: .75; }
-#wwdc25-268 h3 .h3-num { color: var(--w); border-color: var(--w-dim); background: var(--w-dim); }
-#wwdc25-268 .fig::before, #wwdc25-268 .fig::after { border-color: var(--w); }
-#wwdc25-268 .eyebrow::before { background: var(--w); }
+:is(#wwdc25-268, #swift6-migration, #swift62-changes) strong { background: linear-gradient(transparent 62%, var(--w-dim) 62%); }
+:is(#wwdc25-268, #swift6-migration, #swift62-changes) .sec-h2 { border-top-color: var(--line); }
+:is(#wwdc25-268, #swift6-migration, #swift62-changes) .sec-num { -webkit-text-stroke-color: var(--w); opacity: .75; }
+:is(#wwdc25-268, #swift6-migration, #swift62-changes) h3 .h3-num { color: var(--w); border-color: var(--w-dim); background: var(--w-dim); }
+:is(#wwdc25-268, #swift6-migration, #swift62-changes) .fig::before, :is(#wwdc25-268, #swift6-migration, #swift62-changes) .fig::after { border-color: var(--w); }
+:is(#wwdc25-268, #swift6-migration, #swift62-changes) .eyebrow::before { background: var(--w); }
 
 .w-hero { padding: 72px 0 30px; max-width: 1080px; position: relative; }
 .w-hero h1 { font: 900 clamp(46px, 7.6vw, 108px)/1 var(--serif); letter-spacing: -.02em; margin: 22px 0 6px; }
@@ -630,6 +631,106 @@ h4 { font: 700 16.5px/1.5 var(--serif); margin: 30px 0 8px; max-width: 790px; co
   .w-ghost { display: none; }
 }
 @media (max-width: 520px) { .w-stairs { grid-template-columns: 1fr; } }
+
+/* ───────── Swift 6 migration page ───────── */
+#swift6-migration { --w: var(--rl); --w-dim: var(--rl-dim); }
+
+/* Fig. M1 — build settings inspector */
+.xs { border: 1px solid var(--line2); border-radius: 6px; overflow: hidden; background: var(--bg2); font: 12.5px/1.5 var(--mono); }
+.xs-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line2); background: var(--panel2); color: var(--ink3); font-size: 11px; }
+.xs-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line2); display: inline-block; }
+.xs-bar span { margin-left: 8px; letter-spacing: .08em; }
+.xs-group { padding: 6px 12px 2px; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink3); border-top: 1px solid var(--line); }
+.xs-group:first-of-type { border-top: 0; }
+.xs-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; padding: 7px 12px; border-left: 3px solid transparent; transition: background .35s, border-color .35s; }
+.xs-row .k { color: var(--ink2); }
+.xs-row .v { color: var(--ink); justify-self: start; padding: 1px 8px; border-radius: 3px; border: 1px solid transparent; transition: all .35s; }
+.xs-row.hot { background: var(--w-dim); border-left-color: var(--w); }
+.xs-row.hot .v { border-color: var(--w); color: var(--w); font-weight: 600; }
+.xs-row.dim { opacity: .45; }
+.xs-feats { display: flex; flex-wrap: wrap; gap: 4px; }
+.xs-feats code { font-size: 10.5px; }
+.xs-feats code.on { color: var(--w); border-color: var(--w); background: var(--w-dim); }
+
+/* Fig. M2 — diagnostics → fixes */
+.md { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 14px; }
+.md-list { display: grid; gap: 6px; align-content: start; }
+.md-item {
+  text-align: left; cursor: pointer; border: 1px solid var(--line2); border-radius: 4px; background: var(--bg2); color: var(--ink2);
+  padding: 9px 11px 9px 34px; font: 12px/1.55 var(--mono); position: relative; transition: border-color .2s, background .2s, color .2s;
+}
+.md-item::before { position: absolute; left: 10px; top: 9px; font-size: 13px; }
+.md-item[data-sev="warn"]::before { content: "▲"; color: var(--bgt); }
+.md-item[data-sev="err"]::before { content: "●"; color: var(--bad); }
+.md-item small { display: block; color: var(--ink3); font-size: 10.5px; letter-spacing: .08em; margin-bottom: 2px; }
+.md-item:hover { color: var(--ink); border-color: var(--ink3); }
+.md-item[aria-pressed="true"] { color: var(--ink); border-color: var(--w); background: var(--w-dim); }
+.md-item.fixed::before { content: "✓"; color: var(--main); }
+.md-item:focus-visible { outline: 2px solid var(--w); outline-offset: 2px; }
+.md-pane { min-width: 0; }
+.md-why { font-size: 13.5px; line-height: 1.75; margin: 0 0 10px; }
+.md-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.md-diff .code { margin: 0; }
+.md-diff .code pre { font-size: 12px; padding: 30px 14px 14px; }
+.md-diff .lang { left: 0; right: auto; border-left: 0; border-right: 1px solid var(--line); }
+.md-diff .code.before .lang { color: var(--bad); }
+.md-diff .code.after .lang { color: var(--main); }
+.md-pane.swap { animation: md-in .45s cubic-bezier(.2, .7, .2, 1); }
+@keyframes md-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* Fig. M3 — thread log */
+.tl { width: 100%; border-collapse: collapse; font: 12.5px/1.5 var(--mono); }
+.tl th, .tl td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; }
+.tl th { background: transparent; font-size: 10.5px; }
+.tl td:first-child { color: var(--ink); white-space: nowrap; }
+.tl td:nth-child(2) { width: 46%; }
+.tl tr.na td { opacity: .35; }
+.th-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 99px; border: 1px solid; font-weight: 600; transition: all .45s; white-space: nowrap; }
+.th-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.th-chip[data-t="main"] { color: var(--main); background: var(--main-dim); }
+.th-chip[data-t="bg"] { color: var(--bgt); background: var(--bgt-dim); }
+.th-chip[data-t="block"] { color: var(--bad); background: var(--bad-dim); }
+.th-chip[data-t="na"] { color: var(--ink3); border-style: dashed; }
+.th-chip.flip { animation: chip-flip .5s ease; }
+@keyframes chip-flip { 0% { transform: scale(.8); opacity: .2; } 100% { transform: none; opacity: 1; } }
+.tl-note { font-size: 12px; color: var(--ink3); }
+
+/* two-route comparison */
+.routes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 1040px; margin: 20px 0 26px; }
+.route { border: 1px solid var(--line2); border-radius: 4px; background: var(--panel); padding: 16px 18px; position: relative; }
+.route h4 { margin: 0 0 4px; font: 700 17px/1.4 var(--serif); }
+.route .tag { font: 600 10.5px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--w); }
+.route ol { margin: 10px 0 0; padding-left: 20px; font-size: 14px; }
+.route p { font-size: 13.5px; color: var(--ink2); margin: 10px 0 0; }
+
+@media (max-width: 900px) {
+  .md, .md-diff, .routes { grid-template-columns: minmax(0, 1fr); }
+  .xs-row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
+/* ───────── SwiftLee · Swift 6.2 page ───────── */
+#swift62-changes { --w: var(--tn); --w-dim: color-mix(in srgb, var(--tn) 13%, transparent); }
+.page-tab[data-page="sl"][aria-current="page"] { background: var(--tn); }
+.se-board { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 40px 0 6px; max-width: 1080px; }
+.se-card {
+  display: block; text-decoration: none; color: inherit; border: 1px solid var(--line2); border-radius: 4px; background: var(--panel);
+  padding: 12px 12px 14px; position: relative; transition: transform .25s cubic-bezier(.2, .7, .2, 1), border-color .25s;
+}
+.se-card:hover { transform: translateY(-3px); border-color: var(--w); }
+.se-card .se { font: italic 400 30px/1 var(--display); color: var(--w); display: block; }
+.se-card .se small { font: 500 10px var(--mono); font-style: normal; letter-spacing: .14em; color: var(--ink3); margin-right: 4px; vertical-align: 6px; }
+.se-card b { display: block; font: 700 13.5px/1.45 var(--serif); margin: 8px 0 6px; }
+.se-card span.st { font: 500 10.5px var(--mono); color: var(--ink3); }
+.se-card.focus { border-color: var(--w); box-shadow: inset 0 3px var(--w); }
+.cmd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; font: 12px var(--mono); color: var(--ink3); }
+.cmd code { white-space: normal; overflow-wrap: anywhere; }
+.out { margin: 14px 0 0; border: 1px solid var(--line); border-radius: 4px; background: var(--code-bg); padding: 10px 14px; font: 12px/1.7 var(--mono); color: var(--ink2); white-space: pre; overflow-x: auto; }
+.out .m { color: var(--main); } .out .b { color: var(--bgt); }
+.iso-steps { counter-reset: is; list-style: none; padding: 0; max-width: 790px; display: grid; gap: 8px; margin: 18px 0 24px; }
+.iso-steps li { counter-increment: is; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; align-items: start; border: 1px solid var(--line); background: var(--panel); border-radius: 4px; padding: 10px 14px; margin: 0; }
+.iso-steps li::before { content: counter(is); font: italic 400 28px/1 var(--display); color: var(--w); }
+.iso-steps li.hit { border-color: var(--w); background: var(--w-dim); }
+@media (max-width: 900px) { .se-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 </style>
 </head>
 <body>
@@ -639,13 +740,21 @@ h4 { font: 700 16.5px/1.5 var(--serif); margin: 30px 0 8px; max-width: 790px; co
       <div class="toc-brand"><b>Concurrency</b>Field Guide</div>
       <div><button class="toc-toggle" type="button">目录</button> <button class="theme-btn" id="theme-btn" type="button" aria-label="切换明暗主题">◐</button></div>
     </div>
-    <nav class="page-switch" aria-label="页面"><a class="page-tab" data-page="guide" href="#guide">Field Guide<b>并发全景指南</b></a><a class="page-tab" data-page="wwdc" href="#wwdc25-268">WWDC25 · 268<b>拥抱 Swift 并发</b></a></nav>
+    <nav class="page-switch" aria-label="页面"><a class="page-tab" data-page="guide" href="#guide">Field Guide<b>并发全景指南</b></a><a class="page-tab" data-page="wwdc" href="#wwdc25-268">WWDC25 · 268<b>拥抱 Swift 并发</b></a><a class="page-tab" data-page="mig" href="#swift6-migration">Kodeco<b>迁移到 Swift 6</b></a><a class="page-tab" data-page="sl" href="#swift62-changes">SwiftLee<b>Swift 6.2 并发初探</b></a></nav>
     <div class="toc-lists" data-page="guide">
       <div class="toc-label">章节</div><ol><li><a href="#status" data-sec="status"><span>★</span><span>现状：哪些过时，哪些推荐</span></a></li><li><a href="#s0" data-sec="s0"><span>0</span><span>全景图：各概念所在的层次</span></a></li><li><a href="#s1" data-sec="s1"><span>1</span><span>基础概念</span></a></li><li class="has-sub"><a href="#s2" data-sec="s2"><span>2</span><span>Thread</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「Thread」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s2-1" data-sub="s2-1"><span>2.1</span><span>是什么</span></a></li><li><a href="#s2-2" data-sub="s2-2"><span>2.2</span><span>何时使用</span></a></li><li><a href="#s2-3" data-sub="s2-3"><span>2.3</span><span>注意</span></a></li><li><a href="#s2-4" data-sub="s2-4"><span>2.4</span><span>Thread 的闭包在哪个线程执行？</span></a></li></ol></li><li class="has-sub"><a href="#s3" data-sec="s3"><span>3</span><span>RunLoop</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「RunLoop」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s3-1" data-sub="s3-1"><span>3.1</span><span>是什么</span></a></li><li><a href="#s3-2" data-sub="s3-2"><span>3.2</span><span>典型场景</span></a></li><li><a href="#s3-3" data-sub="s3-3"><span>3.3</span><span>特点</span></a></li></ol></li><li class="has-sub"><a href="#s4" data-sec="s4"><span>4</span><span>OperationQueue</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「OperationQueue」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s4-1" data-sub="s4-1"><span>4.1</span><span>是什么</span></a></li><li><a href="#s4-2" data-sub="s4-2"><span>4.2</span><span>何时使用</span></a></li></ol></li><li class="has-sub"><a href="#s5" data-sec="s5"><span>5</span><span>GCD（Grand Central Dispatch）</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「GCD（Grand Central Dispatch）」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s5-1" data-sub="s5-1"><span>5.1</span><span>三种队列</span></a></li><li><a href="#s5-2" data-sub="s5-2"><span>5.2</span><span>DispatchQueue.main</span></a></li><li><a href="#s5-3" data-sub="s5-3"><span>5.3</span><span>DispatchQueue.global(qos:)</span></a></li><li><a href="#s5-4" data-sub="s5-4"><span>5.4</span><span>自定义串行队列：保护共享状态</span></a></li><li><a href="#s5-5" data-sub="s5-5"><span>5.5</span><span>并发队列 + barrier：读写锁</span></a></li><li><a href="#s5-6" data-sub="s5-6"><span>5.6</span><span>DispatchGroup：等待一组任务完成</span></a></li><li><a href="#s5-7" data-sub="s5-7"><span>5.7</span><span>DispatchSemaphore：限制并发数 / 同步等待</span></a></li><li><a href="#s5-8" data-sub="s5-8"><span>5.8</span><span>DispatchWorkItem：可取消的任务（如防抖）</span></a></li><li><a href="#s5-9" data-sub="s5-9"><span>5.9</span><span>DispatchSource：系统事件 / 高精度定时器</span></a></li><li><a href="#s5-10" data-sub="s5-10"><span>5.10</span><span>DispatchQueue.concurrentPerform：并行循环</span></a></li><li><a href="#s5-11" data-sub="s5-11"><span>5.11</span><span>sync vs async 小结</span></a></li></ol></li><li><a href="#s6" data-sec="s6"><span>6</span><span>Combine 中的 Scheduler</span></a></li><li class="has-sub"><a href="#s7" data-sec="s7"><span>7</span><span>Swift Concurrency</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「Swift Concurrency」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s7-1" data-sub="s7-1"><span>7.1</span><span>async / await</span></a></li><li><a href="#s7-2" data-sub="s7-2"><span>7.2</span><span>协作式线程池（Cooperative Thread Pool）</span></a></li><li><a href="#s7-3" data-sub="s7-3"><span>7.3</span><span>Task：非结构化任务</span></a></li><li><a href="#s7-4" data-sub="s7-4"><span>7.4</span><span>Task.detached：脱离上下文的任务</span></a></li><li><a href="#s7-5" data-sub="s7-5"><span>7.5</span><span>async let：并行的固定数量子任务（结构化）</span></a></li><li><a href="#s7-6" data-sub="s7-6"><span>7.6</span><span>TaskGroup：动态数量的子任务（结构化）</span></a></li><li><a href="#s7-7" data-sub="s7-7"><span>7.7</span><span>取消（Cancellation）</span></a></li><li><a href="#s7-8" data-sub="s7-8"><span>7.8</span><span>优先级与睡眠/让出</span></a></li><li><a href="#s7-9" data-sub="s7-9"><span>7.9</span><span>TaskLocal：任务级"上下文变量"</span></a></li><li><a href="#s7-10" data-sub="s7-10"><span>7.10</span><span>actor：保护可变状态</span></a></li><li><a href="#s7-11" data-sub="s7-11"><span>7.11</span><span>MainActor 与全局 actor</span></a></li><li><a href="#s7-12" data-sub="s7-12"><span>7.12</span><span>isolated 与 nonisolated：代码归属哪个 actor</span></a></li><li><a href="#s7-13" data-sub="s7-13"><span>7.13</span><span>Sendable：跨隔离域传值的安全标记</span></a></li><li><a href="#s7-14" data-sub="s7-14"><span>7.14</span><span>Continuation：桥接回调式 API</span></a></li><li><a href="#s7-15" data-sub="s7-15"><span>7.15</span><span>AsyncSequence / AsyncStream：异步序列</span></a></li><li><a href="#s7-16" data-sub="s7-16"><span>7.16</span><span>Executor（执行器）</span></a></li></ol></li><li class="has-sub"><a href="#s8" data-sec="s8"><span>8</span><span>SwiftUI 中与并发相关的 API</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「SwiftUI 中与并发相关的 API」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s8-1" data-sub="s8-1"><span>8.1</span><span>.task / .task(id:)</span></a></li><li><a href="#s8-2" data-sub="s8-2"><span>8.2</span><span>搜索防抖（用 .task(id:) 替代 DispatchWorkItem / Combine debounce）</span></a></li><li><a href="#s8-3" data-sub="s8-3"><span>8.3</span><span>.refreshable</span></a></li><li><a href="#s8-4" data-sub="s8-4"><span>8.4</span><span>TimelineView：按时间表重绘（替代很多 Timer 用法）</span></a></li><li><a href="#s8-5" data-sub="s8-5"><span>8.5</span><span>Button 中触发异步操作</span></a></li><li><a href="#s8-6" data-sub="s8-6"><span>8.6</span><span>状态更新的线程要求</span></a></li></ol></li><li class="has-sub"><a href="#s9" data-sec="s9"><span>9</span><span>Swift 6 / 6.2：更严格，也更易用</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「Swift 6 / 6.2：更严格，也更易用」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s9-1" data-sub="s9-1"><span>9.1</span><span>变化一览</span></a></li><li><a href="#s9-2" data-sub="s9-2"><span>9.2</span><span>Task.immediate（Swift 6.2，iOS 26+）</span></a></li></ol></li><li><a href="#s10" data-sec="s10"><span>10</span><span>锁与同步原语</span></a></li><li class="has-sub"><a href="#s11" data-sec="s11"><span>11</span><span>横向对比</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「横向对比」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s11-1" data-sub="s11-1"><span>11.1</span><span>三代并发 API</span></a></li><li><a href="#s11-2" data-sub="s11-2"><span>11.2</span><span>Task vs Task.detached vs DispatchQueue.global vs async let vs TaskGroup</span></a></li><li><a href="#s11-3" data-sub="s11-3"><span>11.3</span><span>切到主线程的各种方式</span></a></li><li><a href="#s11-4" data-sub="s11-4"><span>11.4</span><span>定时 / 延迟的各种方式</span></a></li></ol></li><li class="has-sub"><a href="#s12" data-sec="s12"><span>12</span><span>执行时机与滚动行为</span></a><button class="toc-caret" type="button" aria-expanded="false" aria-label="展开「执行时机与滚动行为」的小节"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M3 2l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button><ol class="toc-sub"><li><a href="#s12-1" data-sub="s12-1"><span>12.1</span><span>主线程上的三层：RunLoop.main、DispatchQueue.main、MainActor</span></a></li><li><a href="#s12-2" data-sub="s12-2"><span>12.2</span><span>执行顺序示例</span></a></li><li><a href="#s12-3" data-sub="s12-3"><span>12.3</span><span>滚动期间的差异</span></a></li></ol></li><li><a href="#s13" data-sec="s13"><span>13</span><span>GCD → Swift Concurrency 迁移对照</span></a></li><li><a href="#s14" data-sec="s14"><span>14</span><span>常见陷阱</span></a></li><li><a href="#s15" data-sec="s15"><span>15</span><span>选择指南</span></a></li><li><a href="#s16" data-sec="s16"><span>16</span><span>一句话总结</span></a></li><li><a href="#s17" data-sec="s17"><span>17</span><span>演示工程</span></a></li></ol><div class="toc-label">交互动画</div><ol><li><a class="fig-link" href="#fig-runloop"><span>1</span><span>RunLoop.main 与 Mode</span></a></li><li><a class="fig-link" href="#fig-ordering"><span>2</span><span>调度时机回放</span></a></li><li><a class="fig-link" href="#fig-blocking"><span>3</span><span>阻塞 vs 挂起</span></a></li><li><a class="fig-link" href="#fig-pools"><span>4</span><span>线程爆炸 vs 协作式线程池</span></a></li><li><a class="fig-link" href="#fig-structured"><span>5</span><span>结构化并发与取消</span></a></li><li><a class="fig-link" href="#fig-actor"><span>6</span><span>actor 重入</span></a></li></ol>
     </div>
     <div class="toc-lists" data-page="wwdc" hidden>
       <div class="toc-label">WWDC25 · 268 拥抱 Swift 并发</div><ol><li><a href="#w0" data-sec="w0"><span>★</span><span>一页速览</span></a></li><li><a href="#w1" data-sec="w1"><span>1</span><span>从单线程开始</span></a></li><li><a href="#w2" data-sec="w2"><span>2</span><span>异步任务：隐藏延迟</span></a></li><li><a href="#w3" data-sec="w3"><span>3</span><span>引入并发：<code>@concurrent</code></span></a></li><li><a href="#w4" data-sec="w4"><span>4</span><span>跨线程共享数据：Sendable</span></a></li><li><a href="#w5" data-sec="w5"><span>5</span><span>actor：把数据移出主线程</span></a></li><li><a href="#w6" data-sec="w6"><span>6</span><span>推荐的构建设置</span></a></li><li><a href="#w7" data-sec="w7"><span>7</span><span>与本指南的对照</span></a></li></ol>
       <div class="toc-label">交互动画</div><ol><li><a class="fig-link" href="#fig-w-journey"><span>W1</span><span>四个阶段：工作落在哪条线程</span></a></li><li><a class="fig-link" href="#fig-w-interleave"><span>W2</span><span>两个任务在主线程上交错</span></a></li><li><a class="fig-link" href="#fig-w-share"><span>W3</span><span>值类型副本 vs 共享的类实例</span></a></li></ol>
+    </div>
+    <div class="toc-lists" data-page="mig" hidden>
+      <div class="toc-label">Kodeco · 迁移到 Swift 6</div><ol><li><a href="#m0" data-sec="m0"><span>★</span><span>一页速览</span></a></li><li><a href="#m1" data-sec="m1"><span>1</span><span>从单线程到并发：三个阶段</span></a></li><li><a href="#m2" data-sec="m2"><span>2</span><span>隔离域</span></a></li><li><a href="#m3" data-sec="m3"><span>3</span><span>两条迁移路线</span></a></li><li><a href="#m4" data-sec="m4"><span>4</span><span>示例项目 TheMet</span></a></li><li><a href="#m5" data-sec="m5"><span>5</span><span>迁移 TheMet：逐条消除诊断</span></a></li><li><a href="#m6" data-sec="m6"><span>6</span><span>加入并发：<code>@concurrent</code></span></a></li><li><a href="#m7" data-sec="m7"><span>7</span><span>延伸阅读</span></a></li></ol>
+      <div class="toc-label">交互动画</div><ol><li><a class="fig-link" href="#fig-m-settings"><span>M1</span><span>构建设置：两条路线</span></a></li><li><a class="fig-link" href="#fig-m-diag"><span>M2</span><span>诊断 → 修复</span></a></li><li><a class="fig-link" href="#fig-m-threads"><span>M3</span><span>每个方法跑在哪条线程</span></a></li></ol>
+    </div>
+    <div class="toc-lists" data-page="sl" hidden>
+      <div class="toc-label">SwiftLee · Swift 6.2 并发初探</div><ol><li><a href="#l0" data-sec="l0"><span>★</span><span>一页速览</span></a></li><li><a href="#l1" data-sec="l1"><span>1</span><span>让数据竞争安全更易上手</span></a></li><li><a href="#l2" data-sec="l2"><span>2</span><span>Swift 6.2 分支里的提案</span></a></li><li><a href="#l3" data-sec="l3"><span>3</span><span>SE-0466：默认 MainActor 隔离</span></a></li><li><a href="#l4" data-sec="l4"><span>4</span><span>SE-0461：在调用方 actor 上运行</span></a></li><li><a href="#l5" data-sec="l5"><span>5</span><span>文章发表之后的变化</span></a></li><li><a href="#l6" data-sec="l6"><span>6</span><span>别和 Task {} 继承混为一谈</span></a></li><li><a href="#l7" data-sec="l7"><span>7</span><span>延伸阅读</span></a></li></ol>
+      <div class="toc-label">交互动画</div><ol><li><a class="fig-link" href="#fig-l-run"><span>S1</span><span>同一段代码，六种编译设置</span></a></li></ol>
     </div>
   </nav>
   <main>
@@ -922,7 +1031,41 @@ task.cancel()</code></pre></div><ul><li>创建后<strong>立即被调度</strong
     <span class="t-k">let</span> data = <span class="t-k">await</span> <span class="t-t">Decoder</span>.decode(raw) <span class="t-c">// decode 是 @concurrent → 函数体在后台执行；</span>
                                          <span class="t-c">// 这期间 Task 挂起，主线程空闲</span>
     label = data.title                   <span class="t-c">// decode 返回后，回到 MainActor（主线程）</span>
-}</code></pre></div><p>函数在哪执行由<strong>被调用函数自己的隔离声明</strong>决定，和调用它的 Task 无关。同一行 <code>await Decoder.decode(raw)</code>，声明不同，执行位置就不同：</p><div class="table-wrap"><table><thead><tr><th><code>decode</code> 的声明</th><th>函数体在哪执行</th></tr></thead><tbody><tr><td><code>@concurrent static func decode(_:) async</code></td><td><strong>后台</strong>（协作线程池）</td></tr><tr><td><code>nonisolated static func decode(_:) async</code></td><td>开启 Approachable Concurrency 后默认是 nonsending → 调用方的 actor → <strong>主线程</strong></td></tr><tr><td>不加标注（本工程默认 MainActor 隔离）</td><td><code>@MainActor</code> → <strong>主线程</strong></td></tr><tr><td>某个 <code>actor</code> 的方法</td><td>那个 actor 上（后台线程）</td></tr><tr><td>同步函数 <code>nonisolated static func decode(_:)</code></td><td>调用者当前的线程 → <strong>主线程</strong>（调用时也不需要 <code>await</code>）</td></tr></tbody></table></div><p><strong>自己确认</strong>：在闭包里 <code>print(#isolation as Any)</code>，会打印 <code>Optional(MainActor)</code>、某个 actor 或 <code>nil</code>；调试时可用 <code>MainActor.preconditionIsolated()</code> 断言在主线程。本工程实测：MainActor 上下文中的 <code>Task {}</code> 在主线程，<code>async let</code> / <code>TaskGroup</code> 子任务和 <code>Task.detached</code> 在后台（见 §17）。</p><h4>3. 继承什么</h4><div class="table-wrap"><table><thead><tr><th>继承项</th><th><code>Task { }</code></th><th><code>Task.detached { }</code></th></tr></thead><tbody><tr><td>actor 隔离</td><td><strong>继承</strong>：在 <code>@MainActor</code> 方法里创建 → 闭包在 MainActor 上运行</td><td>不继承，无隔离</td></tr><tr><td>优先级</td><td>继承当前任务优先级</td><td>不继承</td></tr><tr><td>TaskLocal 值</td><td>继承</td><td>不继承</td></tr><tr><td>取消状态</td><td><strong>不继承</strong>：父任务被取消，<code>Task {}</code> 不会自动取消</td><td>不继承</td></tr></tbody></table></div><h4>4. 取消与生命周期</h4><ul><li><code>cancel()</code> 只是设置标志，取消是<strong>协作式</strong>的：任务要自己检查 <code>Task.isCancelled</code> / <code>Task.checkCancellation()</code>，或在 <code>Task.sleep</code>、<code>URLSession</code> 等会响应取消的 API 处结束（§7.7）。</li><li>闭包会<strong>强引用</strong>捕获的对象（包括 <code>self</code>），直到任务结束。长任务要配合取消，或用 <code>[weak self]</code>。</li><li>SwiftUI 中优先用 <code>.task { }</code>：视图消失时自动取消。在 <code>onAppear</code> 里写 <code>Task {}</code> 不会自动取消（演示 App 第 11 页）。</li></ul><h4>5. 常见误区</h4><ul><li><strong>以为 <code>Task {}</code> 会去后台</strong>：在 MainActor 上下文中 <code>Task { heavyCPUWork() }</code>，同步计算<strong>仍在主线程</strong>，会卡 UI（Fig. 3）。要去后台，把计算放进 <code>@concurrent</code> 函数，或用 <code>Task.detached</code>。</li><li><strong>以为丢掉句柄、或父任务取消，Task 就会停</strong>：都不会。需要取消就保存句柄，或者改用结构化并发。</li><li><strong>在循环里大量创建 <code>Task {}</code> 做并行</strong>：无法统一等待和取消，应使用 <code>TaskGroup</code>。</li><li><strong>依赖多个 <code>Task {}</code> 之间的执行顺序</strong>：它们是独立调度的，顺序没有保证（§12）。</li></ul><h3 id="s7-4"><span class="h3-num">7.4</span><span>Task.detached：脱离上下文的任务</span><span class="badge b-niche">最后手段</span></h3><div class="code"><span class="lang">swift</span><pre><code><span class="t-t">Task</span>.detached(priority: .background) {
+}</code></pre></div><p>函数在哪执行由<strong>被调用函数自己的隔离声明</strong>决定，和调用它的 Task 无关。同一行 <code>await Decoder.decode(raw)</code>，声明不同，执行位置就不同：</p><div class="table-wrap"><table><thead><tr><th><code>decode</code> 的声明</th><th>函数体在哪执行</th></tr></thead><tbody><tr><td><code>@concurrent static func decode(_:) async</code></td><td><strong>后台</strong>（协作线程池）</td></tr><tr><td><code>nonisolated static func decode(_:) async</code></td><td>开启 Approachable Concurrency 后默认是 nonsending → 调用方的 actor → <strong>主线程</strong></td></tr><tr><td>不加标注（本工程默认 MainActor 隔离）</td><td><code>@MainActor</code> → <strong>主线程</strong></td></tr><tr><td>某个 <code>actor</code> 的方法</td><td>那个 actor 上（后台线程）</td></tr><tr><td>同步函数 <code>nonisolated static func decode(_:)</code></td><td>调用者当前的线程 → <strong>主线程</strong>（调用时也不需要 <code>await</code>）</td></tr></tbody></table></div><p><strong>自己确认</strong>：在闭包里 <code>print(#isolation as Any)</code>，会打印 <code>Optional(MainActor)</code>、某个 actor 或 <code>nil</code>；调试时可用 <code>MainActor.preconditionIsolated()</code> 断言在主线程。本工程实测：MainActor 上下文中的 <code>Task {}</code> 在主线程，<code>async let</code> / <code>TaskGroup</code> 子任务和 <code>Task.detached</code> 在后台（见 §17）。</p><h4>3. 继承什么</h4><div class="table-wrap"><table><thead><tr><th>继承项</th><th><code>Task { }</code></th><th><code>Task.detached { }</code></th></tr></thead><tbody><tr><td>actor 隔离</td><td><strong>继承</strong>：在 <code>@MainActor</code> 方法里创建 → 闭包在 MainActor 上运行</td><td>不继承，无隔离</td></tr><tr><td>优先级</td><td>继承当前任务优先级</td><td>不继承</td></tr><tr><td>TaskLocal 值</td><td>继承</td><td>不继承</td></tr><tr><td>取消状态</td><td><strong>不继承</strong>：父任务被取消，<code>Task {}</code> 不会自动取消</td><td>不继承</td></tr></tbody></table></div><h4>4. 取消与生命周期</h4><ul><li><code>cancel()</code> 只是设置标志，取消是<strong>协作式</strong>的：任务要自己检查 <code>Task.isCancelled</code> / <code>Task.checkCancellation()</code>，或在 <code>Task.sleep</code>、<code>URLSession</code> 等会响应取消的 API 处结束（§7.7）。</li><li>闭包会<strong>强引用</strong>捕获的对象（包括 <code>self</code>），直到任务结束。长任务要配合取消，或用 <code>[weak self]</code>。</li><li>SwiftUI 中优先用 <code>.task { }</code>：视图消失时自动取消。在 <code>onAppear</code> 里写 <code>Task {}</code> 不会自动取消（演示 App 第 11 页）。</li></ul><h4>5. 常见误区</h4><ul><li><strong>以为 <code>Task {}</code> 会去后台</strong>：在 MainActor 上下文中 <code>Task { heavyCPUWork() }</code>，同步计算<strong>仍在主线程</strong>，会卡 UI（Fig. 3）。要去后台，把计算放进 <code>@concurrent</code> 函数，或用 <code>Task.detached</code>。</li><li><strong>以为丢掉句柄、或父任务取消，Task 就会停</strong>：都不会。需要取消就保存句柄，或者改用结构化并发。</li><li><strong>在循环里大量创建 <code>Task {}</code> 做并行</strong>：无法统一等待和取消，应使用 <code>TaskGroup</code>。</li><li><strong>依赖多个 <code>Task {}</code> 之间的执行顺序</strong>：它们是独立调度的，顺序没有保证（§12）。</li></ul><h4>实验：Task 闭包本体 vs 闭包里调用的 nonisolated async 函数</h4><p>“Task 会不会继承调用者的隔离”和“async 函数会不会继承调用者的隔离”是两个问题，经常被混为一谈。下面的程序把两者放在一起，用 Swift 6.4 工具链、Swift 6 语言模式分别在两种设置下编译运行：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">import Foundation
+
+// Thread.isMainThread 在 async 上下文中不可用，用同步的 nonisolated 属性包一层
+extension Thread { nonisolated static var isMain: Bool { Thread.isMainThread } }
+
+nonisolated func plainAsync() async {
+    print("nonisolated async func -> isMain:", Thread.isMain)
+}
+
+@MainActor
+func caller() async {
+    Task {
+        // 闭包本体：不捕获 self，也不调用任何 MainActor API
+        print("Task body -> isMain:", Thread.isMain)
+        MainActor.assertIsolated()   // 如果没有继承 MainActor，这里会崩溃
+        await plainAsync()
+    }
+    try? await Task.sleep(for: .milliseconds(200))
+}
+
+@main struct App {
+    static func main() async { await caller() }
+}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>编译设置</th><th>Task 闭包本体</th><th>闭包里 await 的 nonisolated async 函数</th></tr></thead><tbody>
+<tr><td><code>swiftc -swift-version 6</code></td><td class="ok">主线程</td><td class="warn">后台线程</td></tr>
+<tr><td>+ <code>-enable-upcoming-feature NonisolatedNonsendingByDefault</code></td><td class="ok">主线程</td><td class="ok">主线程</td></tr>
+</tbody></table></div>
+<p>结论：</p><ul>
+<li><strong>Task 闭包本体继承创建处的全局 actor 隔离</strong>：两种设置下都在主线程上，<code>MainActor.assertIsolated()</code> 也没有崩溃。闭包不需要捕获 <code>self</code>。</li>
+<li><strong>变化的只是被调用的 nonisolated async 函数</strong>：旧语义下它会切到全局并发执行器；开启 SE-0461（<code>NonisolatedNonsendingByDefault</code>，包含在 Xcode 26 的 Approachable Concurrency 里）后，它留在调用者的 actor 上。</li>
+<li>网上常见的“async task 不继承调用者隔离”的说法（例如 SwiftLee 的 <a href="https://www.avanderlee.com/concurrency/swift-6-2-concurrency-changes/" target="_blank" rel="noopener">Swift 6.2 concurrency changes</a>），指的是第二列的 nonisolated <em>async 函数</em>，不是 <code>Task { }</code> 闭包。文中的 <code>func performAsync() async</code> 虽然没写 <code>nonisolated</code>，但它没有任何隔离标注，所在模块也没开默认 MainActor 隔离，所以<strong>隐式就是 nonisolated</strong>，和这里显式写 <code>nonisolated</code> 的 <code>plainAsync()</code> 等价。反过来，如果模块的 Default Actor Isolation 设为 MainActor，同样一行声明会被推断成 <code>@MainActor</code>，无论哪种设置都在主线程上运行。</li>
+</ul>
+<div class="callout"><div class="callout-h">“总会继承”的三个限定</div><p>1. 继承依据的是<strong>创建 Task 的那个上下文</strong>，不是所在的类型：在 <code>@MainActor</code> 类型的 <code>nonisolated</code> 方法里创建的 <code>Task {}</code> 不会继承。</p><p>2. 闭包本体被隔离，不代表它里面 <code>await</code> 的函数也在同一处运行：被调用函数看<strong>它自己的声明</strong>（上表第二列）。</p><p>3. 闭包显式标注了别的隔离（如 <code>Task { @concurrent in … }</code>）时，以显式标注为准。普通 actor 实例则要求闭包用到 <code>self</code> 才会隔离到该 actor。</p></div>
+<h3 id="s7-4"><span class="h3-num">7.4</span><span>Task.detached：脱离上下文的任务</span><span class="badge b-niche">最后手段</span></h3><div class="code"><span class="lang">swift</span><pre><code><span class="t-t">Task</span>.detached(priority: .background) {
     <span class="t-c">// 不继承 actor、优先级、TaskLocal</span>
     <span class="t-k">let</span> report = <span class="t-k">await</span> generateReport()
     <span class="t-k">await</span> <span class="t-t">MainActor</span>.run { <span class="t-k">self</span>.report = report }
@@ -1582,6 +1725,350 @@ func scaleAndDisplay(imageName: String) async {
         <tr><td>Sendable</td><td><a href="#s7-13">§7.13 Sendable</a></td></tr>
         <tr><td>actor</td><td><a href="#s7-10">§7.10 actor</a> · <a href="#fig-actor">Fig. 5 actor 重入</a></td></tr>
       </tbody></table></div>
+    </section>
+    </div>
+    <div class="page" id="swift6-migration" data-page="mig" data-title="迁移到 Swift 6 · Kodeco 教程要点" hidden>
+    <header class="w-hero">
+      <div class="w-ghost" aria-hidden="true">6.2</div>
+      <div class="eyebrow reveal">Kodeco Tutorial · 阅读笔记</div>
+      <h1 class="reveal d1">迁移到 Swift 6</h1>
+      <p class="w-en reveal d1">Migrating to Swift 6</p>
+      <p class="lede reveal d2">Audrey Tam 的这篇教程拿一个查询大都会艺术博物馆藏品的 SwiftUI 小 App <strong>TheMet</strong> 做实验，演示在 Xcode 26 里把项目迁移到 Swift 6.2：先理解<strong>隔离域</strong>，再选一条迁移路线，然后逐条处理编译器给出的<strong>数据竞争诊断</strong>，最后用 <code>@concurrent</code> 把真正耗时的工作移出主线程。下面按文章顺序整理要点。示例代码是根据文章描述重建的示意，不是教程素材里的原样代码。</p>
+      <div class="w-meta reveal d3">
+        <span><small>作者</small>Audrey Tam</span>
+        <span><small>发布</small>2025-06-25</span>
+        <span><small>适用</small>Swift 6.2 · iOS 26 · Xcode 26 beta</span>
+        <a href="https://www.kodeco.com/48297451-migrating-to-swift-6-tutorial" target="_blank" rel="noopener"><small>原文</small>阅读教程 ↗</a>
+      </div>
+      <nav class="w-stairs reveal d4" aria-label="迁移步骤">
+        <a class="w-step" href="#m3"><span class="n">1</span><h4>打开完整检查</h4><p class="when">让编译器把所有潜在数据竞争都报出来。</p><span class="tools"><code>Strict Concurrency = Complete</code></span></a>
+        <a class="w-step" href="#m5-1"><span class="n">2</span><h4>默认 MainActor</h4><p class="when">把 App 模块整体放到主 actor 上，大部分警告随之消失。</p><span class="tools"><code>Default Actor Isolation</code></span></a>
+        <a class="w-step" href="#m5-3"><span class="n">3</span><h4>隔离协议遵循</h4><p class="when">让 Codable 这类非隔离协议的遵循也隔离到主 actor。</p><span class="tools"><code>@MainActor Codable</code></span></a>
+        <a class="w-step" href="#m6"><span class="n">4</span><h4>按需卸载</h4><p class="when">只把确实慢的工作移到后台线程。</p><span class="tools"><code>nonisolated</code><code>@concurrent</code></span></a>
+      </nav>
+      <div class="w-stairs-axis reveal d4"><span>满屏警告</span><span>一步步收敛</span><span>零诊断 · 按需并发</span></div>
+    </header>
+
+    <section class="sec" id="m0"><div class="sec-h2"><span class="sec-num">★</span><h2>一页速览</h2></div>
+      <div class="w-keys">
+        <div class="w-key"><b>目标</b><p>Swift 6 并发的首要目标是消除数据竞争。主要手段是<strong>隔离域</strong>，由编译器在编译期验证。</p></div>
+        <div class="w-key"><b>两条路线</b><p>swift.org 迁移指南：留在 Swift 5 模式，逐个开启 Upcoming Feature，最后开完整检查。Xcode 26：直接用默认的 Approachable Concurrency 和 MainActor 默认隔离。</p></div>
+        <div class="w-key"><b>一个设置解决大半</b><p>把 Default Actor Isolation 设为 MainActor，比给每个类型手写 <code>@MainActor</code> 更省事，跨边界和 Sendable 警告随之消失。</p></div>
+        <div class="w-key"><b>协议遵循也要隔离</b><p>模型类型隔离到主 actor 后，它对 Codable 的遵循会和非隔离的协议要求冲突，用 <code>@MainActor Codable</code> 解决。</p></div>
+        <div class="w-key"><b>删掉 MainActor.run</b><p>默认隔离到主 actor 之后，<code>await MainActor.run { … }</code> 这类手动切回主线程的包装可以去掉。</p></div>
+        <div class="w-key"><b>只卸载慢的部分</b><p>迁移后几乎所有代码都在主线程上，只有 URLSession 在后台。真正耗时的类型标 <code>nonisolated</code>，方法标 <code>@concurrent</code>。</p></div>
+      </div>
+      <div class="callout c-niche"><div class="callout-h">如果问题太多</div><p>作者的建议：如果直接开启 Xcode 26 默认设置后冒出的问题太多，<strong>关掉 Approachable Concurrency，改走 swift.org 的渐进迁移路线</strong>。</p></div>
+    </section>
+
+    <section class="sec" id="m1"><div class="sec-h2"><span class="sec-num">01</span><h2>从单线程到并发：三个阶段</h2></div>
+      <p>Swift 6.2 的并发设计成<strong>只在需要时才增加复杂度</strong>。文章把它概括为三个阶段：</p>
+      <ol>
+        <li>从主线程上的<strong>同步执行</strong>开始。</li>
+        <li>工作需要等待时，写一个 <code>async</code> 函数并 <code>await</code> 它。</li>
+        <li>引入<strong>并发</strong>，把这个操作移到后台线程。先用 Instruments 做性能分析，再考虑用 <code>async let</code> 或任务组（task group）把工作并行化。</li>
+      </ol>
+      <p>这和 WWDC25 Session 268 讲的路径一致，详见本站的 <a href="#wwdc25-268">WWDC25 · 268 笔记</a>。</p>
+    </section>
+
+    <section class="sec" id="m2"><div class="sec-h2"><span class="sec-num">02</span><h2>隔离域</h2></div>
+      <p>核心保证只有一句：<strong>可变状态在同一时刻只能从一个隔离域访问。</strong>隔离域分三类：</p>
+      <div class="table-wrap"><table><thead><tr><th>隔离域</th><th>怎么保护状态</th><th>例子</th></tr></thead><tbody>
+        <tr><td><strong>Actor</strong></td><td>用串行队列处理异步请求，保护自己的可变状态</td><td><code>actor ImageCache</code></td></tr>
+        <tr><td><strong>全局 actor</strong></td><td>和 actor 一样，但全局唯一；必须有一个名为 <code>shared</code> 的静态属性</td><td><code>@MainActor</code></td></tr>
+        <tr><td><strong>非隔离（Non-isolated）</strong></td><td>不属于任何 actor，总能被其他域安全访问</td><td><code>nonisolated func</code></td></tr>
+      </tbody></table></div>
+      <p>默认值有区别：在 swift.org 的工具链里，<strong>代码默认是非隔离的</strong>；而 <strong>Xcode 26 新建项目默认隔离到 MainActor</strong>。文章还引用了 WWDC25 对非隔离代码的描述：从主 actor 调用时，它就留在主 actor 上。</p>
+    </section>
+
+    <section class="sec" id="m3"><div class="sec-h2"><span class="sec-num">03</span><h2>两条迁移路线</h2></div>
+      <div class="routes">
+        <div class="route"><span class="tag">路线 A · swift.org 迁移指南</span><h4>渐进式</h4>
+          <ol><li>保持 <strong>Swift 5 语言模式</strong>。</li><li>在 <em>Swift Compiler — Upcoming Features</em> 下<strong>一次开启一个</strong> Upcoming Feature，顺序不限，逐个修完再开下一个。</li><li>在 <em>Swift Compiler — Concurrency</em> 下把 <strong>Strict Concurrency Checking</strong> 设为 Complete。</li></ol>
+          <p>适合存量大、警告多的项目，每一步的改动量可控。</p></div>
+        <div class="route"><span class="tag">路线 B · Xcode 26 默认设置</span><h4>一步到位</h4>
+          <ol><li><strong>Approachable Concurrency = Yes</strong>：一次开启一组 Upcoming Feature，其中包括 swift.org 列表里的两项。</li><li><strong>Default Actor Isolation = MainActor</strong>：模块内代码默认在主 actor 上。</li></ol>
+          <p>适合新项目和以 UI 为主的模块。问题太多时退回路线 A。</p></div>
+      </div>
+      <figure class="fig" id="fig-m-settings">
+        <div class="fig-head"><div><div class="fig-tag">Fig. M1 · Build Settings</div><div class="fig-title">每一步要改哪几个设置</div></div>
+          <div class="controls"><div class="tabs" role="tablist"><button class="tab" data-key="a1" type="button">A1 逐个开特性</button><button class="tab" data-key="a2" type="button">A2 完整检查</button><button class="tab" data-key="b" type="button">B Xcode 26 默认</button><button class="tab" data-key="met" type="button">TheMet 实际做法</button></div></div></div>
+        <div class="fig-body">
+          <div class="xs" aria-live="polite">
+            <div class="xs-bar"><i></i><i></i><i></i><span>TARGET › Build Settings</span></div>
+            <div class="xs-group">Swift Compiler — Language</div>
+            <div class="xs-row" data-k="lang"><span class="k">Swift Language Version</span><span class="v"></span></div>
+            <div class="xs-group">Swift Compiler — Concurrency</div>
+            <div class="xs-row" data-k="strict"><span class="k">Strict Concurrency Checking</span><span class="v"></span></div>
+            <div class="xs-row" data-k="approach"><span class="k">Approachable Concurrency</span><span class="v"></span></div>
+            <div class="xs-row" data-k="iso"><span class="k">Default Actor Isolation</span><span class="v"></span></div>
+            <div class="xs-group">Swift Compiler — Upcoming Features</div>
+            <div class="xs-row" data-k="feats"><span class="k">Upcoming Features</span><span class="v xs-feats"></span></div>
+          </div>
+          <p class="narr wj-narr" aria-live="polite"></p>
+        </div>
+        <figcaption class="fig-cap">高亮行是这一步要改动的设置。<b>Upcoming Feature 名称</b>在原文中只以截图形式出现，这里列出的是 Swift 6.2 中与并发相关的常见几项，用来示意“一次开一个”。</figcaption>
+      </figure>
+      <p class="w-note">补充：Strict Concurrency Checking 有 Minimal、Targeted、Complete 三档。Complete 会给出与 Swift 6 语言模式相同的诊断，只是以警告而不是错误的形式出现，所以可以边修边编译。</p>
+    </section>
+
+    <section class="sec" id="m4"><div class="sec-h2"><span class="sec-num">04</span><h2>示例项目 TheMet</h2></div>
+      <p>TheMet 来自《SwiftUI Apprentice》一书，用户输入关键词，App 查询大都会艺术博物馆的藏品并列出结果。结构很简单：</p>
+      <div class="table-wrap"><table><thead><tr><th>类型</th><th>方法</th><th>做什么</th></tr></thead><tbody>
+        <tr><td><code>TheMetService</code></td><td><code>getObjectIDs(from:)</code></td><td>用查询词构造 URL，下载匹配的藏品 ID 列表</td></tr>
+        <tr><td><code>TheMetService</code></td><td><code>getObject(from:)</code></td><td>按 ID 下载单件藏品</td></tr>
+        <tr><td><code>TheMetStore</code></td><td><code>fetchObjects(for:)</code></td><td>遍历 ID，逐个取回藏品追加到 <code>objects</code> 数组</td></tr>
+        <tr><td><code>ContentView</code></td><td><code>.task</code></td><td>出现时和每次换查询词时调用 <code>fetchObjects</code></td></tr>
+      </tbody></table></div>
+      <div class="callout"><div class="callout-h">⚠ 示例项目里的一处错误</div><p>教程素材中 <code>TheMetService</code> 按 ID 取单件藏品时，URL 拼错了 endpoint，用的是 <code>"search"</code>。大都会博物馆 API 的单件藏品接口是 <code>/objects/[objectID]</code>，<code>/search</code> 只用来按关键词查 ID 列表。需要改成 <code>"objects"</code>，否则取不到藏品数据：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">// ✗ 素材原文
+var urlComponents = URLComponents(string: baseURLString + "search")
+
+// ✓ 应改为
+var urlComponents = URLComponents(string: baseURLString + "objects")</code></pre></div></div>
+      <h3 id="m4-1"><span class="h3-num">4.1</span>在 async 代码里打印当前线程</h3>
+      <p>为了观察每个方法跑在哪条线程上，教程在各方法里打印当前线程。但 <code>Thread.current</code> 在 async 上下文里不能用，编译器会报错 <em>“Class property 'current' is unavailable from asynchronous contexts”</em>。绕过办法是包一层非隔离的同步属性：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">nonisolated extension Thread {
+    public static var currentThread: Thread {
+        Thread.current   // 同步 getter 里可以访问
+    }
+}
+
+print("getObject:", Thread.currentThread)</code></pre></div>
+      <p>起始项目里，Store 和 Service 的方法都跑在后台线程上，只有更新 <code>objects</code>（ContentView 显示的数据）在主线程上。作者指出：其实<strong>只有 URLSession 的调用需要离开主线程</strong>，其余工作都很轻。</p>
+    </section>
+
+    <section class="sec" id="m5"><div class="sec-h2"><span class="sec-num">05</span><h2>迁移 TheMet：逐条消除诊断</h2></div>
+      <p>教程没有走渐进路线，而是直接开启 <strong>Complete</strong> 级别的并发检查。项目仍能编译，但出现了两条警告；修第一条时又引出了协议遵循的错误。点击左侧诊断查看原因和修法：</p>
+      <figure class="fig" id="fig-m-diag">
+        <div class="fig-head"><div><div class="fig-tag">Fig. M2 · Issue Navigator</div><div class="fig-title">三类诊断，三种修法</div></div>
+          <div class="controls"><button class="btn" data-act="fixall" type="button">全部标为已修复</button></div></div>
+        <div class="fig-body"><div class="md">
+          <div class="md-list" role="group" aria-label="诊断列表"></div>
+          <div class="md-pane"></div>
+        </div></div>
+        <figcaption class="fig-cap">诊断文字引自原文，原文只给出了截断的片段。左右两栏代码是根据文章描述重建的示意。</figcaption>
+      </figure>
+      <h3 id="m5-1"><span class="h3-num">5.1</span>跨越隔离边界</h3>
+      <p>值会通过两种方式跨越隔离域：<strong>异步调用</strong>，或者被<strong>闭包捕获</strong>。第一条警告来自 ContentView 里的 <code>await</code> 调用：它把绑定在 MainActor 上的 <code>self.store</code> 送进了另一个隔离域。作者没有给 <code>TheMetStore</code> 单独加 <code>@MainActor</code>，而是在 Build Settings 里把 <strong>Default Actor Isolation 设为 MainActor</strong>，让整个模块默认在主 actor 上。</p>
+      <h3 id="m5-2"><span class="h3-num">5.2</span>Sendable 类型</h3>
+      <ul>
+        <li><strong>值类型</strong>是 Sendable 的，因为传递的是副本。</li>
+        <li><strong>引用类型</strong>只有在没有可变状态、且所有不可变属性都是 Sendable 时才能是 Sendable；编译器只对 <code>final</code> 类做这项验证。</li>
+        <li>全局函数、闭包、getter 和 setter 默认是 <code>@Sendable</code> 的。</li>
+      </ul>
+      <p>第二条警告来自 <code>fetchObjects(for:)</code> 里的 <code>await MainActor.run { objects.append(object) }</code>：这个 <code>@Sendable</code> 闭包捕获了非 Sendable 的 <code>TheMetStore</code>。默认隔离改成 MainActor 之后，整个方法已经在主线程上，<strong>直接删掉 <code>MainActor.run</code> 包装</strong>即可。</p>
+      <h3 id="m5-3"><span class="h3-num">5.3</span>协议：隔离的遵循（isolated conformance）</h3>
+      <p>swift.org 的说明是：协议遵循可能隐式影响隔离，取决于它是怎么声明的。默认隔离改成 MainActor 后，<code>Object</code> 和 <code>ObjectIDs</code> 都变成了 MainActor 隔离，但 <code>Codable</code> 的要求是非隔离的，于是两者冲突。Xcode 给出两个 Fix-it：</p>
+      <div class="table-wrap"><table><thead><tr><th>Fix-it</th><th>效果</th><th>教程选择</th></tr></thead><tbody>
+        <tr><td>Isolate this conformance to the main actor with <code>@MainActor</code></td><td>遵循本身隔离到主 actor，只能在主 actor 上使用这份 Codable 实现</td><td class="ok">✓ 采用</td></tr>
+        <tr><td>Turn data races into runtime errors with <code>@preconcurrency</code></td><td>压下编译期检查，改成运行时检测</td><td>未采用</td></tr>
+      </tbody></table></div>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">struct Object: @MainActor Codable, Hashable { /* ... */ }
+struct ObjectIDs: @MainActor Codable { /* ... */ }</code></pre></div>
+      <p class="w-note">隔离的协议遵循是 Swift 6.2 的新能力（SE-0470），配合 InferIsolatedConformances 时，MainActor 类型的遵循会被自动推断为隔离的。</p>
+      <p>重新编译运行后，Store 和 Service 的方法都跑在主线程上，<strong>只有 URLSession 的调用不在主线程</strong>。对这个 App 来说这正合适。</p>
+    </section>
+
+    <section class="sec" id="m6"><div class="sec-h2"><span class="sec-num">06</span><h2>加入并发：<code>@concurrent</code></h2></div>
+      <p>为了演示真正需要后台执行的工作，教程加了一个模拟的慢操作 <code>SlowProcess</code>：用 <code>Task.sleep(for:)</code> 假装耗时，并在前后打印线程；<code>TheMetService.getObject(from:)</code> 在返回藏品之前调用它。</p>
+      <p>问题是，在 MainActor 默认隔离下，<code>SlowProcess</code> 也<strong>继承了 MainActor 隔离</strong>，<code>doSomething</code> 会在主线程上运行，可能卡住 UI。修法分两步：</p>
+      <ol><li>把 <code>SlowProcess</code> 标为 <code>nonisolated</code>，让它脱离 MainActor。</li><li>把 <code>doSomething</code> 标为 <code>@concurrent</code>，让它<strong>总是</strong>在后台线程上运行。</li></ol>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">nonisolated struct SlowProcess {
+    @concurrent func doSomething() async throws {
+        print("doSomething start:", Thread.currentThread)
+        try await Task.sleep(for: .seconds(1))   // 模拟耗时工作
+        print("doSomething end:", Thread.currentThread)
+    }
+}
+
+// TheMetService.getObject(from:) 中
+try await SlowProcess().doSomething()
+return object</code></pre></div>
+      <p class="w-note">只写 <code>nonisolated</code> 不够：在 Approachable Concurrency 下，nonisolated 的 async 函数会留在调用方的 actor 上（这里是主 actor）。要强制切到后台，必须用 <code>@concurrent</code>。</p>
+      <figure class="fig" id="fig-m-threads">
+        <div class="fig-head"><div><div class="fig-tag">Fig. M3 · 线程日志</div><div class="fig-title">每个方法跑在哪条线程上</div></div>
+          <div class="controls"><div class="tabs" role="tablist"><button class="tab" data-key="start" type="button">① 起始项目</button><button class="tab" data-key="main" type="button">② 默认 MainActor</button><button class="tab" data-key="slow" type="button">③ 加入 SlowProcess</button><button class="tab" data-key="conc" type="button">④ @concurrent</button></div></div></div>
+        <div class="fig-body">
+          <table class="tl"><thead><tr><th>方法</th><th>线程</th><th>说明</th></tr></thead><tbody></tbody></table>
+          <p class="narr wj-narr" aria-live="polite"></p>
+        </div>
+        <figcaption class="fig-cap">根据文章对线程日志的文字描述整理。原文的控制台输出只以截图形式给出。</figcaption>
+      </figure>
+    </section>
+
+    <section class="sec" id="m7"><div class="sec-h2"><span class="sec-num">07</span><h2>延伸阅读</h2></div>
+      <p>教程的完整项目可以从原文的 Download materials 下载（需要免费账号）。作者推荐的 WWDC25 视频：</p>
+      <ul>
+        <li><a href="https://developer.apple.com/videos/play/wwdc2025/270/" target="_blank" rel="noopener">Code-along: Elevate an app with Swift concurrency</a>（Session 270）：按三个阶段给一个 App 逐步加并发。</li>
+        <li><a href="https://developer.apple.com/videos/play/wwdc2025/266/" target="_blank" rel="noopener">Explore concurrency in SwiftUI</a>（Session 266）</li>
+        <li><a href="#wwdc25-268">Embracing Swift concurrency</a>（Session 268）：本站已有笔记。</li>
+      </ul>
+      <p>本指南中的相关章节：<a href="#s7-11">§7.11 MainActor</a> · <a href="#s7-12">§7.12 isolated 与 nonisolated</a> · <a href="#s7-13">§7.13 Sendable</a> · <a href="#s9">§9 Swift 6 / 6.2</a> · <a href="#s13">§13 GCD → Swift Concurrency 迁移对照</a>。</p>
+    </section>
+    </div>
+    <div class="page" id="swift62-changes" data-page="sl" data-title="Swift 6.2 并发初探 · SwiftLee 文章要点" hidden>
+    <header class="w-hero">
+      <div class="w-ghost" aria-hidden="true">0461</div>
+      <div class="eyebrow reveal">SwiftLee · 阅读笔记</div>
+      <h1 class="reveal d1">Swift 6.2 并发初探</h1>
+      <p class="w-en reveal d1">A first look at how it’s changing Concurrency</p>
+      <p class="lede reveal d2">Antoine van der Lee 在 Swift 6.2 还在开发时写的前瞻文章：先介绍 Swift 团队的“让数据竞争安全更易上手”愿景文档，再看 6.2 分支里已实现或已接受的提案，重点讲了两项：<strong>默认 MainActor 隔离</strong>（SE-0466）和<strong>nonisolated async 函数在调用方 actor 上运行</strong>（SE-0461）。文章里那个 <code>NotSendable</code> 例子我在本机用 Swift 6.4 工具链按六种编译设置重新跑了一遍，结果和文章发表后的变化一起整理在这里。</p>
+      <div class="w-meta reveal d3">
+        <span><small>作者</small>Antoine van der Lee</span>
+        <span><small>发布</small>2025-04-22 · 05-19 更新</span>
+        <span><small>写作时</small>Swift 6.2 开发中</span>
+        <a href="https://www.avanderlee.com/concurrency/swift-6-2-concurrency-changes/" target="_blank" rel="noopener"><small>原文</small>阅读文章 ↗</a>
+      </div>
+      <nav class="se-board reveal d4" aria-label="文中列出的提案">
+        <a class="se-card" href="#l2"><span class="se"><small>SE</small>0371</span><b>隔离的同步 deinit</b><span class="st">原计划 6.1，临时推迟</span></a>
+        <a class="se-card focus" href="#l4"><span class="se"><small>SE</small>0461</span><b>nonisolated async 函数默认在调用方 actor 上运行</b><span class="st">本文重点 ②</span></a>
+        <a class="se-card" href="#l2"><span class="se"><small>SE</small>0463</span><b>ObjC 完成回调参数导入为 @Sendable</b><span class="st">桥接改进</span></a>
+        <a class="se-card focus" href="#l3"><span class="se"><small>SE</small>0466</span><b>控制默认 actor 隔离推断</b><span class="st">本文重点 ①</span></a>
+        <a class="se-card" href="#l2"><span class="se"><small>SE</small>0470</span><b>全局 actor 隔离的协议遵循</b><span class="st">见“迁移到 Swift 6”</span></a>
+      </nav>
+    </header>
+
+    <section class="sec" id="l0"><div class="sec-h2"><span class="sec-num">★</span><h2>一页速览</h2></div>
+      <div class="w-keys">
+        <div class="w-key"><b>问题</b><p>Swift 团队承认 Swift Concurrency “没有预想中那么好上手”：迁移旧项目难，连新项目也难，新手太早就被迫面对并发概念。</p></div>
+        <div class="w-key"><b>方向</b><p>2025 年 2 月的愿景文档提出“渐进式披露”：先单线程，再 async/await，最后才是并行。目标是减少编译器警告和错误。</p></div>
+        <div class="w-key"><b>SE-0466</b><p>可以让整个模块默认推断为 <code>@MainActor</code>，消除顺序执行代码里的“误报”。源码不兼容，需要主动开启。</p></div>
+        <div class="w-key"><b>SE-0461</b><p>以前同步和异步的 nonisolated 方法行为不一致：异步的会切到后台。开启后，nonisolated async 函数留在调用方的 actor 上。</p></div>
+        <div class="w-key"><b>例子的关键</b><p>文中 <code>performAsync()</code> 没写 <code>nonisolated</code>，但它<strong>隐式就是 nonisolated</strong>：没有标注，所在类不是 actor，模块也没开默认 MainActor。</p></div>
+        <div class="w-key"><b>现在要注意</b><p>文中的特性名 <code>AsyncCallerExecution</code> 后来改名为 <code>NonisolatedNonsendingByDefault</code>。<strong>旧名会被编译器静默忽略</strong>，不报错也不生效。</p></div>
+      </div>
+    </section>
+
+    <section class="sec" id="l1"><div class="sec-h2"><span class="sec-num">01</span><h2>让数据竞争安全更易上手</h2></div>
+      <p>Swift 团队在 2025 年 2 月发布了愿景文档 <em>Improving the approachability of data-race safety</em>。它聚焦两类场景：<strong>本来就不打算用并发的简单代码</strong>，以及<strong>还在用旧并发库的存量代码</strong>。核心是一条三阶段的“渐进式披露”路径：</p>
+      <div class="table-wrap"><table><thead><tr><th>阶段</th><th>写什么样的代码</th><th>要面对的并发概念</th></tr></thead><tbody>
+        <tr><td><strong>Phase 1</strong></td><td>简单的单线程代码，没有并行</td><td>几乎没有</td></tr>
+        <tr><td><strong>Phase 2</strong></td><td>使用 async/await，但不应碰到数据竞争安全错误</td><td>挂起，但没有并行</td></tr>
+        <tr><td><strong>Phase 3</strong></td><td>为性能引入并行：把工作移出 main actor、使用结构化并发</td><td>Sendable、隔离、actor</td></tr>
+      </tbody></table></div>
+      <p>这和 <a href="#wwdc25-268">WWDC25 · 268</a> 讲的单线程 → 异步 → 并发路线，以及 <a href="#swift6-migration">迁移到 Swift 6</a> 开头的三个阶段是同一套思路。</p>
+    </section>
+
+    <section class="sec" id="l2"><div class="sec-h2"><span class="sec-num">02</span><h2>Swift 6.2 分支里的提案</h2></div>
+      <p>文章写作时，<code>release/6.2</code> 分支里已实现或已接受、与愿景相关的提案有五个。作者提醒：提案状态随时可能变，SE-0371 原本计划进 Swift 6.1，最后一刻被推迟了。</p>
+      <div class="table-wrap"><table><thead><tr><th>提案</th><th>内容</th><th>本站相关</th></tr></thead><tbody>
+        <tr><td><code>SE-0371</code></td><td>Isolated synchronous deinit：actor 隔离类型的同步 <code>deinit</code> 可以在该 actor 上运行</td><td>—</td></tr>
+        <tr><td><code>SE-0461</code></td><td>Run nonisolated async functions on the caller’s actor by default</td><td><a href="#l4">§4</a> · <a href="#s7-3">§7.3 实验</a></td></tr>
+        <tr><td><code>SE-0463</code></td><td>Import Objective-C completion handler parameters as <code>@Sendable</code></td><td><a href="#s7-14">§7.14 Continuation</a></td></tr>
+        <tr><td><code>SE-0466</code></td><td>Control default actor isolation inference</td><td><a href="#l3">§3</a> · <a href="#w1-2">WWDC 268 §1.2</a></td></tr>
+        <tr><td><code>SE-0470</code></td><td>Global-actor isolated conformances</td><td><a href="#m5-3">迁移到 Swift 6 §5.3</a></td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section class="sec" id="l3"><div class="sec-h2"><span class="sec-num">03</span><h2>SE-0466：Main actor all the things!</h2></div>
+      <p>App、脚本、命令行工具大多数代码都是在 main actor 上顺序执行的：<strong>除非你主动引入并发（比如创建一个 Task），一切都是顺序运行的</strong>。这种情况下根本不可能发生数据竞争，所以编译器给出的并发警告基本都是误报。SE-0466 新增一个编译器设置，让模块内的声明<strong>默认推断为 <code>@MainActor</code></strong>，新手也不用过早接触并发概念。</p>
+      <p>这是<strong>源码不兼容</strong>的改动，存量项目需要主动开启：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">// 编译器参数
+// -default-isolation MainActor
+
+// Package.swift
+.target(
+    name: "MyApp",
+    swiftSettings: [
+        .defaultIsolation(MainActor.self)
+    ]
+)</code></pre></div>
+      <p class="w-note">后来 Xcode 26 把它做成了 Build Settings 里的 Default Actor Isolation，新建的 App 项目默认就是 MainActor。</p>
+    </section>
+
+    <section class="sec" id="l4"><div class="sec-h2"><span class="sec-num">04</span><h2>SE-0461：nonisolated async 函数在调用方 actor 上运行</h2></div>
+      <p>作者指出，编译器当时对 <strong>nonisolated 的同步方法和异步方法处理不一致</strong>：同步方法在调用方所在的线程上执行，异步方法却会切到全局并发执行器（后台线程）。这很让人困惑，SE-0461 就是为了统一这一点。</p>
+      <h3 id="l4-1"><span class="h3-num">4.1</span>文中的例子</h3>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">class NotSendable {
+    func performAsync() async {
+        print("Task started on thread: \(Thread.currentThread)")
+        // Old situation: Task started on thread: &lt;NSThread: 0x600003694d00&gt;{number = 8, name = (null)}
+        // New situation: Task started on thread: &lt;_NSMainThread: 0x6000006b4040&gt;{number = 1, name = main}
+    }
+}
+
+@MainActor
+struct NewThreadingDemonstrator {
+
+    func demonstrate() async {
+        print("Starting on the main thread: \(Thread.currentThread)")
+        // Prints: Starting on the main thread: &lt;_NSMainThread: 0x6000006b4040&gt;{number = 1, name = main}
+
+        let notSendable = NotSendable()
+        await notSendable.performAsync()
+
+        /// Returning on the main thread.
+        print("Resuming on the main thread: \(Thread.currentThread)")
+        // Prints: Resuming on the main thread: &lt;_NSMainThread: 0x6000006b4040&gt;{number = 1, name = main}
+    }
+}</code></pre></div>
+      <p>打印线程用的是和 <a href="#m4-1">Kodeco 教程</a>相同的绕法：</p>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">extension Thread {
+    /// A convenience method to print out the current thread from an async method.
+    /// This is a workaround for compiler error:
+    /// Class property 'current' is unavailable from asynchronous contexts; Thread.current cannot be used from async contexts.
+    public static var currentThread: Thread {
+        return Thread.current
+    }
+}</code></pre></div>
+      <h3 id="l4-2"><span class="h3-num">4.2</span>例子里没写 <code>nonisolated</code>，为什么说它是 nonisolated？</h3>
+      <p><code>func performAsync() async</code> 确实没有写 <code>nonisolated</code> 关键字。一个声明属于哪个隔离域，按下面的顺序判断，<strong>先命中的为准</strong>：</p>
+      <ol class="iso-steps">
+        <li><div><strong>有显式标注</strong>（<code>@MainActor</code>、<code>nonisolated</code>、<code>@concurrent</code>…）就按标注来。<br><span class="tl-note">performAsync：没有标注 → 继续</span></div></li>
+        <li><div><strong>所在类型有隔离</strong>（actor、<code>@MainActor class</code>…）就继承类型的隔离。<br><span class="tl-note">NotSendable：普通 class，没有隔离 → 继续</span></div></li>
+        <li class="hit"><div><strong>看模块的默认隔离</strong>：swift.org 默认是 <code>nonisolated</code>；开了 SE-0466 / Xcode 26 新项目则是 <code>MainActor</code>。<br><span class="tl-note">文章的环境是默认值 → performAsync 隐式 nonisolated</span></div></li>
+      </ol>
+      <p>所以文中的 <code>performAsync()</code> 和显式写成 <code>nonisolated func performAsync() async</code> 完全等价。<strong>反过来</strong>：如果模块开了默认 MainActor 隔离，同一行声明会被推断成 <code>@MainActor</code>，不管 SE-0461 开没开都在主线程上运行（见下图 D）。</p>
+      <h3 id="l4-3"><span class="h3-num">4.3</span>本机复现：六种编译设置</h3>
+      <p>把文中的例子精简成可直接运行的程序（只把线程打印换成 main / background），用 Swift 6.4 工具链分别编译：</p>
+      <figure class="fig" id="fig-l-run">
+        <div class="fig-head"><div><div class="fig-tag">Fig. S1 · 实测</div><div class="fig-title">同一段代码，performAsync 跑在哪</div></div>
+          <div class="controls"><div class="tabs" role="tablist"><button class="tab" data-key="a" type="button">A 默认</button><button class="tab" data-key="b" type="button">B 新名</button><button class="tab" data-key="c" type="button">C 旧名</button><button class="tab" data-key="d" type="button">D 默认 MainActor</button><button class="tab" data-key="e" type="button">E @concurrent</button><button class="tab" data-key="f" type="button">F Swift 5</button></div></div></div>
+        <div class="fig-body">
+          <div class="cmd"><span>$</span><code data-role="cmd"></code></div>
+          <table class="tl"><thead><tr><th>步骤</th><th>线程</th><th>说明</th></tr></thead><tbody></tbody></table>
+          <div class="out" data-role="out" aria-label="程序输出"></div>
+          <p class="narr wj-narr" aria-live="polite"></p>
+        </div>
+        <figcaption class="fig-cap">每个标签都是本机真实编译运行的结果（Apple Swift 6.4，macOS）。<b>C</b> 用的是文章里的特性名 <code>AsyncCallerExecution</code>：编译器既不报错也不警告，但行为和 A 完全一样。</figcaption>
+      </figure>
+    </section>
+
+    <section class="sec" id="l5"><div class="sec-h2"><span class="sec-num">05</span><h2>文章发表之后的变化</h2></div>
+      <p>文章写于 Swift 6.2 正式发布之前，作者当时用的是 main 分支的开发版工具链。下面几处和最终版本不同：</p>
+      <div class="table-wrap"><table><thead><tr><th>文章中</th><th>最终 / 现在</th></tr></thead><tbody>
+        <tr><td>特性名 <code>AsyncCallerExecution</code></td><td>改名为 <code>NonisolatedNonsendingByDefault</code>。<strong>旧名不再识别，而且被静默忽略</strong>（见 Fig. S1 的 C）。抄旧文章的配置时要特别注意。</td></tr>
+        <tr><td>“提案里描述了退出继承的方式，但工具链里还没有”</td><td>已落地：<code>@concurrent</code> 让函数总在后台运行（Fig. S1 的 E）；<code>nonisolated(nonsending)</code> 显式表示“跟随调用方”。</td></tr>
+        <tr><td>默认隔离只能用编译器参数 / SwiftPM 设置</td><td>Xcode 26 提供 Default Actor Isolation 设置，新 App 项目默认 MainActor。</td></tr>
+        <tr><td>SE-0461 需要单独开启</td><td>Xcode 26 的 Approachable Concurrency 设置一次性包含它，见 <a href="#fig-m-settings">迁移到 Swift 6 · Fig. M1</a>。</td></tr>
+      </tbody></table></div>
+<div class="code"><span class="lang">swift</span><pre><code class="w-hl">class NotSendable {
+    // 跟随调用方（开启 NonisolatedNonsendingByDefault 后的默认行为，也可以显式写出）
+    nonisolated(nonsending) func performAsync() async { /* ... */ }
+
+    // 总是切到后台并发线程池
+    @concurrent func performHeavyWork() async { /* ... */ }
+}</code></pre></div>
+    </section>
+
+    <section class="sec" id="l6"><div class="sec-h2"><span class="sec-num">06</span><h2>别和 Task {} 继承混为一谈</h2></div>
+      <p>文中那句 <em>“the async task does not inherit the caller’s actor isolation”</em> 里的 “async task” 指的是 <strong><code>performAsync()</code> 这个 async 方法</strong>，不是 <code>Task { }</code>。两件事要分开看：</p>
+      <div class="table-wrap"><table><thead><tr><th></th><th>旧语义</th><th>开启 SE-0461</th></tr></thead><tbody>
+        <tr><td>在 <code>@MainActor</code> 上下文中创建的 <code>Task { }</code> 闭包本体</td><td class="ok">主线程</td><td class="ok">主线程</td></tr>
+        <tr><td>在 <code>@MainActor</code> 上下文中 <code>await</code> 的 nonisolated async 函数</td><td class="warn">后台线程</td><td class="ok">主线程</td></tr>
+      </tbody></table></div>
+      <p>完整实验和三个限定条件见指南 <a href="#s7-3">§7.3 Task</a> 末尾的“实验”一节。</p>
+    </section>
+
+    <section class="sec" id="l7"><div class="sec-h2"><span class="sec-num">07</span><h2>延伸阅读</h2></div>
+      <ul>
+        <li><a href="https://github.com/swiftlang/swift-evolution/blob/main/visions/approachable-concurrency.md" target="_blank" rel="noopener">愿景文档：Improving the approachability of data-race safety</a></li>
+        <li><a href="https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md" target="_blank" rel="noopener">SE-0461 · Run nonisolated async functions on the caller’s actor by default</a></li>
+        <li><a href="https://github.com/swiftlang/swift-evolution/blob/main/proposals/0466-control-default-actor-isolation.md" target="_blank" rel="noopener">SE-0466 · Control default actor isolation inference</a></li>
+        <li><a href="https://github.com/swiftlang/swift/tree/release/6.2" target="_blank" rel="noopener">swiftlang/swift 的 release/6.2 分支</a></li>
+        <li>本站：<a href="#wwdc25-268">WWDC25 · 268 拥抱 Swift 并发</a> · <a href="#swift6-migration">迁移到 Swift 6</a> · <a href="#s9">§9 Swift 6 / 6.2</a></li>
+      </ul>
     </section>
     </div>
   </main>
@@ -2419,9 +2906,207 @@ func scaleAndDisplay(imageName: String) async {
     initTabs(fig, show);
   }
 
+  /* ═════════ Swift 6 migration page ═════════ */
+  /* Fig. M1 — build settings for each route */
+  function initMigSettings() {
+    const fig = $('#fig-m-settings'); if (!fig) return;
+    const narr = $('.wj-narr', fig), featsEl = $('[data-k="feats"] .v', fig);
+    const ALL = ['GlobalConcurrency', 'InferSendableFromCaptures', 'DisableOutwardActorInference', 'GlobalActorIsolatedTypesUsability', 'NonisolatedNonsendingByDefault', 'InferIsolatedConformances'];
+    const APPROACHABLE = ALL.slice(1);
+    const STEPS = {
+      a1: { lang: 'Swift 5', strict: 'Minimal', approach: 'No', iso: 'nonisolated', feats: ['GlobalConcurrency'], hot: ['feats'],
+            narr: '留在 Swift 5 模式，一次只开一个 Upcoming Feature（顺序不限），修完它引出的问题再开下一个。' },
+      a2: { lang: 'Swift 5', strict: 'Complete', approach: 'No', iso: 'nonisolated', feats: ALL, hot: ['strict'],
+            narr: '特性都开完后，把 Strict Concurrency Checking 设为 Complete：得到 Swift 6 模式的全部诊断，但仍是警告，项目照常编译。' },
+      b:  { lang: 'Swift 5', strict: 'Minimal', approach: 'Yes', iso: 'MainActor', feats: APPROACHABLE, hot: ['approach', 'iso'],
+            narr: 'Xcode 26 新项目的默认值：Approachable Concurrency 一次打开一组特性，Default Actor Isolation 让代码默认在主 actor 上。' },
+      met: { lang: 'Swift 5', strict: 'Complete', approach: '原文未说明', iso: 'MainActor', feats: null, hot: ['strict', 'iso'], dim: ['approach', 'feats'],
+            narr: 'TheMet 的做法：先开 Complete 检查暴露问题，再把 Default Actor Isolation 改成 MainActor，一次消掉大部分警告。' },
+    };
+    function show(key) {
+      const st = STEPS[key];
+      for (const row of $$('.xs-row', fig)) {
+        const k = row.dataset.k;
+        row.classList.toggle('hot', st.hot.includes(k));
+        row.classList.toggle('dim', !!st.dim?.includes(k));
+        if (k !== 'feats') $('.v', row).textContent = st[k];
+      }
+      featsEl.replaceChildren(...(st.feats === null
+        ? [h('span', {}, '原文未说明')]
+        : ALL.map(f => h('code', { class: st.feats.includes(f) ? 'on' : '' }, f))));
+      narr.textContent = st.narr;
+    }
+    initTabs(fig, show);
+  }
+
+  /* Fig. M2 — diagnostics → fixes */
+  function initMigDiag() {
+    const fig = $('#fig-m-diag'); if (!fig) return;
+    const list = $('.md-list', fig), pane = $('.md-pane', fig);
+    const DIAG = [
+      { sev: 'warn', file: 'ContentView.swift', msg: "Sending 'self.store' risks causing data races…",
+        why: 'ContentView 在 MainActor 上，<code>await store.fetchObjects(for:)</code> 把 <code>self.store</code> 送进了非隔离的 async 函数，也就是另一个隔离域。修法不是给 <code>TheMetStore</code> 手写 <code>@MainActor</code>，而是在 Build Settings 里把 Default Actor Isolation 设为 MainActor。',
+        before: `// TheMetStore 默认非隔离
+class TheMetStore {
+    var objects: [Object] = []
+    func fetchObjects(for queryTerm: String) async throws { /* ... */ }
+}
+
+// ContentView（MainActor）
+.task {
+    // ▲ 把 self.store 送进另一个隔离域
+    try? await store.fetchObjects(for: query)
+}`,
+        after: `// Build Settings:
+//   Default Actor Isolation = MainActor
+
+// 整个模块默认隔离到 MainActor，无需手写
+class TheMetStore {
+    var objects: [Object] = []
+    func fetchObjects(for queryTerm: String) async throws { /* ... */ }
+}` },
+      { sev: 'warn', file: 'TheMetStore.swift', msg: "Capture of 'self' with non-sendable type 'TheMetStore' in a '@Sendable' closure…",
+        why: '<code>MainActor.run</code> 的闭包是 <code>@Sendable</code> 的，却捕获了非 Sendable 的 <code>TheMetStore</code>（经由隐式的 <code>self.objects</code>）。默认隔离改成 MainActor 后，<code>fetchObjects</code> 本身就在主线程上，这层包装可以直接删除。',
+        before: `func fetchObjects(for queryTerm: String) async throws {
+    // ...
+    if let object = try await service.getObject(from: objectID) {
+        // ▲ @Sendable 闭包捕获了 self
+        await MainActor.run {
+            objects.append(object)
+        }
+    }
+}`,
+        after: `func fetchObjects(for queryTerm: String) async throws {
+    // ...
+    if let object = try await service.getObject(from: objectID) {
+        objects.append(object)   // 已在 MainActor 上
+    }
+}` },
+      { sev: 'err', file: 'Object.swift', msg: "Conformance of 'Object' to protocol 'Encodable' crosses into main actor-isolated code and can cause data races",
+        why: '默认隔离改成 MainActor 后，<code>Object</code> 和 <code>ObjectIDs</code> 也被隔离到 MainActor，但 <code>Codable</code> 的要求是非隔离的，于是还有一条配套错误：<em>“Main actor-isolated instance method \'encode(to:)\' cannot satisfy nonisolated requirement”</em>。采用 Xcode 的第一个 Fix-it，把遵循隔离到 MainActor；另一个 Fix-it <code>@preconcurrency</code> 会把数据竞争变成运行时错误，没有采用。',
+        before: `// ● 遵循跨入 main actor 隔离代码
+struct Object: Codable, Hashable {
+    let objectID: Int
+    let title: String
+    // ...
+}
+
+struct ObjectIDs: Codable {
+    let total: Int
+    let objectIDs: [Int]
+}`,
+        after: `struct Object: @MainActor Codable, Hashable {
+    let objectID: Int
+    let title: String
+    // ...
+}
+
+struct ObjectIDs: @MainActor Codable {
+    let total: Int
+    let objectIDs: [Int]
+}` },
+    ];
+    const codeBox = (cls, label, src) => h('div', { class: `code ${cls}` }, h('span', { class: 'lang' }, label), h('pre', {}, h('code', { html: hl(src) })));
+    const items = DIAG.map((d, i) => {
+      const b = h('button', { class: 'md-item', type: 'button', 'data-sev': d.sev, 'aria-pressed': 'false' }, h('small', {}, d.file), d.msg);
+      b.addEventListener('click', () => select(i));
+      list.append(b);
+      return b;
+    });
+    function select(i) {
+      const d = DIAG[i];
+      items.forEach((b, j) => b.setAttribute('aria-pressed', String(j === i)));
+      items[i].classList.add('fixed');
+      pane.replaceChildren(
+        h('p', { class: 'md-why', html: d.why }),
+        h('div', { class: 'md-diff' }, codeBox('before', '修改前', d.before), codeBox('after', '修改后', d.after)));
+      pane.classList.remove('swap'); void pane.offsetWidth; if (!RM) pane.classList.add('swap');
+    }
+    $('[data-act="fixall"]', fig).addEventListener('click', () => items.forEach(b => b.classList.add('fixed')));
+    select(0);
+  }
+
+  /* Fig. M3 — which thread each method runs on */
+  function initMigThreads() {
+    const fig = $('#fig-m-threads'); if (!fig) return;
+    const tbody = $('.tl tbody', fig), narr = $('.wj-narr', fig);
+    const LABEL = { main: '主线程', bg: '后台线程', block: '主线程 · 阻塞 UI', na: '—' };
+    const ROWS = ['ContentView .task', 'TheMetStore.fetchObjects', 'TheMetService.getObjectIDs', 'TheMetService.getObject', 'URLSession.data', 'SlowProcess.doSomething', 'objects.append'];
+    // [thread, note] per row
+    const STAGES = {
+      start: { rows: [['main'], ['bg', '非隔离 async 函数'], ['bg'], ['bg'], ['bg'], ['na', '尚未添加'], ['main', '经由 await MainActor.run']],
+               narr: '起始项目：Store 和 Service 的方法都在后台线程上，只有更新 objects 时用 MainActor.run 切回主线程。' },
+      main:  { rows: [['main'], ['main', '默认 MainActor'], ['main'], ['main'], ['bg', '库在内部卸载'], ['na', '尚未添加'], ['main', '删掉了 MainActor.run']],
+               narr: '默认隔离设为 MainActor 后，自己的代码全部在主线程上，只有 URLSession 的网络请求在后台。对这个 App 正合适。' },
+      slow:  { rows: [['main'], ['main'], ['main'], ['main'], ['bg'], ['block', '继承了 MainActor 隔离'], ['main']],
+               narr: '加入 SlowProcess：它同样被默认隔离到 MainActor，doSomething 在主线程上执行，耗时期间可能卡住 UI。' },
+      conc:  { rows: [['main'], ['main'], ['main'], ['main', '调用前后都在主线程'], ['bg'], ['bg', 'nonisolated + @concurrent'], ['main']],
+               narr: 'SlowProcess 标为 nonisolated、doSomething 标为 @concurrent 后，它总在后台线程上运行；getObject 在调用前后仍在主线程。' },
+    };
+    const trs = ROWS.map(name => {
+      const chip = h('span', { class: 'th-chip' }), note = h('span', { class: 'tl-note' });
+      const tr = h('tr', {}, h('td', {}, name), h('td', {}, chip), h('td', {}, note));
+      tbody.append(tr);
+      return { tr, chip, note };
+    });
+    function show(key) {
+      STAGES[key].rows.forEach(([t, n = ''], i) => {
+        const { tr, chip, note } = trs[i];
+        if (chip.dataset.t !== t) { chip.classList.remove('flip'); void chip.offsetWidth; if (!RM) chip.classList.add('flip'); }
+        chip.dataset.t = t; chip.textContent = LABEL[t];
+        note.textContent = n;
+        tr.classList.toggle('na', t === 'na');
+      });
+      narr.textContent = STAGES[key].narr;
+    }
+    initTabs(fig, show);
+  }
+
+  /* ═════════ SwiftLee · Swift 6.2 page ═════════ */
+  /* Fig. S1 — the article's example under six compiler settings (measured with Swift 6.4) */
+  function initSlRun() {
+    const fig = $('#fig-l-run'); if (!fig) return;
+    const tbody = $('.tl tbody', fig), cmd = $('[data-role="cmd"]', fig), out = $('[data-role="out"]', fig), narr = $('.wj-narr', fig);
+    const LABEL = { main: '主线程', bg: '后台线程' };
+    const STEPS = ['demonstrate() 开始', 'notSendable.performAsync()', 'demonstrate() 恢复'];
+    const BASE = 'swiftc -swift-version 6 -parse-as-library';
+    const RUNS = {
+      a: { cmd: BASE, t: ['main', 'bg', 'main'], note: ['', '隐式 nonisolated，旧语义切到全局执行器', 'await 返回后回到 MainActor'],
+           narr: '文章里的“旧情况”：performAsync 跑在后台线程。Swift 6 语言模式本身并不会改变这一点。' },
+      b: { cmd: `${BASE} -enable-upcoming-feature NonisolatedNonsendingByDefault`, t: ['main', 'main', 'main'], note: ['', '留在调用方 MainActor 上', ''],
+           narr: '文章里的“新情况”：开启 SE-0461（最终名称）后，nonisolated async 函数继承调用方的 actor，全程在主线程。' },
+      c: { cmd: `${BASE} -enable-upcoming-feature AsyncCallerExecution`, t: ['main', 'bg', 'main'], note: ['', '旧名被静默忽略，等同 A', ''],
+           narr: '文章当时的特性名。现在的编译器不认识它，却既不报错也不警告，行为和没开一样。照抄旧文章配置时最容易踩这个坑。' },
+      d: { cmd: `${BASE} -default-isolation MainActor`, t: ['main', 'main', 'main'], note: ['', 'NotSendable 被推断为 @MainActor', ''],
+           narr: 'SE-0466：模块默认隔离为 MainActor 后，NotSendable 连同 performAsync 都被推断为 @MainActor，与 SE-0461 无关也在主线程。' },
+      e: { cmd: `${BASE} -enable-upcoming-feature NonisolatedNonsendingByDefault   # performAsync 加 @concurrent`, t: ['main', 'bg', 'main'], note: ['', '@concurrent：总是切到后台', ''],
+           narr: '在 B 的基础上给 performAsync 加 @concurrent：显式要求离开调用方 actor。这就是文章说的“退出继承的方式”的最终形态。' },
+      f: { cmd: 'swiftc -swift-version 5 -parse-as-library', t: ['main', 'bg', 'main'], note: ['', '旧语义', ''],
+           narr: 'Swift 5 语言模式下结果和 A 相同：nonisolated async 函数在哪运行，取决于 SE-0461 是否开启，而不是语言模式。' },
+    };
+    const trs = STEPS.map(name => {
+      const chip = h('span', { class: 'th-chip' }), note = h('span', { class: 'tl-note' });
+      tbody.append(h('tr', {}, h('td', {}, name), h('td', {}, chip), h('td', {}, note)));
+      return { chip, note };
+    });
+    const OUT = ['  start         -> ', '  performAsync  -> ', '  resume        -> '];
+    function show(key) {
+      const r = RUNS[key];
+      cmd.textContent = r.cmd;
+      r.t.forEach((t, i) => {
+        const { chip, note } = trs[i];
+        if (chip.dataset.t !== t) { chip.classList.remove('flip'); void chip.offsetWidth; if (!RM) chip.classList.add('flip'); }
+        chip.dataset.t = t; chip.textContent = LABEL[t]; note.textContent = r.note[i];
+      });
+      out.innerHTML = '$ ./demo\n' + r.t.map((t, i) => `${OUT[i]}<span class="${t === 'main' ? 'm' : 'b'}">${t === 'main' ? 'main' : 'background'}</span>`).join('\n');
+      narr.textContent = r.narr;
+    }
+    initTabs(fig, show);
+  }
+
   /* ───────── boot ───────── */
   initChrome();
-  for (const init of [initRunLoop, initOrdering, initBlocking, initPools, initStructured, initActor, initWwdcCode, initWwdcJourney, initWwdcInterleave]) {
+  for (const init of [initRunLoop, initOrdering, initBlocking, initPools, initStructured, initActor, initWwdcCode, initWwdcJourney, initWwdcInterleave, initMigSettings, initMigDiag, initMigThreads, initSlRun]) {
     try { init(); } catch (err) { console.error(init.name, err); }
   }
 })();
