@@ -1,6 +1,6 @@
 # Swift / SwiftUI 多任务与并发全景指南
 
-MainActor、DispatchQueue、RunLoop、Task、GCD、OperationQueue、actor 等概念的区别与调度时机，附交互动画、三篇 Swift 6 / 6.2 并发资料的阅读笔记，以及一个可运行的 iOS 演示工程。
+MainActor、DispatchQueue、RunLoop、Task、GCD、OperationQueue、actor 等概念的区别与调度时机，附交互动画、四篇 Swift 并发资料（两场 WWDC 讲座、两篇文章）的阅读笔记，以及一个可运行的 iOS 演示工程。
 
 ## 在线查看
 
@@ -8,14 +8,17 @@ MainActor、DispatchQueue、RunLoop、Task、GCD、OperationQueue、actor 等概
 
 指南是一个单文件网页 [`index.html`](index.html)，通过 GitHub Pages 发布。在 GitHub 上直接点开 `index.html` 只会看到源码，不会渲染页面，请使用上面的链接。
 
-网页分四个页面，用侧栏顶部的切换器切换，每个页面都有自己的地址：
+网页分五个页面，用侧栏顶部的切换器切换，每个页面都有自己的地址：
 
 | 页面 | 地址 | 内容 |
 |---|---|---|
 | 并发全景指南 | [`#guide`](https://jeffery812.github.io/MainActor/#guide) | 主体指南，见下文 |
 | WWDC25 · 268 拥抱 Swift 并发 | [`#wwdc25-268`](https://jeffery812.github.io/MainActor/#wwdc25-268) | [Embrace Swift concurrency](https://developer.apple.com/videos/play/wwdc2025/268/) 视频笔记：从单线程到异步、`@concurrent`、Sendable、actor 的四个阶段，推荐的构建设置。3 个交互动画 |
+| WWDC23 · 10170 结构化并发进阶 | [`#wwdc23-10170`](https://jeffery812.github.io/MainActor/#wwdc23-10170) | [Beyond the basics of structured concurrency](https://developer.apple.com/videos/play/wwdc2023/10170/) 视频笔记：任务树带来的自动取消、优先级传播、task-local 值，任务组限流与 `withDiscardingTaskGroup`，服务端日志与分布式追踪。3 个交互动画 |
 | 迁移到 Swift 6 | [`#swift6-migration`](https://jeffery812.github.io/MainActor/#swift6-migration) | Kodeco 教程 [Migrating to Swift 6](https://www.kodeco.com/48297451-migrating-to-swift-6-tutorial) 要点：隔离域、两条迁移路线、逐条消除诊断、隔离的协议遵循。3 个交互动画 |
 | Swift 6.2 并发初探 | [`#swift62-changes`](https://jeffery812.github.io/MainActor/#swift62-changes) | SwiftLee 文章 [Swift 6.2 concurrency changes](https://www.avanderlee.com/concurrency/swift-6-2-concurrency-changes/) 要点：SE-0466、SE-0461，文中例子在六种编译设置下的本机实测 |
+
+另有一个单独的网页 [`MainActor.html`](MainActor.html)：演示工程逐页导读，👉 **<https://jeffery812.github.io/MainActor/MainActor.html>**。侧栏切换器底部的「演示工程导读 ↗」也链接到它，详见下文[演示工程](#演示工程)。
 
 并发全景指南的内容：
 
@@ -25,7 +28,7 @@ MainActor、DispatchQueue、RunLoop、Task、GCD、OperationQueue、actor 等概
 - 在 iPhone 17 Pro 模拟器上的实测数据
 - `Task {}` 闭包与 nonisolated async 函数隔离继承的对比实验（§7.3）
 
-WWDC 和 Kodeco 两页的示例代码是根据原文描述重建的示意，页面上已注明；SwiftLee 页引用的是原文代码；视频 transcript 保存在 [`wwdc2025-268.txt`](wwdc2025-268.txt)。
+两个 WWDC 页和 Kodeco 页的示例代码是根据原文描述重建的示意，页面上已注明；SwiftLee 页引用的是原文代码；视频 transcript 保存在 [`wwdc2025-268.txt`](wwdc2025-268.txt) 和 [`wwdc2023-10170.txt`](wwdc2023-10170.txt)。
 
 支持明暗主题切换和手机浏览。
 
@@ -68,3 +71,12 @@ GitHub Pages 会把根目录的 `index.html` 作为首页。之后每次推送�
 | TimelineView | `MainActor/Demos/TimelineViewDemo.swift` |
 
 工程开启了 *Default Actor Isolation = MainActor* 与 *Approachable Concurrency*，`SWIFT_VERSION` 为 5.0（Swift 6.2 编译器，未启用 Swift 6 语言模式）。用 Xcode 打开工程，选择 iOS 模拟器运行即可。
+
+### 逐页导读
+
+[`MainActor.html`](MainActor.html)（在线：<https://jeffery812.github.io/MainActor/MainActor.html>）解释每个演示**为什么这样写**：
+
+- 编译设置如何决定代码默认在哪个线程上运行，以及满屏的 `nonisolated`、反复出现的 `let console = console` 从何而来
+- 13 个演示逐一拆解：看什么、控制变量是什么、关键代码和看似多余的写法为什么必不可少
+- 日志系统 `Console` / `LogBuffer` 深读：`Sendable`、`nonisolated let`、`Mutex`、`ContinuousClock`，以及 Mutex 与主线程的四个追问（为什么不需要 `await`、主线程能否用锁、持锁太久怎么办、调用方不知道里面有锁怎么办）
+- 4 个交互示意：阻塞 vs 挂起、3 个线程同时写日志（有无 Mutex）、三种时钟测时长（`Date` / `ContinuousClock` / `SuspendingClock`）、主线程等锁时的掉帧时间线

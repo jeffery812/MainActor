@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 个演示，为什么这样写 · MainActor 演示工程导读</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0c0e0b;
+  --ink-2:#13160f;
+  --ink-3:#1b1f17;
+  --rule:#2a2f24;
+  --paper:#ebe6d6;
+  --paper-dim:#a9a593;
+  --paper-faint:#6d6b5e;
+  --main:#6ee28f;          /* 主线程：和 App 里的绿色徽章同义 */
+  --main-deep:#1f4a2c;
+  --bg:#ff9d3c;            /* 后台线程：和 App 里的橙色徽章同义 */
+  --bg-deep:#4f2e0d;
+  --warn:#ff5c4d;
+  --code:#d9d3bd;
+  --kw:#ff9d3c;
+  --attr:#6ee28f;
+  --str:#e8c872;
+  --num:#9bc8ff;
+  --com:#6d6b5e;
+  --serif:"Noto Serif SC", "Songti SC", serif;
+  --sans:"Noto Sans SC", "PingFang SC", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --display:"Bricolage Grotesque", var(--sans);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{
+  margin:0;background:var(--ink);color:var(--paper);
+  font:16px/1.85 var(--sans);
+  -webkit-font-smoothing:antialiased;
+}
+/* 方格纸 + 颗粒：像一张示波器记录纸 */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(var(--rule) 1px, transparent 1px),
+    linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+  background-size:48px 48px;
+  opacity:.28;
+  mask-image:radial-gradient(ellipse at 30% 0%, #000 30%, transparent 85%);
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:100;opacity:.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+a{color:inherit}
+code,kbd{font-family:var(--mono);font-size:.86em}
+:not(pre)>code{
+  background:var(--ink-3);border:1px solid var(--rule);
+  padding:.05em .4em;border-radius:3px;color:var(--code);white-space:nowrap;
+}
+
+/* ---------- 布局 ---------- */
+.shell{position:relative;z-index:1;display:grid;grid-template-columns:280px minmax(0,1fr);max-width:1360px;margin:0 auto}
+.rail{
+  position:sticky;top:0;height:100vh;overflow:auto;
+  border-right:1px solid var(--rule);padding:28px 0 40px;
+  background:linear-gradient(180deg,rgba(12,14,11,.96),rgba(12,14,11,.85));
+  backdrop-filter:blur(6px);
+}
+.rail h2{
+  font:700 11px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--paper-faint);margin:0 24px 14px;
+}
+.rail a{
+  display:grid;grid-template-columns:30px 44px 1fr;gap:8px;align-items:center;
+  padding:6px 24px;text-decoration:none;font:500 13px/1.4 var(--sans);color:var(--paper-dim);
+  border-left:2px solid transparent;transition:background .2s,color .2s,border-color .2s;
+}
+.rail a:hover{background:var(--ink-2);color:var(--paper)}
+.rail a.on{color:var(--paper);border-left-color:var(--main);background:var(--ink-2)}
+.rail .idx{font:500 11px/1 var(--mono);color:var(--paper-faint)}
+.rail .sep{height:1px;background:var(--rule);margin:14px 24px}
+.rail .legend{margin:18px 24px 0;font:12px/1.7 var(--sans);color:var(--paper-faint)}
+
+.badge{
+  display:inline-flex;justify-content:center;align-items:center;min-width:44px;
+  font:700 10.5px/1 var(--mono);padding:3px 6px;border-radius:99px;color:#0c0e0b;letter-spacing:.02em;
+}
+.b-main{background:var(--main)}
+.b-bg{background:var(--bg)}
+.b-mix{background:linear-gradient(90deg,var(--main) 0 50%,var(--bg) 50% 100%)}
+.b-ui{background:var(--paper);}
+
+main{padding:0 clamp(20px,4vw,64px) 120px;min-width:0}
+
+/* ---------- 封面 ---------- */
+.hero{padding:72px 0 56px;border-bottom:1px solid var(--rule);position:relative}
+.hero .kicker{font:500 12px/1 var(--mono);letter-spacing:.2em;color:var(--main);text-transform:uppercase}
+.hero h1{
+  font:900 clamp(44px,7vw,92px)/1.02 var(--serif);margin:22px 0 0;letter-spacing:-.01em;
+}
+.hero h1 .num{font-family:var(--display);font-weight:800;color:var(--bg);font-size:1.12em;letter-spacing:-.04em}
+.hero h1 em{font-style:normal;color:transparent;-webkit-text-stroke:1.4px var(--paper)}
+.hero .lede{max-width:46em;color:var(--paper-dim);font-size:17px;margin:26px 0 0}
+.hero .lede b{color:var(--paper);font-weight:500}
+
+.scope{
+  margin-top:44px;border:1px solid var(--rule);background:var(--ink-2);border-radius:6px;overflow:hidden;
+  box-shadow:0 30px 80px -40px rgba(110,226,143,.25);
+}
+.scope-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.scope-head .t{font:500 12px/1 var(--mono);color:var(--paper-faint);letter-spacing:.08em}
+.scope-btns{display:flex;flex-wrap:wrap;gap:8px}
+.scope-btns button{
+  font:500 12px/1 var(--mono);color:var(--paper);background:var(--ink-3);border:1px solid var(--rule);
+  padding:8px 11px;border-radius:4px;cursor:pointer;transition:border-color .2s,transform .1s;
+}
+.scope-btns button:hover{border-color:var(--paper-dim)}
+.scope-btns button:active{transform:translateY(1px)}
+.scope-btns button i{font-style:normal;margin-right:6px}
+.scope-body{display:grid;grid-template-columns:120px 1fr;gap:0}
+.gearbox{display:grid;place-items:center;border-right:1px solid var(--rule);padding:18px 0;position:relative}
+.gear{width:58px;height:58px;color:var(--main);animation:spin 2s linear infinite;transition:color .2s}
+.gear.frozen{animation-play-state:paused;color:var(--warn)}
+.gearbox small{position:absolute;bottom:8px;font:10px/1 var(--mono);color:var(--paper-faint)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lanes{padding:12px 16px 14px;position:relative}
+.lane{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:center;height:30px}
+.lane .track{position:relative;height:14px;background:repeating-linear-gradient(90deg,var(--rule) 0 1px,transparent 1px 10%);border-top:1px dashed var(--rule)}
+.lane .blk{position:absolute;top:-1px;height:14px;border-radius:2px;transform-origin:left;transform:scaleX(0);transition:transform linear}
+.blk.m{background:var(--main)}
+.blk.b{background:var(--bg)}
+.blk.w{background:var(--warn)}
+.blk.s{background:transparent;border:1px dashed var(--main)}
+.playhead{position:absolute;top:8px;bottom:22px;width:1px;background:var(--paper);left:calc(16px + 62px);opacity:0}
+.scope-foot{padding:10px 16px;border-top:1px solid var(--rule);font:13px/1.6 var(--sans);color:var(--paper-dim);min-height:44px}
+.scope-foot b{color:var(--paper)}
+
+/* ---------- 章节 ---------- */
+section.part{padding:80px 0 0}
+.part-head{display:flex;align-items:baseline;gap:18px;border-bottom:1px solid var(--rule);padding-bottom:18px;margin-bottom:34px}
+.part-head .pn{font:800 64px/1 var(--display);color:var(--ink-3);-webkit-text-stroke:1px var(--paper-faint);letter-spacing:-.04em}
+.part-head h2{font:900 34px/1.2 var(--serif);margin:0}
+.part-head p{margin:0 0 0 auto;color:var(--paper-faint);font:12px/1 var(--mono);letter-spacing:.1em}
+
+h3{font:700 21px/1.4 var(--serif);margin:42px 0 12px}
+p{margin:0 0 14px}
+.dim{color:var(--paper-dim)}
+ul.why{list-style:none;padding:0;margin:8px 0 18px}
+ul.why li{position:relative;padding-left:22px;margin:0 0 10px}
+ul.why li::before{content:"→";position:absolute;left:0;color:var(--bg);font-family:var(--mono)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:18px 0 24px}
+.card{border:1px solid var(--rule);background:var(--ink-2);border-radius:6px;padding:18px 18px 14px}
+.card h4{margin:0 0 6px;font:700 15px/1.4 var(--sans)}
+.card h4 code{font-size:.92em}
+.card p{font-size:14px;color:var(--paper-dim);margin:0}
+
+pre{
+  margin:14px 0 20px;padding:16px 18px;background:#090b08;border:1px solid var(--rule);border-left:3px solid var(--main);
+  border-radius:4px;overflow:auto;font:13px/1.7 var(--mono);color:var(--code);tab-size:4;
+}
+pre.bad{border-left-color:var(--warn)}
+pre.bgc{border-left-color:var(--bg)}
+pre .k{color:var(--kw)}
+pre .a{color:var(--attr)}
+pre .s{color:var(--str)}
+pre .n{color:var(--num)}
+pre .c{color:var(--com);font-style:italic}
+pre .t{color:#cfe8c0}
+
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:600 11px/1.4 var(--mono);letter-spacing:.12em;color:var(--paper-faint);text-transform:uppercase}
+td:first-child{white-space:nowrap}
+
+/* ---------- 每个演示 = 一行日志 ---------- */
+article.demo{
+  margin:0 0 28px;border:1px solid var(--rule);border-radius:8px;background:rgba(19,22,15,.72);
+  overflow:hidden;opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1);
+}
+article.demo.in{opacity:1;transform:none}
+.logrow{
+  display:grid;grid-template-columns:56px 74px 54px 1fr;gap:10px;align-items:center;
+  padding:16px 22px;border-bottom:1px solid var(--rule);background:var(--ink-2);
+  font:500 12px/1 var(--mono);color:var(--paper-faint);
+}
+.logrow .ms{text-align:right}
+.logrow h3{margin:0;font:900 clamp(19px,2.4vw,25px)/1.25 var(--serif);color:var(--paper)}
+.demo-body{padding:22px 26px 10px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 18px;font:12px/1.5 var(--mono);color:var(--paper-faint);margin-bottom:16px}
+.meta span b{color:var(--paper-dim);font-weight:500}
+.btnlist{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 18px}
+.btnlist span{
+  font:12px/1.3 var(--sans);padding:5px 10px;border:1px solid var(--rule);border-radius:4px;background:var(--ink);
+  color:var(--paper-dim);
+}
+.btnlist span.x{border-color:#5a2a24;color:#ffb0a6}
+.btnlist span.v{border-color:var(--main-deep);color:#b8f1c8}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+.label{font:700 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;margin:6px 0 12px;display:flex;align-items:center;gap:8px}
+.label::after{content:"";flex:1;height:1px;background:var(--rule)}
+.label.see{color:var(--main)}
+.label.how{color:var(--bg)}
+.observe{font-size:15px;color:var(--paper-dim)}
+.observe b{color:var(--paper);font-weight:500}
+.note{
+  margin:4px 0 20px;padding:12px 16px;border:1px dashed var(--rule);border-radius:4px;font-size:14px;color:var(--paper-dim);
+}
+.note b{color:var(--bg);font-weight:500}
+
+.rule-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0;border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin-top:20px}
+.rule-grid div{padding:20px 22px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);background:var(--ink-2)}
+.rule-grid h4{margin:0 0 8px;font:700 15px/1.45 var(--sans);color:var(--paper)}
+.rule-grid h4 .n{font:800 13px/1 var(--display);color:var(--bg);margin-right:8px}
+.rule-grid p{margin:0;font-size:14px;color:var(--paper-dim)}
+
+/* ---------- 深读：数据流 ---------- */
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:18px 0 12px}
+.fnode{flex:1 1 150px;min-width:140px;border:1px solid var(--rule);border-radius:6px;padding:12px 12px 10px;background:var(--ink-2);display:flex;flex-direction:column;gap:4px}
+.fnode .tag{font:700 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.fnode b{font:500 13px/1.4 var(--mono);color:var(--paper)}
+.fnode small{font:12px/1.5 var(--sans);color:var(--paper-faint)}
+.fnode.any{border-top:3px solid var(--bg)} .fnode.any .tag{color:var(--bg)}
+.fnode.lock{border-top:3px solid var(--bg);background:repeating-linear-gradient(135deg,var(--ink-2) 0 8px,#181b12 8px 16px)} .fnode.lock .tag{color:var(--bg)}
+.fnode.main{border-top:3px solid var(--main)} .fnode.main .tag{color:var(--main)}
+.farrow{align-self:center;color:var(--paper-faint);font:16px/1 var(--mono)}
+.fwall{align-self:stretch;display:flex;align-items:center;padding:0 10px;border-left:2px dashed var(--warn);border-right:2px dashed var(--warn)}
+.fwall span{font:11px/1.5 var(--mono);color:var(--warn);text-align:center}
+@media (max-width:760px){.farrow{display:none}.fwall{flex-basis:100%;border:0;border-top:2px dashed var(--warn);border-bottom:2px dashed var(--warn);padding:6px;justify-content:center}.fwall br{display:none}}
+
+/* ---------- 深读：问答 ---------- */
+.qa{display:grid;grid-template-columns:minmax(0,1fr);margin:30px 0 8px;border-left:2px solid var(--rule);padding-left:22px}
+.qa .q{font:900 20px/1.4 var(--serif);margin-bottom:10px;display:flex;gap:12px;align-items:baseline}
+.qa .q span{font:800 13px/1 var(--display);color:var(--ink);background:var(--bg);padding:4px 7px;border-radius:3px;letter-spacing:.02em;flex:none}
+.qa .a>p{color:var(--paper)}
+
+/* ---------- 深读：交互模拟 ---------- */
+.sim{margin:26px 0 10px;border:1px solid var(--rule);border-radius:6px;background:var(--ink-2);overflow:hidden}
+.sim-head{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--rule)}
+.sim-head .t{font:500 12px/1 var(--mono);color:var(--paper-faint);letter-spacing:.08em}
+.sim-btns{display:flex;gap:8px;flex-wrap:wrap}
+.sim-btns button{font:500 12px/1 var(--mono);color:var(--paper-dim);background:var(--ink-3);border:1px solid var(--rule);padding:8px 11px;border-radius:4px;cursor:pointer}
+.sim-btns button.on{color:var(--paper);border-color:var(--paper-dim)}
+.sim-btns button.go{color:var(--ink);background:var(--main);border-color:var(--main);font-weight:700}
+.sim-btns button:disabled{opacity:.5;cursor:default}
+.sim-body{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);min-height:250px}
+.sim-ops{margin:0;padding:14px 16px;list-style:none;border-right:1px solid var(--rule);font:12.5px/1.5 var(--mono)}
+.sim-ops li{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;padding:4px 0;animation:pop .3s ease both}
+.sim-ops li.idle{display:block;color:var(--paper-faint);font-family:var(--sans);animation:none}
+.sim-ops li.wait span:last-child{color:var(--paper-faint)}
+.sim-ops li.bad span:last-child{color:#ffb0a6}
+.sim-ops li.good span:last-child{color:#b8f1c8}
+@keyframes pop{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.sim-state{padding:14px 16px;display:grid;grid-template-columns:62px 1fr;gap:12px 10px;align-content:start}
+.sim-k{font:700 10.5px/26px var(--mono);color:var(--paper-faint);letter-spacing:.1em;text-transform:uppercase}
+.slots{display:flex;flex-wrap:wrap;gap:5px}
+.slot{font:600 11px/1 var(--mono);padding:7px 7px;border-radius:3px;border:1px solid var(--rule);background:var(--ink);color:var(--paper-dim);animation:pop .3s ease both}
+.slot.old{opacity:.45}
+.slot.m{border-color:var(--main);color:var(--main)}
+.slot.b{border-color:var(--bg);color:var(--bg)}
+.slot.dup{border-color:var(--warn);color:var(--warn);background:#2a1310}
+.slot.lost{text-decoration:line-through;opacity:.5;border-style:dashed}
+.nextid{font:800 26px/26px var(--display);color:var(--paper)}
+.nextid.bad{color:var(--warn)}
+.lockst{font:500 12.5px/26px var(--mono);color:var(--paper-dim)}
+.sim-foot{padding:11px 16px;border-top:1px solid var(--rule);font:13.5px/1.6 var(--sans);color:var(--paper-dim);min-height:46px}
+.sim-foot b{color:var(--paper)}
+.sim-foot.ok b{color:var(--main)} .sim-foot.ko b{color:var(--warn)}
+@media (max-width:760px){.sim-body{grid-template-columns:1fr}.sim-ops{border-right:0;border-bottom:1px solid var(--rule)}}
+table.breaks td:first-child{white-space:normal;width:38%}
+
+/* ---------- 深读：三种时钟 ---------- */
+.clocks{margin:24px 0 12px;border:1px solid var(--rule);border-radius:6px;background:var(--ink-2);overflow:hidden}
+.clock-rows{padding:8px 16px}
+.crow{display:grid;grid-template-columns:170px 1fr auto;gap:14px;align-items:center;padding:12px 0;border-bottom:1px dashed var(--rule)}
+.crow:last-child{border-bottom:0}
+.crow code{background:none;border:0;padding:0;font-size:14px;color:var(--paper)}
+.crow .cdesc{font:13px/1.4 var(--sans);color:var(--paper-faint)}
+.crow .cval{font:800 26px/1 var(--display);color:var(--paper);min-width:150px;text-align:right;transition:color .3s}
+.crow .cval.bad{color:var(--warn)}
+.crow .cval.ok{color:var(--main)}
+.crow.flash .cval{animation:flash .5s ease}
+@keyframes flash{from{transform:scale(1.12)}to{transform:none}}
+@media (max-width:620px){.crow{grid-template-columns:1fr auto}.crow .cdesc{grid-column:1/-1;grid-row:2}}
+
+/* ---------- Q7：主线程等锁时间线 ---------- */
+.lt{margin:20px 0 22px;border:1px solid var(--rule);border-radius:6px;background:var(--ink-2);overflow:hidden}
+.lt-body{padding:14px 16px 10px}
+.lt-axis,.lt-lane{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center}
+.lt-lane{height:40px}
+.lt-scale{position:relative;height:16px;font:10.5px/1 var(--mono);color:var(--paper-faint)}
+.lt-scale i{position:absolute;font-style:normal;white-space:nowrap;transform:translateX(-50%)}
+.lt-scale i:first-child{transform:none}.lt-scale i:last-child{transform:translateX(-100%)}
+.lt-track{position:relative;height:22px;border-top:1px dashed var(--rule);background:repeating-linear-gradient(90deg,var(--rule) 0 1px,transparent 1px 16.67%)}
+.lt-blk{position:absolute;top:2px;height:16px;border-radius:2px;font:10px/16px var(--mono);color:var(--ink);padding:0 4px;white-space:nowrap;overflow:hidden;min-width:3px;transform-origin:left;animation:grow .5s ease both}
+@keyframes grow{from{transform:scaleX(0)}to{transform:none}}
+.lt-blk.lockheld{background:var(--bg);box-shadow:inset 0 0 0 1px #ffd2a3}
+.lt-blk.work{background:transparent;border:1px solid var(--bg);color:var(--bg)}
+.lt-blk.blocked{background:repeating-linear-gradient(135deg,var(--warn) 0 5px,#7a2a22 5px 10px);color:#fff}
+.lt-blk.skip{background:transparent;border:1px dashed var(--main);color:var(--main)}
+.lt-blk.mainwork{background:var(--main)}
+.lt-frame{position:absolute;top:-7px;width:9px;height:9px;border-radius:50%;transform:translateX(-50%);animation:pop .3s ease both}
+.lt-frame.ok{background:var(--main)}
+.lt-frame.miss{background:var(--warn);box-shadow:0 0 0 3px rgba(255,92,77,.25)}
+.lt-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0 64px;font:11.5px/1.4 var(--sans);color:var(--paper-faint)}
+.lt-legend .sw{display:inline-block;width:14px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.sw.lockheld{background:var(--bg)}.sw.work{border:1px solid var(--bg)}.sw.blocked{background:var(--warn)}
+.sw.frame{width:9px;border-radius:50%}.sw.frame.ok{background:var(--main)}.sw.frame.miss{background:var(--warn)}
+.lt-btns-on{}
+.lt .sim-btns button.on{color:var(--paper);border-color:var(--paper-dim);background:var(--ink)}
+
+footer{margin-top:90px;padding-top:24px;border-top:1px solid var(--rule);font:12px/1.8 var(--mono);color:var(--paper-faint)}
+
+@media (max-width:980px){
+  .shell{grid-template-columns:1fr}
+  .rail{display:none}
+  .cols{grid-template-columns:1fr;gap:6px}
+}
+@media (max-width:620px){
+  .logrow{grid-template-columns:44px 1fr;row-gap:10px}
+  .logrow .ms{display:none}
+  .logrow h3{grid-column:1/-1}
+  .scope-body{grid-template-columns:80px 1fr}
+  .part-head p{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .gear{animation:none}
+  article.demo{opacity:1;transform:none;transition:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="rail" aria-label="目录">
+  <h2>Console · 目录</h2>
+  <a href="#scaffold"><span class="idx">#00</span><span class="badge b-ui">base</span>先读懂脚手架</a>
+  <a href="#logging"><span class="idx">#00+</span><span class="badge b-mix">deep</span>LogBuffer 与 Console</a>
+  <a href="#mutex-main"><span class="idx">#00+</span><span class="badge b-main">lock</span>Mutex 与主线程</a>
+  <a href="#clock"><span class="idx">#00+</span><span class="badge b-ui">time</span>ContinuousClock</a>
+  <div class="sep"></div>
+  <a href="#d1"><span class="idx">#01</span><span class="badge b-mix">mix</span>执行时机</a>
+  <a href="#d2"><span class="idx">#02</span><span class="badge b-mix">mix</span>阻塞 vs 挂起</a>
+  <a href="#d3"><span class="idx">#03</span><span class="badge b-main">main</span>RunLoop Mode</a>
+  <a href="#d4"><span class="idx">#04</span><span class="badge b-mix">mix</span>Task 继承了什么</a>
+  <a href="#d5"><span class="idx">#05</span><span class="badge b-mix">mix</span>结构化并发</a>
+  <a href="#d6"><span class="idx">#06</span><span class="badge b-bg">T</span>actor 串行与重入</a>
+  <a href="#d7"><span class="idx">#07</span><span class="badge b-mix">mix</span>桥接旧 API</a>
+  <a href="#d8"><span class="idx">#08</span><span class="badge b-bg">T</span>GCD 工具箱</a>
+  <a href="#d9"><span class="idx">#09</span><span class="badge b-bg">T</span>OperationQueue</a>
+  <a href="#d10"><span class="idx">#10</span><span class="badge b-bg">T</span>数据竞争与锁</a>
+  <a href="#d11"><span class="idx">#11</span><span class="badge b-main">main</span>.task 与生命周期</a>
+  <a href="#d12"><span class="idx">#12</span><span class="badge b-mix">mix</span>AsyncSequence vs Combine</a>
+  <a href="#d13"><span class="idx">#13</span><span class="badge b-ui">UI</span>TimelineView</a>
+  <div class="sep"></div>
+  <a href="#rules"><span class="idx">#∑</span><span class="badge b-ui">sum</span>反复出现的写法</a>
+  <p class="legend">徽章沿用 App 日志的配色：<br>绿色 = 主线程，橙色 = 后台线程，<br>半绿半橙 = 两者都会出现。</p>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="kicker">MainActor.xcodeproj · 演示工程导读</div>
+  <h1><span class="num">13</span> 个演示，<br><em>为什么</em>这样写</h1>
+  <p class="lede">
+    演示工程里的每一页都是一个<b>对照实验</b>：同一件事换几种写法各跑一遍，日志记下代码实际运行在哪个线程、在什么时刻。
+    这份导读不重复概念本身（概念在 <a href="index.html#guide">并发全景指南</a> 里），只解释代码为什么这样组织：
+    哪个变量是被控制的，哪一行是关键，哪些看起来多余的写法其实必不可少。
+  </p>
+
+  <div class="scope" aria-label="交互示意：阻塞 vs 挂起">
+    <div class="scope-head">
+      <span class="t">先试一下 · 演示 #02 的缩略版</span>
+      <div class="scope-btns">
+        <button data-run="block"><i>❌</i>Thread.sleep(2)</button>
+        <button data-run="inherit"><i>❌</i>Task { spin(2) }</button>
+        <button data-run="concurrent"><i>✅</i>await @concurrent</button>
+        <button data-run="sleep"><i>✅</i>await Task.sleep(2)</button>
+      </div>
+    </div>
+    <div class="scope-body">
+      <div class="gearbox">
+        <svg class="gear" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3.3h-4l-.4 2.6a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1l.3 2.6h4l.4-2.6a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5L19.4 13ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" transform="translate(-1 0)"/></svg>
+        <small>主线程驱动</small>
+      </div>
+      <div class="lanes">
+        <div class="lane"><span class="badge b-main">main</span><div class="track" id="lane-main"></div></div>
+        <div class="lane"><span class="badge b-bg">T1</span><div class="track" id="lane-t1"></div></div>
+        <div class="lane"><span class="badge b-bg">T2</span><div class="track" id="lane-t2"></div></div>
+        <div class="playhead" id="playhead"></div>
+      </div>
+    </div>
+    <div class="scope-foot" id="scope-foot">点上面的按钮。齿轮代表 App 第 2 页那个由 <code>TimelineView(.animation)</code> 逐帧驱动的图标：主线程一被占住，它就停转。</div>
+  </div>
+</header>
+
+<!-- ====================================================== -->
+<section class="part" id="scaffold">
+  <div class="part-head"><span class="pn">00</span><h2>先读懂脚手架</h2><p>Support/ · build settings</p></div>
+
+  <p>13 个页面共用同一套基础设施。不先理解这几处，后面很多写法（满屏的 <code>nonisolated</code>、反复出现的 <code>let console = console</code>）都会显得莫名其妙。</p>
+
+  <h3>编译设置决定了"默认在哪儿跑"</h3>
+  <table>
+    <tr><th>设置</th><th>值</th><th>对代码的影响</th></tr>
+    <tr><td><code>SWIFT_DEFAULT_ACTOR_ISOLATION</code></td><td>MainActor</td><td>模块里没有标注的类型和函数都隐式是 <code>@MainActor</code>：所有 View、<code>Console</code>、<code>TickModel</code>、<code>CombineAsyncLab</code> 都在主线程。想让代码<b>不</b>在主线程，必须显式写 <code>nonisolated</code>。</td></tr>
+    <tr><td><code>SWIFT_APPROACHABLE_CONCURRENCY</code></td><td>YES</td><td>打开一组 upcoming feature，其中最关键的是 SE-0461：<code>nonisolated async</code> 函数默认变成 <code>nonisolated(nonsending)</code>，即<b>在调用方的 actor 上执行</b>。要真正切到后台，得写 <code>@concurrent</code>。</td></tr>
+    <tr><td><code>SWIFT_VERSION</code></td><td>5.0</td><td>用 Swift 6.2 编译器，但不启用 Swift 6 语言模式：并发问题多数是警告而非错误。所以 <code>@unchecked Sendable</code>、<code>assumeIsolated</code> 这类"告诉编译器我知道"的写法要格外小心，它们不会让代码变安全。</td></tr>
+  </table>
+  <p class="dim">这三行是理解整个工程的钥匙。演示 #02 里 <code>Task { 同步计算 }</code> 会卡 UI，<code>await nonsending 函数</code> 也会卡 UI，根本原因都在这张表里。</p>
+
+  <h3>Console：在"调用那一刻"记录线程</h3>
+<pre><code class="swift">@Observable
+final class Console {                       // 默认隔离 → @MainActor，因此隐式 Sendable
+    private(set) var entries: [LogEntry] = []
+    nonisolated let buffer = LogBuffer()     // Mutex 保护，任何线程可写
+
+    nonisolated func log(_ message: String) {
+        buffer.append(message)               // ← 同步读取 pthread_main_np / 线程号
+        Task { @MainActor [weak self] in self?.refresh() }   // UI 刷新另外排队
+    }
+}</code></pre>
+  <ul class="why">
+    <li><b><code>log</code> 必须是 <code>nonisolated</code> 的同步函数。</b>如果它是 <code>@MainActor</code>，后台代码调用时就得 <code>await</code>，切回主线程才执行，记下的线程永远是 main，实验也就没意义了。现在线程信息在调用方所在的线程上同步读取，看到的就是真实位置。</li>
+    <li><b>记录和显示分开。</b><code>LogBuffer</code> 用 <code>Mutex</code> 串行化 <code>append</code>，所以日志的序号顺序就是真实执行顺序；UI 刷新则异步排到 MainActor 上，晚一点也不影响顺序。</li>
+    <li><b>时间戳是相对 <code>clear()</code> 的。</b>每个实验先 <code>console.clear()</code>，于是"耗时""谁先谁后"可以直接读出来。</li>
+    <li><b>Console 本身是 MainActor 隔离的类。</b>全局 actor 隔离的类自动是 <code>Sendable</code>，所以它能被任何 <code>@Sendable</code> 闭包（<code>Task.detached</code>、GCD）捕获，这是后面所有实验能跨线程打日志的前提。</li>
+  </ul>
+  <p class="dim">LogBuffer 为什么必须是 Sendable、state 为什么包在 Mutex 里、buffer 为什么要 nonisolated，见下一节 <a href="#logging">#00+ 深读</a>。</p>
+
+  <h3>Work：三种"耗时"，各有用途</h3>
+  <div class="cards">
+    <div class="card"><h4><code>Work.spin(seconds:)</code></h4><p>CPU 忙等，占住当前线程并消耗 CPU。用来证明<b>代码跑在哪</b>：在主线程 spin，齿轮就停。#02、#06、#10 用它。</p></div>
+    <div class="card"><h4><code>Work.block(milliseconds:)</code></h4><p><code>usleep</code>：不耗 CPU，但线程被占住。GCD 看到线程阻塞会补新线程，于是 #08 的"线程爆炸"能复现出来；spin 是 CPU 密集，演示不出这一点。</p></div>
+    <div class="card"><h4><code>Task.sleep</code></h4><p>挂起而非阻塞，线程会被让出去。#02 的对照组，#05、#11 模拟网络请求。被取消时会抛错，所以也是"能否被取消"的探针。</p></div>
+  </div>
+  <p><code>Work.spinNonsending</code> 和 <code>Work.spinConcurrent</code> 函数体完全相同，只差一个属性，专门留给 #02 做对照。</p>
+
+  <h3>其余小零件</h3>
+  <ul class="why">
+    <li><b><code>DemoScreen</code> / <code>DemoButton</code></b>：上半屏是说明和按钮，下半屏是日志。13 页布局一致，读者只需要关注按钮之间的差别。</li>
+    <li><b><code>RunningCounter</code>、<code>ThreadSet</code></b>：<code>Mutex</code> 包着的 <code>Sendable</code> 小类，分别统计"同时运行数的峰值"和"用到过几个线程"。#08 用它们把并发度变成一个可以读的数字。</li>
+    <li><b>实验代码放在 <code>nonisolated enum</code> 命名空间里</b>（<code>GCDExperiments</code>、<code>FakeAPI</code>、<code>Bridges</code>、<code>Probe</code>……）。在默认 MainActor 隔离下，不加 <code>nonisolated</code> 的静态函数都属于主线程；把实验抽到非隔离命名空间，被测代码才不会被"默认值"悄悄绑在主线程上，也能从后台闭包里直接调用。</li>
+  </ul>
+
+  <div class="note"><b>反复出现的 <code>let console = console</code></b>：View 的方法里，闭包引用 <code>console</code> 实际捕获的是 <code>self</code>（一个 MainActor 隔离的 View）。在 <code>Task.detached</code>、<code>DispatchQueue.global().async</code> 这种 <code>@Sendable</code>、非隔离的闭包里访问 <code>self.console</code> 是跨隔离访问。先复制到局部常量，闭包就只捕获一个 Sendable 的 <code>Console</code> 引用。<code>blockMainThread()</code> 这种只在主线程同步执行的函数就没有这样写。</div>
+</section>
+
+<!-- ====================================================== -->
+<section class="part" id="logging">
+  <div class="part-head"><span class="pn">00+</span><h2>深读：LogBuffer 与 Console</h2><p>Support/Console.swift</p></div>
+
+  <p>13 个实验能成立，全靠日志说真话：<b>记下的线程就是代码真实运行的线程，日志的顺序就是真实的执行顺序。</b>做到这一点，需要两个类分工：</p>
+  <div class="cards">
+    <div class="card"><h4><code>LogBuffer</code> · 记录</h4><p>非隔离、Sendable、内部用 <code>Mutex</code> 加锁。任何线程都可以<b>同步</b>写入，写入顺序就是日志顺序。</p></div>
+    <div class="card"><h4><code>Console</code> · 显示</h4><p>MainActor 隔离、<code>@Observable</code>。持有一个 buffer，把它的快照复制给 SwiftUI。只有"入口" <code>log</code> 和 <code>buffer</code> 开放给非隔离代码。</p></div>
+  </div>
+
+  <h3>一条日志的旅程</h3>
+  <div class="flow" aria-label="log 调用的数据流">
+    <div class="fnode any"><span class="tag">任意线程</span><b>console.log("…")</b><small>nonisolated · 同步调用</small></div>
+    <div class="farrow">→</div>
+    <div class="fnode any"><span class="tag">任意线程 · 锁外</span><b>ThreadInfo.current()</b><small>pthread_main_np / 线程号</small></div>
+    <div class="farrow">→</div>
+    <div class="fnode lock"><span class="tag">任意线程 · 锁内</span><b>state.withLock { … }</b><small>算 elapsed · append · nextID += 1</small></div>
+    <div class="fwall"><span>隔离边界<br>只有 Sendable<br>的东西能过</span></div>
+    <div class="fnode main"><span class="tag">MainActor</span><b>Task { @MainActor } refresh()</b><small>entries = buffer.snapshot()</small></div>
+    <div class="farrow">→</div>
+    <div class="fnode main"><span class="tag">MainActor</span><b>SwiftUI List</b><small>@Observable 触发重绘</small></div>
+  </div>
+  <p class="dim">前三步都在调用方自己的线程上同步完成，<code>log</code> 返回时日志已经记下了；后两步异步排到主线程上，只负责显示，晚一点没关系。</p>
+
+  <!-- ---------- LogBuffer ---------- -->
+  <h3>LogBuffer 的实现</h3>
+<pre><code class="swift">nonisolated final class LogBuffer: Sendable {
+    private struct State: Sendable {
+        var entries: [LogEntry] = []
+        var nextID = 0
+        var start = ContinuousClock.now
+    }
+
+    private let state = Mutex(State())          // 所有可变状态都关在 Mutex 里
+
+    func append(_ message: String) {
+        let thread = ThreadInfo.current()      // ① 锁外：读当前线程（每个调用方自己的，不共享）
+        state.withLock { state in              // ② 锁内：三件事作为一个整体完成
+            state.entries.append(LogEntry(
+                id: state.nextID,
+                elapsed: state.start.duration(to: .now),
+                message: message,
+                isMainThread: thread.isMain,
+                threadID: thread.id
+            ))
+            state.nextID += 1
+        }
+    }
+
+    func snapshot() -> [LogEntry] { state.withLock { $0.entries } }   // 复制一份出去
+    func reset() { state.withLock { $0.entries.removeAll(); $0.start = .now } }
+}</code></pre>
+
+  <div class="qa">
+    <div class="q"><span>Q1</span>为什么要 <code>Sendable</code>？</div>
+    <div class="a">
+      <p><code>Sendable</code> 表示"这个值可以安全地在不同的并发域（线程 / actor / 任务）之间传递和共享"。LogBuffer 的整个工作就是被很多线程同时使用：</p>
+      <ul class="why">
+        <li><b>它被跨隔离共享。</b>同一个 buffer 对象由 MainActor 上的 <code>Console</code> 持有，又在 GCD 线程、协作线程池、actor 内部被调用 <code>append</code>。一个引用类型要在多个并发域之间共享，Swift 要求它是 Sendable，否则编译器无法保证没有数据竞争。</li>
+        <li><b>它是 <code>nonisolated let buffer</code> 的前提。</b>Console 是 MainActor 的类，想把它的某个存储属性标成 <code>nonisolated</code>（让非隔离代码直接读），编译器要求这个属性的类型是 Sendable。没有 Sendable，下面 Console 那一招就用不了。</li>
+        <li><b>这里是编译器验证过的 Sendable，不是 <code>@unchecked</code>。</b>一个 <code>final class</code> 要被自动认可为 Sendable，所有存储属性都得是不可变的 <code>let</code>，且类型本身 Sendable。LogBuffer 只有一个 <code>let state: Mutex&lt;State&gt;</code>，而 <code>Mutex</code> 本身是 Sendable 的，所以编译器能证明它安全。对比 #10 的 <code>LockedBox</code>：用 <code>NSLock</code> + <code>var _value</code>，编译器看不出锁和数据的关系，只能写 <code>@unchecked Sendable</code> 让人来担保。</li>
+        <li><b><code>LogEntry</code> 和 <code>State</code> 也是 Sendable。</b>条目在后台线程创建，最后通过 <code>snapshot()</code> 交给 MainActor，要跨越隔离边界，必须 Sendable。<code>LogEntry</code> 是只含值类型字段的 struct，天然满足。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q2</span>为什么 <code>nonisolated</code>？</div>
+    <div class="a">
+      <p>工程开了"默认 MainActor 隔离"。不写 <code>nonisolated</code>，LogBuffer 就是 <code>@MainActor</code> 的，后台线程调用 <code>append</code> 时必须 <code>await</code>、先切到主线程。那样一来，后台的同步代码（GCD 闭包、<code>concurrentPerform</code> 的循环体）根本没法调用，就算能调用，也是先排队再记录，顺序和时间都不准了。<code>nonisolated</code> 让它变回一个"谁都能同步调用"的普通类，线程安全由 Mutex 负责，而不是由 actor 负责。</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q3</span><code>state</code> 为什么要包在 <code>Mutex</code> 里？</div>
+    <div class="a">
+      <p>因为 <code>append</code> 会被多个线程<b>同时</b>调用。比如 #08 的 GCD 实验里，几个线程几乎同一时刻打日志。不加锁会出三类问题：</p>
+      <ul class="why">
+        <li><b>数组本身被写坏。</b><code>Array.append</code> 不是线程安全的：两个线程同时 append，可能同时触发扩容、写同一个槽位，结果是丢日志、内存损坏甚至崩溃。</li>
+        <li><b><code>nextID</code> 读改写丢失更新。</b><code>nextID += 1</code> 是"读、加一、写回"三步。两个线程同时读到 7，就会产生两条 id 都是 7 的日志。SwiftUI 的 <code>List</code> 用 <code>id</code> 区分行，id 重复时列表会显示错乱。这和 #10 "无保护"那一行是同一个 bug。</li>
+        <li><b>顺序和时间对不上。</b><code>elapsed</code> 在<b>锁内</b>计算，所以"先拿到锁的先记时间、先拿 id、先进数组"，三者顺序一致。如果把计时放在锁外，可能出现 id 小的条目时间反而更晚。</li>
+      </ul>
+      <p>反过来，<code>ThreadInfo.current()</code> 故意放在<b>锁外</b>：线程号是每个调用方自己的信息，不是共享状态，不需要保护；临界区越短，各线程等锁的时间越少。</p>
+    </div>
+  </div>
+
+  <!-- 交互：3 个线程同时 log -->
+  <div class="sim" aria-label="交互示意：3 个线程同时调用 log">
+    <div class="sim-head">
+      <span class="t">示意 · 3 个线程同时调用 log()</span>
+      <div class="sim-btns">
+        <button data-lock="1" class="on">🔒 有 Mutex</button>
+        <button data-lock="0">⚠️ 无 Mutex</button>
+        <button id="sim-run" class="go">▶ 运行</button>
+      </div>
+    </div>
+    <div class="sim-body">
+      <ol class="sim-ops" id="sim-ops"><li class="idle">点「运行」：main、T1、T2 在同一时刻调用 <code>append</code>。</li></ol>
+      <div class="sim-state">
+        <div class="sim-k">entries</div>
+        <div class="slots" id="sim-slots"></div>
+        <div class="sim-k">nextID</div>
+        <div class="nextid" id="sim-next">7</div>
+        <div class="sim-k">锁</div>
+        <div class="lockst" id="sim-lock">—</div>
+      </div>
+    </div>
+    <div class="sim-foot" id="sim-foot">已有 #5、#6 两条日志。期望结果：新增 #7、#8、#9，nextID 变为 10。</div>
+  </div>
+  <p class="dim">无 Mutex 的这次交错是人为编排的，用来说明问题；真实的竞争不可预测，有时看起来一切正常，有时直接崩溃，这也正是数据竞争难以调试的原因。</p>
+
+  <div class="qa">
+    <div class="q"><span>Q4</span><code>Mutex</code> 是什么？</div>
+    <div class="a">
+      <p><code>Mutex</code> 是 Swift 6 标准库 <code>Synchronization</code> 模块里的互斥锁（SE-0433，iOS 18 / macOS 15 起可用）。它和传统锁最大的不同是：<b>锁和它保护的数据绑在一起</b>。</p>
+<pre><code class="swift">import Synchronization
+
+let state = Mutex(State())                 // 数据被"装进"锁里
+state.withLock { state in                  // 只能在加锁的闭包里拿到 inout 访问权
+    state.nextID += 1
+}                                          // 闭包返回 = 自动解锁，不会忘记 unlock
+// state.nextID                            // ❌ 锁外根本访问不到数据</code></pre>
+      <div class="cards">
+        <div class="card"><h4>数据只能在锁内访问</h4><p>传统写法 <code>lock.lock(); value += 1; lock.unlock()</code> 中，锁和数据只是"约定"上有关系，忘记加锁也能编译。Mutex 把值包在里面，<code>withLock</code> 是唯一入口，"忘了加锁"这种错误写不出来。</p></div>
+        <div class="card"><h4>~Copyable：不能复制</h4><p>Mutex 是不可复制类型。复制一把锁会得到两把各管各的锁，等于没锁，编译器直接禁止。也因此它通常作为 <code>let</code> 存在 class 里（LogBuffer 就是 class），由所有线程共享同一个实例。</p></div>
+        <div class="card"><h4>本身是 Sendable</h4><p>Mutex 无条件是 Sendable，这正是包含它的 <code>final class</code> 能被编译器自动认可为 Sendable 的原因，不需要 <code>@unchecked</code>。</p></div>
+        <div class="card"><h4>同步、阻塞、不可重入</h4><p>拿不到锁的线程会<b>阻塞等待</b>（Apple 平台底层是 <code>os_unfair_lock</code>）。闭包是同步的，不能在里面 <code>await</code>；同一线程在锁内再次 <code>withLock</code> 同一把锁会出错（死锁或崩溃）。所以临界区要短，只做几行内存操作。</p></div>
+      </div>
+      <p>"阻塞"在 Swift Concurrency 里不是不允许吗？#08 说过 async 代码里不能长时间阻塞，但持有时间以纳秒计的短锁是可以接受的：等待者很快就能拿到锁，不会拖垮协作线程池。<code>append</code> 的锁内只有一次数组追加和一次加法，符合这个条件。</p>
+    </div>
+  </div>
+
+  <!-- ---------- Mutex 与主线程：Q5–Q8 ---------- -->
+  <h3 id="mutex-main">Mutex 与主线程：四个追问</h3>
+  <p class="dim">读到这里，自然会问：T2 等锁时为什么不用 <code>await</code>？主线程能不能用锁？有人持锁太久怎么办？调用方又怎么知道里面有锁？下面四个问题依次回答。</p>
+
+  <div class="qa">
+    <div class="q"><span>Q5</span>T1、T2 同时 <code>withLock</code>，T2 要等，为什么不需要 <code>await</code>？</div>
+    <div class="a">
+      <p>因为 T2 是<b>阻塞</b>在原地等，不是<b>挂起</b>，这正是 #02 讲的那组区别。<code>await</code> 是 Swift 用来标记"这里可能挂起、把线程让出去"的语法；<code>withLock</code> 是同步函数，从头到尾不让出线程，所以不需要、也不能写 <code>await</code>。</p>
+      <table>
+        <tr><th></th><th>Mutex（<code>withLock</code>）</th><th>actor（<code>await</code>）</th></tr>
+        <tr><td>等的方式</td><td><b>阻塞</b>：T2 的线程停在这一行，由系统挂起线程，T1 解锁后再唤醒它</td><td><b>挂起</b>：任务让出线程，线程去执行别的任务，轮到时再在某个线程上恢复</td></tr>
+        <tr><td>调用方写法</td><td>普通同步调用，看起来只是"返回得慢了一点"</td><td>必须写 <code>await</code>，只能在 async 上下文中调用</td></tr>
+        <tr><td>等待期间线程</td><td>被占着，什么也不能做</td><td>空出来做别的事</td></tr>
+        <tr><td>适合的等待时长</td><td>极短（纳秒到微秒）</td><td>任意长</td></tr>
+      </table>
+<pre><code class="swift">state.withLock { … }   // T1 持锁时，T2 的线程停在这一行；T1 解锁后才进入闭包</code></pre>
+      <p>为什么在这里阻塞可以接受？#08 说 async 代码里不能阻塞，指的是<b>长时间</b>阻塞：协作线程池的线程数约等于核心数，一个线程被长时间占住，其他任务就没有线程可用。<code>LogBuffer</code> 锁内只有一次追加和一次加一，持锁时间以纳秒计，T2 几乎立刻就能拿到锁。苹果平台上 Mutex 的底层是 <code>os_unfair_lock</code>，等锁的高优先级线程还会把优先级借给持锁线程，避免优先级反转。</p>
+      <p>同步阻塞也带来三条限制：</p>
+      <ul class="why">
+        <li><b>锁里不能 <code>await</code></b>：闭包是同步的，写了编译不过。这是有意的设计：持锁时一旦能挂起，锁可能被占很久。</li>
+        <li><b>锁里不做慢事</b>：网络请求、文件 IO、<code>Thread.sleep</code>、等待其他线程的结果都不行。</li>
+        <li><b>不可重入</b>：同一线程在锁内再次 <code>withLock</code> 同一把锁，会死锁或崩溃。</li>
+      </ul>
+      <p>也正因为只用 Mutex、不需要 <code>await</code>，<code>Console.log</code> 才能做成同步函数，GCD 闭包、<code>concurrentPerform</code> 循环体这类同步代码都能直接调用。换成 actor，这些地方就调用不了了。</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q6</span>那主线程能用 Mutex 吗？会不会卡？</div>
+    <div class="a">
+      <p>能用，这个工程的主线程就一直在用。会不会卡，看的是<b>主线程等锁要等多久</b>，跟锁本身无关：</p>
+      <ul class="why">
+        <li><b>没有竞争</b>（锁空闲，绝大多数情况）：一次原子操作，几十纳秒，不进内核，不会阻塞。</li>
+        <li><b>有竞争</b>（锁正被后台线程持有）：主线程要等对方解锁，等待时间约等于对方剩余的锁内工作时间。</li>
+      </ul>
+      <table>
+        <tr><th>对方锁内做了什么</th><th>主线程等多久</th><th>结果</th></tr>
+        <tr><td>数组追加、加一（<code>LogBuffer</code>）</td><td>微秒级</td><td>无感知</td></tr>
+        <tr><td>解码图片、写文件</td><td>几到几十毫秒</td><td>可能掉帧（60Hz 每帧约 16.7ms，120Hz 约 8.3ms）</td></tr>
+        <tr><td>网络请求、<code>Thread.sleep</code></td><td>几百毫秒以上</td><td>明显卡顿</td></tr>
+      </table>
+      <p>所以卡顿的根源是<b>有人持锁太久</b>，这个规则对所有线程都适用：后台线程的锁内工作也要短，因为主线程随时可能来等这把锁。</p>
+      <p><b>本工程的例子</b>：<code>Console.refresh()</code> 和 <code>clear()</code> 都在主线程上调用 <code>snapshot()</code> 和 <code>reset()</code>，每打一条日志主线程就拿一次锁，App 并不卡。后台线程持锁只是一次 <code>append</code>；<code>snapshot()</code> 返回的 <code>Array</code> 是写时复制的，锁内只增加一次引用计数，不复制元素。有一个隐藏成本：snapshot 之后数组被两处共享，下一次 <code>append</code> 会在锁内触发一次完整复制（O(n)）。几百条日志可以忽略，几万条时就变成了"后台线程持锁太久"。</p>
+      <p>主线程用锁真正要防的是：</p>
+      <ul class="why">
+        <li><b>锁里做慢事</b>：不管哪个线程这样做，最终都可能让主线程等。</li>
+        <li><b>死锁</b>：后台线程持锁，再调用 <code>DispatchQueue.main.sync</code>，而主线程此刻正在等这把锁，两边互相等待，主线程永久卡死。规则是持锁期间不要同步等待任何其他线程。</li>
+        <li><b>锁里调用外部代码</b>：回调、delegate、发通知。你不知道它们会做什么，可能很慢，也可能回头再拿同一把锁。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q7</span>如果线程 T 持锁太久，主线程等着读数据，不就卡了吗？</div>
+    <div class="a">
+      <p>会卡。主线程停在 <code>withLock</code> 那一行，T 持锁多久，它就停多久：界面不刷新，触摸没反应，<code>TimelineView</code> 停下（#02 的齿轮会停转）；卡到秒级，还可能在启动或切换前台时被看门狗杀掉（<code>0x8badf00d</code>）。优先级捐赠能让 T 跑得快一点，但 T 的工作量没变。</p>
+      <p>问题不在锁，而在<b>主线程用阻塞的方式去等一个可能很久的东西</b>。下面切换四种写法，看主线程的帧：</p>
+
+      <div class="lt" aria-label="交互示意：主线程等锁时的帧">
+        <div class="sim-head">
+          <span class="t">示意 · 0–100 ms · T 在 5 ms 开始处理数据，主线程在 12 ms 去读</span>
+          <div class="sim-btns">
+            <button data-lt="long" class="on">❌ 锁内解码 40 ms</button>
+            <button data-lt="short">✅ 锁外解码，锁内只赋值</button>
+            <button data-lt="try">✅ withLockIfAvailable</button>
+            <button data-lt="conc">✅ @concurrent 读取</button>
+          </div>
+        </div>
+        <div class="lt-body">
+          <div class="lt-axis"><span></span><div class="lt-scale"><i style="left:0">0</i><i style="left:25%">25</i><i style="left:50%">50</i><i style="left:75%">75</i><i style="left:100%">100 ms</i></div></div>
+          <div class="lt-lane"><span class="badge b-main">main</span><div class="lt-track" id="lt-main"></div></div>
+          <div class="lt-lane"><span class="badge b-bg">T</span><div class="lt-track" id="lt-t"></div></div>
+          <div class="lt-lane"><span class="badge b-bg">T2</span><div class="lt-track" id="lt-t2"></div></div>
+          <div class="lt-legend"><span><i class="sw lockheld"></i>持锁</span><span><i class="sw work"></i>锁外工作</span><span><i class="sw blocked"></i>阻塞等锁</span><span><i class="sw frame ok"></i>按时出帧</span><span><i class="sw frame miss"></i>掉帧</span></div>
+        </div>
+        <div class="sim-foot" id="lt-foot"></div>
+      </div>
+
+      <p><b>解法 1：缩短临界区（首选）。</b>慢工作放到锁外，锁只保护最后那一下读写。只要所有线程都遵守"锁里只做内存操作"，主线程即使碰上竞争也只等几微秒。</p>
+<pre><code class="swift">// ❌ 锁里解码：持锁几十毫秒
+state.withLock { $0.items = decode(data) }
+
+// ✅ 锁外解码，锁里只赋值：持锁几十纳秒
+let items = decode(data)
+state.withLock { $0.items = items }</code></pre>
+      <p><b>解法 2：主线程不硬等。</b><code>Mutex</code> 提供 <code>withLockIfAvailable</code>：拿不到锁就返回 <code>nil</code>，不阻塞。适合"晚一帧显示也无所谓"的 UI 刷新。要注意跳过的那次需要有人补上：<code>Console</code> 每条日志都会触发 refresh，中间跳过几次无妨；但如果<b>最后一次</b>被跳过，就再也没有触发了，需要自己安排重试。</p>
+<pre><code class="swift">func refresh() {
+    if let snapshot = buffer.state.withLockIfAvailable({ $0.entries }) {
+        entries = snapshot
+    } else {
+        // 锁正忙：这次先不刷新，稍后重试
+    }
+}</code></pre>
+      <p><b>解法 3：把"等待"挪出主线程。</b>让后台线程去等锁，主线程只 <code>await</code>，由阻塞变为挂起。代价是被阻塞的变成了协作线程池里的线程（#08），所以这只是转移问题，根本解法仍是解法 1。</p>
+<pre><code class="swift">@concurrent
+static func readSnapshot(_ buffer: LogBuffer) async -> [LogEntry] {
+    buffer.snapshot()                          // 在后台线程上等锁
+}
+
+entries = await Self.readSnapshot(buffer)      // MainActor 上：挂起，不阻塞</code></pre>
+      <p><b>解法 4：本来就慢的工作，换 actor。</b>如果受保护的逻辑本身包含耗时或异步操作，就不该用锁。用 actor，调用方 <code>await</code>，等待期间线程被让出，代价是 <code>await</code> 会传染到调用链，还有重入问题（#06）。</p>
+      <table>
+        <tr><th>情况</th><th>做法</th></tr>
+        <tr><td>锁内只有几行内存操作</td><td>Mutex，主线程直接 <code>withLock</code></td></tr>
+        <tr><td>慢工作能和"写入结果"分开</td><td>慢工作放锁外，锁只保护赋值（解法 1）</td></tr>
+        <tr><td>UI 读取可以晚一帧</td><td><code>withLockIfAvailable</code>，并安排补刷新（解法 2）</td></tr>
+        <tr><td>保护区域内必须 <code>await</code> 或做 IO</td><td>actor，主线程 <code>await</code>（解法 4）</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q8</span>可主线程根本不知道对象里面用了锁，怎么办？</div>
+    <div class="a">
+      <p>这是关键所在：<b>同步 API 不会告诉调用方它会不会阻塞。</b>Swift 的类型系统里没有"可能阻塞"这个标记，<code>await</code> 只标记"可能挂起"。一个普通的同步属性或方法，内部可能在拿锁、调用 <code>DispatchQueue.sync</code> 或 <code>semaphore.wait()</code>、读文件（<code>Data(contentsOf:)</code>），或者同步调用某个跨进程的系统服务。从调用点看，它们和读一个普通变量写法完全一样。</p>
+<pre class="bad"><code class="swift">// 调用点看起来一模一样，主线程无从分辨
+let count = cache.count          // 也许只是读一个字段
+let count = store.count          // 也许内部 withLock，而别的线程正在锁里写文件</code></pre>
+      <p><b>那靠什么保证不卡？靠约定，责任在实现方。</b>Swift 的设计思路是：同步 API 默认被认为很快，慢的东西要做成 <code>async</code>。</p>
+      <ul class="why">
+        <li><b>API 设计规范</b>：属性访问应当很便宜；昂贵的操作做成方法；可能耗时很久的做成 <code>async</code>，让 <code>await</code> 在调用点把"这里可能要等"写出来。</li>
+        <li>所以一个用 Mutex 实现的同步 API，<b>对外承诺的是锁内只做短暂的内存操作</b>。调用方最坏等多久取决于别人持锁多久，实现方保证这个时间极短，"同步调用不会卡"就仍然成立。</li>
+        <li>实现方在锁里做 IO、解码、网络请求，又暴露成同步属性，就是<b>实现方的 bug</b>，和"getter 里偷偷发网络请求"是同一类问题，调用方无从防范。做不到短持锁，就应该改成 <code>async</code> API，或者内部改用 actor。</li>
+      </ul>
+      <table>
+        <tr><th></th><th>内部 Mutex · 同步 API</th><th>actor · async API</th></tr>
+        <tr><td>调用点能看出要等吗</td><td>看不出</td><td>能，必须写 <code>await</code></td></tr>
+        <tr><td>等待时主线程</td><td>阻塞</td><td>挂起，照常响应 UI</td></tr>
+        <tr><td>谁保证不卡</td><td>实现方，靠约定</td><td>机制本身</td></tr>
+        <tr><td>代价</td><td>无</td><td><code>await</code> 会传染到调用链；有重入问题</td></tr>
+      </table>
+      <p><code>await</code> 也不告诉你要等多久，但它保证等待期间主线程不会被占住。所以对"内部实现不透明、可能慢"的依赖，<code>async</code> API 更安全。</p>
+      <p><b>作为调用方，能做的：</b></p>
+      <ul class="why">
+        <li><b>看 API 形态找线索</b>：一个非 actor 的类型标了 <code>Sendable</code>，又提供同步读写方法，内部几乎一定有锁或原子操作。它保证线程安全，但不保证持锁时间。</li>
+        <li><b>对可能很重的调用保持警惕</b>：第三方 SDK 的同步 API、涉及磁盘或系统服务的 API，不要放进主线程的高频路径（滚动回调、每帧刷新）。拿不准时，包一层 <code>@concurrent</code> 函数在后台调用，主线程 <code>await</code>。</li>
+        <li><b>用工具发现卡顿</b>：Instruments 的 Hangs、Thread State Trace 能看到主线程卡在哪个锁或系统调用上；Xcode 的 Thread Performance Checker 在运行时提示优先级反转等风险；线上看 Xcode Organizer 的 Hangs 报告和 MetricKit 的 hang 诊断。</li>
+        <li><b>UI 侧的状态尽量不用锁</b>：这正是默认 MainActor 隔离的好处。只在主线程读写的状态没有竞争，不需要锁，主线程也就不会去等别人的锁。本工程里 <code>Console.entries</code> 就是这样，只有跨线程的入口 <code>LogBuffer</code> 才用 Mutex。</li>
+      </ul>
+      <div class="note"><b>回到这个工程</b>：<code>refresh()</code> 在主线程调用 <code>buffer.snapshot()</code>，主线程确实"不知道"里面有锁。它能放心调用，是因为 <code>LogBuffer</code> 守住了约定：锁内只有一次追加、一次加一或一次引用计数增加。如果哪天有人在 <code>append</code> 的锁里加了写文件，日志一多，主线程就会卡在这里，而 <code>refresh()</code> 的调用点一个字都没变。</div>
+    </div>
+  </div>
+
+  <h3>为什么选 Mutex，而不是别的</h3>
+  <table>
+    <tr><th>方案</th><th>能否同步调用</th><th>编译器验证</th><th>用在这里的问题</th></tr>
+    <tr><td><b>Mutex</b> ✅</td><td>能</td><td>能（自动 Sendable）</td><td>—— 同步、短、安全，正合适</td></tr>
+    <tr><td>NSLock</td><td>能</td><td>不能，需要 <code>@unchecked</code></td><td>能用，但锁和数据之间的关系只靠人来保证</td></tr>
+    <tr><td>actor</td><td><b>不能</b>，外部调用必须 <code>await</code></td><td>能</td><td>GCD 闭包、<code>concurrentPerform</code> 里的同步代码无法 await；而且每条日志都要先排队再记录，顺序不再等于调用顺序</td></tr>
+    <tr><td>串行队列 <code>sync</code></td><td>能</td><td>不能</td><td>比锁重；在已处于该队列的代码里调用会死锁</td></tr>
+    <tr><td>@MainActor</td><td>只有主线程能</td><td>能</td><td>记下的线程永远是 main，实验失去意义</td></tr>
+  </table>
+
+  <!-- ---------- Console ---------- -->
+  <h3>Console 的实现</h3>
+<pre><code class="swift">@Observable
+final class Console {                        // 默认隔离 → 整个类是 @MainActor
+    private(set) var entries: [LogEntry] = [] // SwiftUI 读它：只在主线程改
+
+    nonisolated let buffer = LogBuffer()      // ← 这一行的 nonisolated 是关键
+
+    nonisolated func log(_ message: String) {
+        buffer.append(message)                // 同步记录（在调用方线程）
+        Task { @MainActor [weak self] in self?.refresh() }   // 异步刷新（在主线程）
+    }
+
+    func refresh() { entries = buffer.snapshot() }   // MainActor
+    func clear()   { buffer.reset(); entries = [] }  // MainActor
+}</code></pre>
+
+  <div class="qa">
+    <div class="q"><span>Q9</span><code>buffer</code> 为什么要 <code>nonisolated</code>？</div>
+    <div class="a">
+      <p>Console 整个类是 MainActor 隔离的，它的存储属性默认也是 MainActor 隔离的，<code>let</code> 也不例外。而 <code>log</code> 是 <code>nonisolated</code> 函数，可能在任意线程上运行。在 <code>log</code> 里写 <code>buffer.append(...)</code> 就是"从非隔离上下文读取 MainActor 属性"，编译器会要求 <code>await</code>，同步调用就不成立了。</p>
+      <p><code>nonisolated let buffer</code> 告诉编译器：这个属性不归 MainActor 管，任何线程都可以直接读。这件事之所以安全，是因为两个条件同时成立：</p>
+      <ul class="why">
+        <li><b><code>let</code></b>：引用本身初始化后永不改变，多个线程同时读一个不变的引用，没有竞争。（<code>nonisolated var</code> 是不允许的，要写就只能用 <code>nonisolated(unsafe)</code> 自己担保。）</li>
+        <li><b>类型是 Sendable</b>：读到引用之后，调用它的方法也是安全的，因为 LogBuffer 内部用 Mutex 自己管好了并发。这就是 Q1 中"Sendable 是 nonisolated let 的前提"。</li>
+      </ul>
+      <p>于是 Console 被切成两半：<b>MainActor 的那一半</b>（<code>entries</code>、<code>refresh</code>、<code>clear</code>）给 SwiftUI 用；<b>非隔离的那一半</b>（<code>buffer</code>、<code>log</code>）给全世界用。</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q10</span>为什么用快照刷新，而不是每次 Task 里追加一条？</div>
+    <div class="a">
+      <p>每次 <code>log</code> 都会启动一个 <code>Task { @MainActor }</code>，但<b>非结构化 Task 的执行顺序没有保证</b>（#01 演示过）。如果写成 <code>Task { @MainActor in entries.append(entry) }</code>，屏幕上的顺序就可能和真实顺序不同。</p>
+      <p>现在的 <code>refresh()</code> 不管自己是第几个被执行，都把 buffer 的<b>完整快照</b>复制过来。顺序由 buffer（也就是 Mutex）决定，与 Task 的执行顺序无关；多个 refresh 重复执行也没有副作用，最后一次总能显示全部日志。</p>
+      <ul class="why">
+        <li><code>[weak self]</code>：页面关闭后，排队中的刷新不会让 Console 多活一段时间。</li>
+        <li>捕获 <code>self</code> 本身没问题：Console 是 MainActor 隔离的类，自动是 Sendable。</li>
+        <li>代价是每条日志都复制一次数组、启动一个 Task。演示里日志只有几十到几百条，可以接受；日志量很大时，可以加一个"已安排刷新"的标志来合并刷新。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q11</span>主线程被阻塞时，日志会不会乱？</div>
+    <div class="a">
+      <p>不会，这正是"记录"和"显示"分开的好处。#02 里主线程被 <code>Thread.sleep</code> 卡住 2 秒，期间后台线程照样调用 <code>log</code>，条目、时间、线程号都同步写进了 buffer。主线程恢复后，排队的 <code>refresh</code> 才执行，一次性显示出来，时间戳仍然是事件发生时的真实时间。如果记录也要等主线程，这 2 秒内的日志时间就全是错的。</p>
+    </div>
+  </div>
+
+  <h3>删掉一个关键字会怎样</h3>
+  <table class="breaks">
+    <tr><th>改动</th><th>后果</th></tr>
+    <tr><td>删掉 <code>LogBuffer</code> 的 <code>nonisolated</code></td><td>LogBuffer 变成 @MainActor，后台同步代码无法调用 <code>append</code>；能调用的也要先排队到主线程，线程号恒为 main</td></tr>
+    <tr><td>删掉 <code>: Sendable</code></td><td>Console 里的 <code>nonisolated let buffer</code> 不再成立（编译器要求 Sendable 类型），整套设计无法编译</td></tr>
+    <tr><td>把 <code>Mutex(State())</code> 换成三个 <code>var</code></td><td>类不再满足 Sendable；即使用 <code>@unchecked</code> 强行通过，也会丢日志、id 重复，甚至崩溃</td></tr>
+    <tr><td>删掉 <code>buffer</code> 的 <code>nonisolated</code></td><td><code>log</code> 里访问 <code>buffer</code> 需要 <code>await</code>，<code>log</code> 无法再是同步函数</td></tr>
+    <tr><td>删掉 <code>log</code> 的 <code>nonisolated</code></td><td>log 变成 @MainActor：后台调用要 <code>await</code>，记到的线程全是 main</td></tr>
+    <tr><td>把 <code>elapsed</code> 移到锁外</td><td>id 顺序和时间顺序可能不一致</td></tr>
+    <tr><td><code>refresh</code> 改成逐条 append</td><td>屏幕顺序依赖 Task 的执行顺序，而这个顺序没有保证</td></tr>
+  </table>
+
+  <!-- ---------- ContinuousClock ---------- -->
+  <h3 id="clock">附：ContinuousClock，日志里的"毫秒"从哪来</h3>
+  <p><code>LogBuffer.State</code> 里有一行 <code>var start = ContinuousClock.now</code>，每条日志的 <code>elapsed</code> 都是用它算出来的。整个工程凡是要计时的地方，用的都是 <code>ContinuousClock</code>，没有用 <code>Date</code>。</p>
+
+  <div class="qa">
+    <div class="q"><span>Q12</span><code>ContinuousClock</code> 是什么？</div>
+    <div class="a">
+      <p>Swift 5.7（SE-0329）给标准库加了一套时间类型，代替过去 <code>Date</code>、<code>DispatchTime</code>、<code>CFAbsoluteTime</code>、<code>mach_absolute_time</code> 各管一摊的局面：</p>
+      <div class="cards">
+        <div class="card"><h4><code>Clock</code> · 时钟</h4><p>一个协议：能告诉你"现在"（<code>now</code>），能睡到某个时刻（<code>sleep(until:)</code>）。标准库自带两个实现：<code>ContinuousClock</code> 和 <code>SuspendingClock</code>。</p></div>
+        <div class="card"><h4><code>Instant</code> · 时刻</h4><p>某个时钟上的一个点，比如 <code>ContinuousClock.now</code>。可以比较大小、加减 <code>Duration</code>。<b>它不是日历时间</b>，没法转换成"几点几分"，只能和同一个时钟的另一个时刻比较。</p></div>
+        <div class="card"><h4><code>Duration</code> · 时长</h4><p>两个时刻之差：<code>start.duration(to: .now)</code>。用 <code>.seconds(2)</code>、<code>.milliseconds(100)</code> 构造，精度到 attosecond（10⁻¹⁸ 秒），<code>Task.sleep(for:)</code> 接收的就是它。</p></div>
+      </div>
+      <p><code>ContinuousClock</code> 是一个<b>单调</b>时钟：只会往前走，不受用户修改系统时间、网络校时、时区变化的影响，<b>设备休眠期间也继续走</b>。另一个 <code>SuspendingClock</code> 同样单调，区别只在于设备休眠时它暂停。</p>
+    </div>
+  </div>
+
+  <!-- 交互：三种时钟 -->
+  <div class="clocks" aria-label="交互示意：三种时钟测量同一段时长">
+    <div class="sim-head">
+      <span class="t">示意 · 从 start 开始，三种时钟各测得多久？</span>
+      <div class="sim-btns">
+        <button data-ev="run">▶ 运行 5 秒</button>
+        <button data-ev="sleep">💤 设备休眠 10 分钟</button>
+        <button data-ev="back">⏪ 系统时间被往回调 1 小时</button>
+        <button data-ev="reset" class="go">↺ 重新开始</button>
+      </div>
+    </div>
+    <div class="clock-rows">
+      <div class="crow" data-k="date"><code>Date</code><span class="cdesc">墙上时间 · 会被修改、会跳</span><span class="cval">0 s</span></div>
+      <div class="crow" data-k="cont"><code>ContinuousClock</code><span class="cdesc">单调 · 休眠时继续走</span><span class="cval">0 s</span></div>
+      <div class="crow" data-k="susp"><code>SuspendingClock</code><span class="cdesc">单调 · 休眠时暂停</span><span class="cval">0 s</span></div>
+    </div>
+    <div class="sim-foot" id="clock-foot">三个时钟同时从 start 开始计时。点上面的事件，看它们测出的时长有什么不同。</div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>Q13</span>为什么计时不用 <code>Date</code>？</div>
+    <div class="a">
+      <p><code>Date</code> 表示"日历上的某一时刻"，适合显示、存储、和服务器对时，但<b>不适合测量时长</b>：用户手动改时间、网络校时，都会让 <code>Date()</code> 突然跳动，两次 <code>Date()</code> 相减可能得到偏大甚至负的结果。日志的 <code>elapsed</code> 一旦为负，"谁先谁后"就无从谈起。单调时钟没有这个问题。</p>
+      <p>至于选 <code>ContinuousClock</code> 还是 <code>SuspendingClock</code>：演示里的实验都在几秒内跑完，期间设备不会休眠，两者测得的结果相同。<code>ContinuousClock</code> 是 <code>Task.sleep(for:)</code> 的默认时钟，用它和标准库保持一致。如果关心的是"进程真正运行了多久"（比如性能测量时希望排除休眠），就用 <code>SuspendingClock</code>。</p>
+    </div>
+  </div>
+
+  <h3>它在工程里的五种用法</h3>
+  <table>
+    <tr><th>写法</th><th>位置</th><th>作用</th></tr>
+    <tr><td><code>start.duration(to: .now)</code></td><td>LogBuffer · #08 · #10</td><td>记一个起点，之后求"到现在过了多久"。日志的 <code>elapsed</code>、线程爆炸实验的耗时、各种锁的耗时都是这样算的</td></tr>
+    <tr><td><code>ContinuousClock().measure { … }</code></td><td>#05 结构化并发</td><td>直接返回闭包执行用了多久（<code>Duration</code>）。<code>run(_:)</code> 用它包住每个实验，比较顺序 await 约 3s、async let 约 1s</td></tr>
+    <tr><td><code>.now + .milliseconds(n)</code></td><td>Work.spin</td><td>算出一个截止时刻，然后 <code>while ContinuousClock.now &lt; end</code> 忙等。<code>Instant + Duration</code> 得到新的 <code>Instant</code></td></tr>
+    <tr><td><code>Task.sleep(until: next, clock: clock)</code></td><td>#12 ticks</td><td>睡到<b>绝对时刻</b>，而不是睡一段<b>相对时长</b>。每轮 <code>next += interval</code>，唤醒延迟不会逐轮累积</td></tr>
+    <tr><td><code>Duration.components</code></td><td>Console.swift</td><td>把时长换算成毫秒显示，见下</td></tr>
+  </table>
+
+<pre><code class="swift">nonisolated extension Duration {
+    var milliseconds: Double {
+        // components = (seconds: Int64, attoseconds: Int64)，1 ms = 10¹⁵ attoseconds
+        Double(components.seconds) * 1000 + Double(components.attoseconds) / 1e15
+    }
+    var msText: String { String(format: "%.0f ms", milliseconds) }
+}</code></pre>
+  <p class="dim"><code>Duration</code> 内部用"整秒 + attosecond"两段整数存储，既不会因为浮点数丢精度，也能表示很长的时长。这个扩展把两段合成毫秒，日志里每行左边的 <code>123 ms</code> 就是这样来的。<code>Duration</code> 也是 <code>Sendable</code> 的，所以 <code>LogEntry</code> 能带着它从后台线程一路传到 MainActor。</p>
+
+  <div class="note"><b>#12 里的一个细节</b>：<code>ticks</code> 先 <code>let clock = ContinuousClock()</code>，再把同一个 <code>clock</code> 传给 <code>Task.sleep(until:clock:)</code>。<code>next</code> 是这个时钟上的 <code>Instant</code>，必须交给同一种时钟去睡，类型系统也是这样约束的：<code>ContinuousClock.Instant</code> 不能拿去和 <code>SuspendingClock</code> 一起用。这也是 <code>Instant</code> 设计成"只能和同一个时钟比较"的意义。</div>
+</section>
+
+<!-- ====================================================== -->
+<section class="part" id="demos">
+  <div class="part-head"><span class="pn">13</span><h2>逐页拆解</h2><p>MainActor/Demos/*.swift</p></div>
+
+<!-- 1 -->
+<article class="demo" id="d1">
+  <div class="logrow"><span>#1</span><span class="ms">OrderingDemo</span><span class="badge b-mix">mix</span><h3>执行时机</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> OrderingDemo.swift</span><span><b>控制变量</b> "安排"代码的方式</span></div>
+    <div class="btnlist"><span>从同步上下文调度</span><span>从 MainActor 的 async 上下文调度</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">在<b>同一段同步代码</b>里一口气用 7 种方式安排日志，然后看日志里的真实顺序。<code>1 → Task.immediate → 2 → 3</code> 一定最先；<code>main.async</code>、<code>Task {}</code>、<code>RunLoop.perform</code>、<code>OperationQueue.main</code> 都要等当前函数返回，它们之间的先后不应依赖；<code>detached</code> 和 <code>global</code> 在后台，可能插在任何位置，甚至排在 <code>2</code> 前面。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li>所有调度挤在一个同步函数里，中间没有挂起点，于是"当前代码返回之前"和"之后"界限分明。</li>
+          <li><code>mainActorSyncFunction</code> 是对照组：同为 MainActor，<b>直接调用</b>不排队，所以 <code>2</code> 一定在 <code>3</code> 之前。</li>
+          <li><code>Task.immediate</code>（Swift 6.2）放在这里，用来说明它会立即同步开始执行，直到第一个挂起点为止，和 <code>Task {}</code> 的"入队"形成反差。</li>
+        </ul>
+      </div>
+    </div>
+<pre><code class="swift">console.log("1 同步代码开始")
+DispatchQueue.main.async { console.log("DispatchQueue.main.async") }
+Task           { console.log("Task { }（继承 MainActor，入队）") }
+Task.immediate { console.log("Task.immediate（立即同步开始执行）") }
+...
+mainActorSyncFunction(console)        // 直接执行，不排队
+console.log("3 同步代码结束")</code></pre>
+    <p>第二个按钮换到 <b>async 上下文</b>：先排两个任务，再 <code>await MainActor.run</code>。即使已经在 MainActor 上，<code>await</code> 仍然是<b>潜在挂起点</b>，前面排队的任务可能先于 B 执行。外层 <code>Task { await scheduleFromAsyncContext() }</code> 正是为了得到一个 MainActor 上的 async 环境。</p>
+  </div>
+</article>
+
+<!-- 2 -->
+<article class="demo" id="d2">
+  <div class="logrow"><span>#2</span><span class="ms">BlockingDemo</span><span class="badge b-mix">mix</span><h3>阻塞 vs 挂起</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> BlockingDemo.swift</span><span><b>控制变量</b> 2 秒的工作在哪执行</span></div>
+    <div class="btnlist"><span class="x">Thread.sleep 在主线程</span><span class="x">Task { 同步计算 }</span><span class="x">await nonsending</span><span class="v">await @concurrent</span><span class="v">Task.detached</span><span class="v">global → main.async</span><span class="v">await Task.sleep</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">页面顶部有一个旋转齿轮和走动的时间。<b>齿轮停转 = 主线程被阻塞</b>。前三个按钮会让它停 2 秒，后四个不会。日志里的徽章进一步告诉你：工作是在 <code>main</code> 还是 <code>T…</code> 上执行的。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b>齿轮是检测器。</b><code>Spinner</code> 用 <code>TimelineView(.animation)</code> 逐帧计算旋转角度，而 TimelineView 在主线程刷新，主线程卡住它就停下。看齿轮比看日志更直观。</li>
+          <li>工作统一用 <code>Work.spin</code>（CPU 忙等）而不是 sleep，排除"是不是 sleep 特殊"的干扰：同一段计算，只换执行位置。</li>
+          <li>反例 2、3 正是编译设置的后果：默认 MainActor 让 <code>Task {}</code> 继承主线程；Approachable Concurrency 让 nonisolated async 函数默认 nonsending，也留在主线程。</li>
+        </ul>
+      </div>
+    </div>
+<pre class="bad"><code class="swift">// ❌ 和 ✅ 的函数体一模一样，只差一个属性
+nonisolated(nonsending)
+static func spinNonsending(seconds: Double, console: Console) async -> Int { spin(seconds: seconds) }
+
+@concurrent
+static func spinConcurrent(seconds: Double, console: Console) async -> Int { spin(seconds: seconds) }</code></pre>
+    <p>✅ 组里 <code>detached</code> 用 <code>await MainActor.run</code> 回主线程，GCD 用 <code>DispatchQueue.main.async</code> 回主线程，两种"回来"的写法并排放着，方便对比；<code>@concurrent</code> 那一组最省事，<code>await</code> 返回后自动回到调用方的 MainActor。</p>
+  </div>
+</article>
+
+<!-- 3 -->
+<article class="demo" id="d3">
+  <div class="logrow"><span>#3</span><span class="ms">RunLoopModeDemo</span><span class="badge b-main">main</span><h3>RunLoop Mode 与滚动</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> RunLoopModeDemo.swift</span><span><b>控制变量</b> 回到主线程的通道 + 注册的 mode</span></div>
+    <div class="btnlist"><span>按住下方列表拖动，不要松手</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">7 个计数器每 0.1 秒 +1。按住列表拖动时，主 RunLoop 切到 <code>UITrackingRunLoopMode</code>，注册在 <code>.default</code> 的三个计数器<b>停住</b>；<code>.common</code>、主队列、MainActor 任务<b>照常走</b>。顶部那行"当前 mode"会在拖动时变红。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b>事件源放在后台，且不依赖 RunLoop。</b><code>BackgroundTicker</code> 用 GCD 的 <code>DispatchSource</code> 定时器在全局队列上产生事件，所以事件源本身不会因滚动暂停。唯一的变量就剩"怎么切回主线程"：<code>receive(on: RunLoop.main)</code> 还是 <code>DispatchQueue.main</code>，<code>perform(inModes: [.default])</code> 还是 <code>main.async</code>。</li>
+          <li><b>mode 由仍在运行的那个循环来读取。</b><code>currentMode</code> 在 MainActor 的 <code>Task.sleep</code> 循环里更新，这个循环滚动时不停，才读得到 Tracking mode。换成 <code>.default</code> 定时器去读，拖动时它自己停了，永远读不到。</li>
+        </ul>
+      </div>
+    </div>
+<pre class="bgc"><code class="swift">private func tick() {                         // 在 GCD 后台队列上
+    subject.send(())                          // → 两条 Combine 管道
+    DispatchQueue.main.async {
+        MainActor.assumeIsolated { model?.mainQueueAsync += 1 }
+    }
+    RunLoop.main.perform(inModes: [.default]) {
+        MainActor.assumeIsolated { model?.runLoopPerformDefault += 1 }
+    }
+    CFRunLoopWakeUp(CFRunLoopGetMain())       // perform 不会主动唤醒 RunLoop
+}</code></pre>
+    <ul class="why">
+      <li><code>CFRunLoopWakeUp</code> 不是多余的：<code>perform(inModes:)</code> 只把 block 挂到 RunLoop 上，不唤醒正在休眠的主 RunLoop，不手动唤醒的话计数会断断续续。</li>
+      <li><code>MainActor.assumeIsolated</code>：<code>BackgroundTicker</code> 是 <code>nonisolated</code> 类，编译器不知道这两个闭包会在主线程执行，而 <code>TickModel</code> 是 MainActor 的。闭包确实在主线程，于是用断言告诉编译器。</li>
+      <li><code>@unchecked Sendable</code> + <code>weak model</code>：ticker 要被 DispatchSource 的事件处理闭包持有，弱引用避免循环引用，页面消失时 <code>stop()</code> 统一取消。</li>
+    </ul>
+  </div>
+</article>
+
+<!-- 4 -->
+<article class="demo" id="d4">
+  <div class="logrow"><span>#4</span><span class="ms">TaskInheritance</span><span class="badge b-mix">mix</span><h3>Task 继承了什么</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> TaskInheritanceDemo.swift</span><span><b>控制变量</b> 启动方式 × 4 个维度</span></div>
+    <div class="btnlist"><span>① actor 隔离</span><span>② 优先级</span><span>③ TaskLocal</span><span>④ 取消传播</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">同一组启动方式：<code>Task {}</code>、<code>Task.detached</code>、<code>DispatchQueue.global</code>、<code>async let</code>、<code>TaskGroup</code>，<b>每个按钮只测一个维度</b>。读完四个按钮就能拼出一张表：<code>Task {}</code> 继承隔离、优先级和 TaskLocal，但<b>不继承取消</b>；detached 什么都不继承；结构化子任务继承优先级和取消。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b>一个按钮测一个维度</b>，每次只看一种继承关系，日志不会混在一起。</li>
+          <li>② 父任务特意用 <code>.low</code>：默认优先级在不同上下文里本来就可能不同，换一个明显不同的值才能判断"是不是继承来的"。GCD 没有 TaskPriority，只能读 <code>qos_class_self()</code>，单独一行说明。</li>
+          <li>③ <code>@TaskLocal</code> 放在 <code>nonisolated enum TraceContext</code> 里，避免被默认隔离绑到 MainActor；作用域外再打一行，证明值只在 <code>withValue</code> 内存在。</li>
+        </ul>
+      </div>
+    </div>
+<pre><code class="swift">let parent = Task {
+    let unstructured = Task { await Probe.sleepAndReport("Task { }（非结构化）", console) }
+    Task.detached          { await Probe.sleepAndReport("Task.detached", console) }
+    async let child: Void = Probe.sleepAndReport("async let（结构化）", console)
+    await withTaskGroup(of: Void.self) { group in
+        group.addTask { await Probe.sleepAndReport("TaskGroup 子任务（结构化）", console) }
+    }
+    await child
+    await unstructured.value
+}
+// 300ms 后 parent.cancel()</code></pre>
+    <p>④ 的设计：<code>Probe</code> 睡 1 秒，被取消时 <code>Task.sleep</code> 抛错，于是日志里"被取消 ✅"还是"正常完成"一目了然。300ms 取消父任务时，所有子任务都还在睡。父任务最后 <code>await unstructured.value</code>，保证父任务在取消时刻仍然活着，排除"父任务早就结束了"的干扰。</p>
+  </div>
+</article>
+
+<!-- 5 -->
+<article class="demo" id="d5">
+  <div class="logrow"><span>#5</span><span class="ms">Structured</span><span class="badge b-mix">mix</span><h3>结构化并发</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> StructuredConcurrencyDemo.swift</span><span><b>控制变量</b> 并发组织方式</span></div>
+    <div class="btnlist"><span>顺序 await ≈3s</span><span>async let ≈1s</span><span>TaskGroup 限流</span><span>ThrowingTaskGroup 出错</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">每个实验最后一行是 <b>⏱ 总耗时</b>。三个 1 秒请求：顺序约 3s，<code>async let</code> 约 1s；8 个任务限流 3 个，约 3s；出错的组里，C 在 0.5s 抛错后，A、B 会打印"被取消"。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b><code>run(_:)</code> 统一计时。</b>每个实验都是 <code>(Console) async -> Void</code>，外面用 <code>ContinuousClock().measure</code> 包一层，几种写法用同一种方法比较。</li>
+          <li><b><code>FakeAPI.fetch</code> 自带取消日志。</b>它 catch 住 <code>Task.sleep</code> 的取消错误，打印 ✖︎ 后再重新抛出，所以"被自动取消"在日志里看得见。</li>
+          <li>限流用的是"先放 3 个，每完成一个补一个"的滑动窗口，这是 TaskGroup 控制在途数量的惯用写法。</li>
+        </ul>
+      </div>
+    </div>
+<pre><code class="swift">await withTaskGroup(of: Void.self) { group in
+    for _ in 0..&lt;maxConcurrent where next &lt; jobs.count { group.addTask { … }; next += 1 }
+    while await group.next() != nil {          // 每完成一个
+        if next &lt; jobs.count { group.addTask { … }; next += 1 }   // 再补一个
+    }
+}</code></pre>
+    <p>出错实验里，<code>for try await name in group</code> 是关键：迭代时碰到 C 的错误会直接抛出，离开 group 作用域时剩下的子任务被自动取消并等待完成。这就是"结构化"：子任务不会比作用域活得更久。</p>
+  </div>
+</article>
+
+<!-- 6 -->
+<article class="demo" id="d6">
+  <div class="logrow"><span>#6</span><span class="ms">ActorReentrancy</span><span class="badge b-bg">T</span><h3>actor 串行与重入</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> ActorReentrancyDemo.swift</span><span><b>控制变量</b> actor 方法里有没有 await</span></div>
+    <div class="btnlist"><span>① actor 串行执行</span><span class="x">② 朴素缓存：下载 5 次</span><span class="v">③ 去重缓存：下载 1 次</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">① 5 个调用的"开始/结束"<b>严格成对、从不交错</b>；② 5 个并发请求同一张图，打印 5 次"开始下载"；③ 只下载 1 次，其余 4 次"复用进行中的下载"。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li>① 的方法是<b>同步</b>的，内部用 <code>spin</code> 而不是 <code>Task.sleep</code>：没有挂起点，actor 就不会让别的调用进来，所以看到的是纯粹的串行。</li>
+          <li>② 的 bug 是故意写的：先检查缓存，然后 <code>await</code> 下载，最后才写入缓存。<code>await</code> 期间 actor 放行其他调用，它们看到的缓存仍是空的。</li>
+          <li>调用方用 <code>TaskGroup</code> 发起 5 个调用，确保它们真的是并发的，而不是排队一个接一个。</li>
+        </ul>
+      </div>
+    </div>
+<pre class="bad"><code class="swift">if let cached = cache[key] { return cached }          // ① 检查
+try? await Task.sleep(for: .milliseconds(500))        // ② 挂起：其他调用在这里进入 actor
+cache[key] = image                                     // ③ 写入，但已经晚了</code></pre>
+<pre><code class="swift">if let task = inFlight[key] { return await task.value }   // 复用进行中的下载
+let task = Task { … }                                     // 在 await 之前就登记
+inFlight[key] = task
+let image = await task.value</code></pre>
+    <p>修正的要点：在第一个 <code>await</code> 之前，把"正在下载"这个事实同步写进 actor 状态。后来的调用看到 <code>inFlight</code> 里已有任务，就去等同一个 <code>Task</code>。</p>
+  </div>
+</article>
+
+<!-- 7 -->
+<article class="demo" id="d7">
+  <div class="logrow"><span>#7</span><span class="ms">BridgingDemo</span><span class="badge b-mix">mix</span><h3>桥接旧 API</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> BridgingDemo.swift</span><span><b>控制变量</b> 回调形式</span></div>
+    <div class="btnlist"><span>① Continuation</span><span>② AsyncStream 消费 10 个</span><span>② 取消消费任务</span><span>③ assumeIsolated</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">① 回调那一行是橙色（GCD 线程），<code>await</code> 返回后那一行是绿色，<b>自动回到了 MainActor</b>；② 生产者在后台 <code>yield</code>，消费者在主线程收；中途取消会看到 <code>onTermination: cancelled</code>；③ 直接在回调里改了 <code>@State</code>。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><code>LegacyAPI</code> 模拟两种真实 SDK：一个在<b>后台</b>回调，一个文档保证<b>主队列</b>回调。②、③ 分别对应这两种情况。</li>
+          <li>消费任务存进 <code>@State consumer</code>：AsyncStream 的取消来自消费方的 Task，不保存句柄就没法演示"取消触发 onTermination"。</li>
+          <li>③ 的闭包是 <code>@Sendable</code> 的，编译器认为它不在 MainActor 上，但 API 保证它在主线程。<code>assumeIsolated</code> 在运行时检查这一点，不在主线程就直接崩溃，不会悄悄地数据竞争。</li>
+        </ul>
+      </div>
+    </div>
+<pre class="bgc"><code class="swift">AsyncStream { continuation in
+    let ticker = StreamTicker(count: count, console: console, continuation: continuation)
+    continuation.onTermination = { reason in
+        console.log("onTermination：\(reason)")
+        ticker.cancel()          // 消费者不要了 → 停掉生产者
+    }
+    ticker.start()
+}</code></pre>
+    <p>细节：<code>StreamTicker</code> 的事件处理闭包用 <code>[unowned self]</code>，因为 DispatchSource 持有闭包，闭包再强引用 ticker 就成了环；ticker 的生命由 <code>onTermination</code> 闭包持有。<code>produced</code> 没加锁也安全，因为同一个 DispatchSource 的事件处理是串行执行的，代码注释里写了这一点，这也是这里用 <code>@unchecked Sendable</code> 的依据。</p>
+  </div>
+</article>
+
+<!-- 8 -->
+<article class="demo" id="d8">
+  <div class="logrow"><span>#8</span><span class="ms">GCDToolsDemo</span><span class="badge b-bg">T</span><h3>GCD 工具箱</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> GCDToolsDemo.swift</span><span><b>控制变量</b> GCD 原语 · 线程池模型</span></div>
+    <div class="btnlist"><span>Group + notify</span><span>Semaphore 限流</span><span>串行 vs 并发</span><span>barrier</span><span>concurrentPerform</span><span>后台 main.sync</span><span class="x">线程爆炸：GCD</span><span class="v">协作式线程池</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">前 6 个按钮各演示一个 GCD 工具。最后两个是重点：<b>同样 100 个各阻塞 100ms 的任务</b>，GCD 会开出远多于 CPU 核心数的线程；TaskGroup 用的线程数约等于核心数，总耗时被拉长。具体数字以日志为准。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li>GCD 实验用 <code>Thread.sleep</code> 模拟工作：在 GCD 世界里阻塞线程是常态，演示的是 GCD 的原生行为。</li>
+          <li>Semaphore 实验配了 <code>RunningCounter</code>，最后打印<b>峰值并发数</b>，"最多 2 个"就成了日志里一个可以核对的数字。</li>
+          <li><code>concurrentPerform</code> 和 <code>main.sync</code> 都先切到 <code>global</code> 再调用：前者会阻塞调用线程直到全部迭代完成，后者在主线程调用会死锁，所以那个危险的场景没有放进演示。</li>
+        </ul>
+      </div>
+    </div>
+<pre class="bad"><code class="swift">@concurrent
+static func cooperativePool(_ console: Console) async {
+    await withTaskGroup(of: Void.self) { group in
+        for _ in 0..&lt;100 {
+            group.addTask {
+                threads.insertCurrent()
+                Work.block(milliseconds: 100)   // 反面示例：async 代码里不要阻塞
+            }
+        }
+    }
+}</code></pre>
+    <ul class="why">
+      <li>这里用 <code>Work.block</code>（usleep）而不是 <code>spin</code>：GCD 发现线程被阻塞、CPU 空闲，才会补新线程；CPU 密集的 spin 演示不出线程爆炸。</li>
+      <li><code>ThreadSet</code> 收集用过的线程号，"用了几个线程"成了可以直接对比的数字。</li>
+      <li><code>@concurrent</code> 让父任务那部分（创建 100 个子任务、等待、计时）也不占主线程。子任务本来就在全局执行器上运行，这个标注主要是把意图写清楚。</li>
+    </ul>
+  </div>
+</article>
+
+<!-- 9 -->
+<article class="demo" id="d9">
+  <div class="logrow"><span>#9</span><span class="ms">OperationQueue</span><span class="badge b-bg">T</span><h3>OperationQueue</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> OperationQueueDemo.swift</span><span><b>控制变量</b> 依赖 / 取消 / 暂停</span></div>
+    <div class="btnlist"><span>依赖关系</span><span>取消</span><span>暂停 / 恢复</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">依赖：下载 → 解压 → 保存严格按序，上报统计和它们并行，"全部完成"最后在主线程出现。取消：已开始的操作打印"检测到 isCancelled，提前退出"，没开始的<b>一行日志都不会有</b>。暂停：1 秒内什么都不发生，恢复后依次执行。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b>故意倒序添加</b> <code>[save, unzip, download, analytics]</code>：执行顺序如果仍然正确，就证明顺序是依赖决定的，跟添加顺序无关。</li>
+          <li><code>done</code> 加进 <code>OperationQueue.main</code>，却依赖后台队列里的操作，演示依赖可以跨队列。</li>
+          <li><code>maxConcurrentOperationCount = 2</code>：6 个操作在 1.5s 取消时，正好有在跑的、也有没开始的，两种取消行为同时可见。</li>
+        </ul>
+      </div>
+    </div>
+<pre><code class="swift">let operation = BlockOperation()
+operation.addExecutionBlock { [unowned operation] in   // 先创建再添加 block，才能引用自己
+    for _ in 0..&lt;10 {
+        if operation.isCancelled { return }            // 取消是协作式的：要自己检查
+        Thread.sleep(forTimeInterval: 0.1)
+    }
+}</code></pre>
+    <p>把 1 秒切成 10 段、每段检查一次 <code>isCancelled</code>，是为了让"协作式取消"可见：<code>cancelAllOperations()</code> 只是设置一个标志，正在运行的操作要自己检查并退出。这和 Swift 的 <code>Task.isCancelled</code> 是同一个模型。</p>
+  </div>
+</article>
+
+<!-- 10 -->
+<article class="demo" id="d10">
+  <div class="logrow"><span>#10</span><span class="ms">DataRaceDemo</span><span class="badge b-bg">T</span><h3>数据竞争与锁</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> DataRaceDemo.swift</span><span><b>控制变量</b> 保护方式</span></div>
+    <div class="btnlist"><span class="x">无保护</span><span>NSLock</span><span>Mutex</span><span>Atomic</span><span>串行队列 sync</span><span>actor</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">4 个线程 × 50 000 次 <code>+= 1</code>，期望 200 000。无保护的结果通常小于期望（❌ 丢失更新），其余都 ✅，但<b>耗时差别很大</b>，actor 因为每次递增都要跨隔离 <code>await</code>，最慢。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b>每种方式都包成一个"Box"</b>，暴露同样的 <code>increment()</code> / <code>value</code>，再交给同一个 <code>hammer</code> 和 <code>measure</code>，各方式之间只有保护机制不同。</li>
+          <li><code>hammer</code> 用 <code>concurrentPerform</code>，4 个 worker 真正同时跑在不同线程上，竞争才会稳定出现。</li>
+          <li>整个实验先切到 <code>global(qos: .userInitiated)</code>：<code>concurrentPerform</code> 会阻塞调用线程，连跑 5 种方式不能放在主线程。</li>
+        </ul>
+      </div>
+    </div>
+<pre class="bad"><code class="swift">/// ❌ 没有任何保护。@unchecked Sendable 只是让编译器闭嘴，并不会变得线程安全。
+private nonisolated final class UnsafeBox: @unchecked Sendable {
+    var value = 0
+}</code></pre>
+    <p><code>UnsafeBox</code> 是全篇最值得记住的一段：<code>@unchecked Sendable</code> 让它能编译通过，跑起来照样丢更新。<code>Mutex</code> 和 <code>Atomic</code> 版本是真正的 <code>Sendable</code>，不需要 unchecked；<code>NSLock</code> 和串行队列版本靠人工保证，所以仍需 <code>@unchecked</code>。actor 版本单独一个按钮、标了 <code>@concurrent</code>，因为它是 async 的，测的也是另一种成本。结论：小而快的同步临界区更适合 Mutex 或 Atomic，不必都用 actor。</p>
+  </div>
+</article>
+
+<!-- 11 -->
+<article class="demo" id="d11">
+  <div class="logrow"><span>#11</span><span class="ms">SwiftUITask</span><span class="badge b-main">main</span><h3>.task 与生命周期</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> SwiftUITaskDemo.swift</span><span><b>控制变量</b> 任务的所有者</span></div>
+    <div class="btnlist"><span>① 进入子页面</span><span>取消泄漏的 Task</span><span>② 搜索框快速输入</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">① 返回上一页后，<code>.task</code> 打印"视图消失，自动取消 ✅"，<code>onAppear { Task {} }</code> 的循环<b>继续每秒打印</b>，直到点"取消泄漏的 Task"。② 快速输入时，<code>.task(id:)</code> 每敲一个字就取消上一个任务，停手 400ms 后才搜索；DispatchWorkItem 的写法效果相同。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b>子页面和父页面共用同一个 <code>Console</code></b>：子页面消失后，日志仍然在父页面上滚动，"泄漏"看得见。</li>
+          <li>泄漏的 Task 通过 <code>onLeak</code> 回调交给父页面保存。不这样做的话，子页面消失后就再也拿不到这个句柄，无法演示"必须手动取消"。</li>
+          <li><code>.task</code> 循环 catch 住 <code>Task.sleep</code> 的错误并 return，所以"被取消"会打印出来；防抖同理，被取消的那次输入在日志里也有一行。</li>
+        </ul>
+      </div>
+    </div>
+<pre><code class="swift">.task(id: searchText) {                     // id 变化 → 取消旧任务、启动新任务
+    try await Task.sleep(for: .milliseconds(400))   // 被取消就抛错，不会搜索
+    console.log("🔍 .task(id:) 防抖后搜索：「\(searchText)」")
+}</code></pre>
+    <div class="note"><b>小观察</b>：泄漏的那个循环用的是 <code>try? await Task.sleep</code> + <code>while !Task.isCancelled</code>。取消后，sleep 立即抛错但被 <code>try?</code> 吞掉，所以取消之后可能还会多打一行"循环 N"，然后才退出。演示 #12 的 <code>ticks</code> 注释专门提到了这个坑（用 <code>try?</code> 吞错误会多发一个值），对照着读更好理解。</div>
+  </div>
+</article>
+
+<!-- 12 -->
+<article class="demo" id="d12">
+  <div class="logrow"><span>#12</span><span class="ms">AsyncSeq/Combine</span><span class="badge b-mix">mix</span><h3>AsyncSequence vs Combine</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> AsyncSequenceCombineDemo.swift</span><span><b>控制变量</b> push vs pull · 日志前缀 [C] / [A]</span></div>
+    <div class="btnlist"><span>① 变换管道</span><span>② 定时器</span><span>③ 通知</span><span>④ 慢消费者</span><span>⑤ 忘记保存句柄</span><span>⑥ 取消</span><span>⑦ 错误处理</span><span>⑧ 互相转换</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">每个按钮<b>用两种方式做同一件事</b>，日志交错出现。最值得看的是 ③ 和 ⑤：Combine 的 sink 在 <code>post</code> 调用<b>内部</b>同步执行（日志夹在"post #n"和"post #n 返回"之间），AsyncSequence 稍后才收到；丢掉 <code>AnyCancellable</code> 订阅立刻没了，丢掉 <code>Task</code> 却照样运行。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b><code>CombineAsyncLab</code> 统一保管</b>所有 <code>AnyCancellable</code> 和 <code>Task</code>，每个实验开头 <code>stopAll()</code>，离开页面也调用一次，上一个实验的残留不会混进下一个实验的日志。</li>
+          <li>③ 的发送方先睡 100ms 再 post：<code>for await</code> 要先开始等待才能收到通知，否则第一条会丢，比较就不公平了。④ 同理先等 50ms，让两个消费者都就绪。</li>
+          <li>④ 让 AsyncStream 用 <code>.bufferingNewest(2)</code>，并检查 <code>yield</code> 的返回值 <code>.dropped</code>，被丢掉的值在日志里能看到；Combine 那边全部排队。</li>
+        </ul>
+      </div>
+    </div>
+<pre class="bgc"><code class="swift">/// 在 nonisolated 上下文中创建订阅，保证 sink 闭包不被推断为 MainActor 隔离
+private nonisolated static func slowCombineConsumer(…) -> AnyCancellable {
+    subject
+        .receive(on: DispatchQueue(label: "demo.combine.slow"))
+        .sink { value in Thread.sleep(forTimeInterval: 0.2) }
+}</code></pre>
+    <ul class="why">
+      <li>为什么要单独抽一个 <code>nonisolated static</code> 函数？<code>CombineAsyncLab</code> 是默认 MainActor 的，在它的方法里直接写 <code>.sink { }</code>，闭包会被推断为 MainActor 隔离，却在后台串行队列上执行，隔离声明和实际线程对不上。放进非隔离函数里创建，闭包就是普通的非隔离闭包。</li>
+      <li><code>ticks(every:)</code> 睡到<b>绝对截止时间</b>（<code>sleep(until:)</code>），不用每轮 <code>sleep(for:)</code>，避免唤醒延迟逐轮累积；被取消时 <code>break</code>，不用 <code>try?</code>，否则会多发一个值。<code>onTermination</code> 里取消生产者 Task，消费方一取消，生产方也随之停下。</li>
+      <li>⑧ 两个方向都演示：Combine → Async 用任何 Publisher 都有的 <code>.values</code>；Async → Combine 没有内置转换，只能用 Subject 转发。</li>
+    </ul>
+  </div>
+</article>
+
+<!-- 13 -->
+<article class="demo" id="d13">
+  <div class="logrow"><span>#13</span><span class="ms">TimelineView</span><span class="badge b-ui">UI</span><h3>TimelineView</h3></div>
+  <div class="demo-body">
+    <div class="meta"><span><b>文件</b> TimelineViewDemo.swift</span><span><b>控制变量</b> 调度表（TimelineSchedule）</span></div>
+    <div class="btnlist"><span>① periodic</span><span>② everyMinute</span><span>③ 跳秒 vs 扫秒</span><span>④ 限帧与暂停</span><span>⑤ Canvas</span><span>⑥ 秒表</span><span>⑦ explicit</span><span>⑧ 自定义调度表</span><span>⑨ 自更新 Text</span><span>⑩ 要点</span></div>
+    <div class="cols">
+      <div>
+        <div class="label see">看什么</div>
+        <p class="observe">这是唯一<b>没有日志</b>的一页。它不看线程，看的是"按时间刷新"本身：每张卡片下面的"已刷新 N 次"告诉你内容闭包被重新计算了几次，④ 显示实测 fps。它放进并发工程，是因为 <b>TimelineView 在主线程刷新</b>，#02 的齿轮就靠这一点判断主线程有没有被阻塞。</p>
+      </div>
+      <div>
+        <div class="label how">为什么这样写</div>
+        <ul class="why">
+          <li><b><code>UpdateMeter</code> 故意不是 <code>@Observable</code>。</b>它在 body 里被修改，如果它可观察，每次计数都会触发新的刷新，计数会把自己刷爆。普通 class 存在 <code>@State</code> 里，只为了跨刷新保留同一个实例；同一个 <code>context.date</code> 重复计算时不计数。</li>
+          <li>③ 指针角度用<b>累计秒数</b>计算，不对 360° 取余：59 秒跳到 0 秒时角度继续增加，弹簧动画就不会倒转一整圈。</li>
+          <li>⑥ 秒表的 <code>@State</code> 只存"累计时长"和"本次开始时间"，显示值每次刷新时由 <code>context.date</code> 算出，不需要每 10ms 修改一次状态。</li>
+        </ul>
+      </div>
+    </div>
+<pre><code class="swift">nonisolated struct RelativeTimeSchedule: TimelineSchedule {
+    func entries(from startDate: Date, mode: TimelineScheduleMode) -> UnfoldFirstSequence&lt;Date&gt; {
+        sequence(first: startDate) { date in
+            let age  = date.timeIntervalSince(reference)
+            let step = age &lt; 60 &amp;&amp; mode != .lowFrequency ? 1 : age &lt; 3600 ? 60 : 3600
+            return reference.addingTimeInterval((max(0, age) / step).rounded(.down) * step + step)
+        }
+    }
+}</code></pre>
+    <ul class="why">
+      <li>自定义调度表标 <code>nonisolated</code>：不然在默认 MainActor 隔离下，这个值类型和它对 <code>TimelineSchedule</code> 的遵循都会被绑到主线程，而协议要求本身是非隔离的。</li>
+      <li>时间点<b>对齐到参考时间的整秒、整分</b>，而不是"现在 + 60 秒"，于是"x 分钟前"恰好在跨过整分钟时更新。示例消息设成 55 秒前和 59 分 50 秒前，几秒内就能看到刷新频率切换。</li>
+      <li>⑦ 在数组末尾多加一个时间点，这是实测出来的结论：iOS 26 上数组的最后一个时间点不会触发刷新。代码注释和卡片说明都写了这一点。</li>
+    </ul>
+  </div>
+</article>
+</section>
+
+<!-- ====================================================== -->
+<section class="part" id="rules">
+  <div class="part-head"><span class="pn">∑</span><h2>反复出现的写法</h2><p>pattern → reason</p></div>
+  <p>13 个文件读下来，下面这几条写法反复出现。它们是这个工程的"实验方法"，换到自己的项目里写演示或排查问题时同样适用。</p>
+  <div class="rule-grid">
+    <div><h4><span class="n">01</span>一个页面只改一个变量</h4><p>同一段工作（同样 2 秒的 spin、同样的 FakeAPI、同样的 hammer），只换执行方式。日志之间的差别就只来自这一个变量。</p></div>
+    <div><h4><span class="n">02</span>把现象变成可以核对的数字或画面</h4><p>停转的齿轮、峰值并发数、用过的线程数、⏱ 总耗时、已刷新次数、✅/❌。不需要读者盯着代码推理，看结果就能下结论。</p></div>
+    <div><h4><span class="n">03</span>在事件发生的那一刻记录线程</h4><p><code>Console.log</code> 是 nonisolated 的同步函数，线程号在调用现场读取。日志一旦要先切回主线程才记录，测到的就永远是 main。</p></div>
+    <div><h4><span class="n">04</span>显式写出隔离，不依赖默认值</h4><p>默认 MainActor 让"不在主线程"成了需要显式声明的事。实验代码放进 <code>nonisolated enum</code>，要切到后台就写 <code>@concurrent</code>，代码的执行位置写在声明上。</p></div>
+    <div><h4><span class="n">05</span>取消必须看得见</h4><p>凡是可能被取消的地方都 catch 住 <code>CancellationError</code> 打一行日志，或者检查 <code>isCancelled</code>。看不到"被取消"的日志，就没法确认自动取消真的发生了。</p></div>
+    <div><h4><span class="n">06</span>保管好句柄</h4><p><code>@State consumer</code>、<code>onLeak</code> 回调、<code>CombineAsyncLab</code>、<code>cancellables</code>：谁持有 Task 或 AnyCancellable，谁就负责它的生命周期。#11 和 #12 ⑤ 演示的就是不保管句柄的后果。</p></div>
+    <div><h4><span class="n">07</span>危险写法单独标注</h4><p><code>@unchecked Sendable</code>、<code>assumeIsolated</code>、<code>Work.block</code> 在 async 中使用，每处都有注释说明为什么这样写、出错时会怎样；会死锁的 <code>main.sync</code> 只在说明文字里提到，没有做成按钮。</p></div>
+    <div><h4><span class="n">08</span>实测结果写进代码注释</h4><p>cadence 在 iOS 上总是 <code>.minutes</code>、<code>.explicit</code> 的最后一个时间点不触发刷新、<code>perform(inModes:)</code> 不会唤醒 RunLoop：这些都是实际跑出来的结果，记在代码旁边。</p></div>
+  </div>
+
+  <footer>
+    MainActor.html · 演示工程导读 · 对应源码 MainActor/Demos/*.swift、MainActor/Support/*.swift<br>
+    概念讲解见 <a href="index.html#guide">index.html · 并发全景指南</a>
+  </footer>
+</section>
+
+</main>
+</div>
+
+<script>
+/* ---------- 极简 Swift 高亮 ---------- */
+(function(){
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*")|(@\w+)|\b(let|var|func|static|struct|final|class|actor|enum|private|nonisolated|await|async|try|throws|return|if|else|for|in|while|guard|do|catch|some|where|self|nil|init)\b|\b(Task|DispatchQueue|RunLoop|MainActor|AsyncStream|AnyCancellable|BlockOperation|Console|Date|Int|Double|String|Void|Mutex|Sendable|LogEntry|LogBuffer|ContinuousClock|SuspendingClock|Duration|ThreadInfo)\b|\b(\d+(?:\.\d+)?)\b/g;
+  document.querySelectorAll("pre code.swift").forEach(el => {
+    const src = el.textContent;
+    let out = "", last = 0, m;
+    while ((m = re.exec(src))) {
+      out += esc(src.slice(last, m.index));
+      const cls = m[1] ? "c" : m[2] ? "s" : m[3] ? "a" : m[4] ? "k" : m[5] ? "t" : "n";
+      out += `<span class="${cls}">${esc(m[0])}</span>`;
+      last = re.lastIndex;
+    }
+    el.innerHTML = out + esc(src.slice(last));
+  });
+})();
+
+/* ---------- 封面小实验：阻塞 vs 挂起 ---------- */
+(function(){
+  const gear = document.querySelector(".gear");
+  const foot = document.getElementById("scope-foot");
+  const head = document.getElementById("playhead");
+  const lanes = { main: document.getElementById("lane-main"), t1: document.getElementById("lane-t1"), t2: document.getElementById("lane-t2") };
+  const TOTAL = 2.6; // 秒：轨道代表的时长
+  let timers = [];
+
+  const scenarios = {
+    block: {
+      blocks: [["main","w",0.1,2.0]], freeze:[0.1,2.0],
+      text: "<b>Thread.sleep</b> 直接占住主线程 2 秒：齿轮停转，期间任何 UI 事件都得不到处理。"
+    },
+    inherit: {
+      blocks: [["main","m",0.05,0.05],["main","w",0.1,2.0]], freeze:[0.1,2.0],
+      text: "<b>Task { }</b> 在默认 MainActor 隔离下继承主线程，同步计算仍在 main 上：看起来\"异步\"了，其实一样卡。"
+    },
+    concurrent: {
+      blocks: [["main","m",0.05,0.08],["t1","b",0.15,2.0],["main","m",2.2,0.08]],
+      text: "<b>@concurrent</b> 把计算放到后台线程池（橙色）；<code>await</code> 返回后自动回到 MainActor。齿轮一直在转。"
+    },
+    sleep: {
+      blocks: [["main","m",0.05,0.06],["main","s",0.12,2.0],["main","m",2.15,0.06]],
+      text: "<b>await Task.sleep</b> 是挂起而非阻塞：虚线段里主线程是空闲的，可以去处理别的事。齿轮一直在转。"
+    }
+  };
+
+  function reset(){
+    timers.forEach(clearTimeout); timers = [];
+    Object.values(lanes).forEach(l => l.innerHTML = "");
+    gear.classList.remove("frozen");
+    head.style.transition = "none"; head.style.opacity = 0; head.style.transform = "translateX(0)";
+  }
+
+  function run(key){
+    reset();
+    const sc = scenarios[key];
+    const laneEl = lanes.main;
+    const width = laneEl.getBoundingClientRect().width;
+    foot.innerHTML = sc.text;
+
+    requestAnimationFrame(() => {
+      head.style.opacity = .7;
+      head.style.transition = `transform ${TOTAL}s linear`;
+      head.style.transform = `translateX(${width}px)`;
+    });
+
+    sc.blocks.forEach(([lane, cls, start, dur]) => {
+      const b = document.createElement("div");
+      b.className = "blk " + cls;
+      b.style.left = (start / TOTAL * 100) + "%";
+      b.style.width = (dur / TOTAL * 100) + "%";
+      b.style.transitionDuration = dur + "s";
+      lanes[lane].appendChild(b);
+      timers.push(setTimeout(() => { b.style.transform = "scaleX(1)"; }, start * 1000));
+    });
+
+    if (sc.freeze) {
+      timers.push(setTimeout(() => gear.classList.add("frozen"), sc.freeze[0] * 1000));
+      timers.push(setTimeout(() => gear.classList.remove("frozen"), (sc.freeze[0] + sc.freeze[1]) * 1000));
+    }
+    timers.push(setTimeout(() => { head.style.opacity = 0; }, TOTAL * 1000 + 200));
+  }
+
+  document.querySelectorAll("[data-run]").forEach(btn => btn.addEventListener("click", () => run(btn.dataset.run)));
+})();
+
+/* ---------- 深读：3 个线程同时 log() ---------- */
+(function(){
+  const ops = document.getElementById("sim-ops");
+  const slots = document.getElementById("sim-slots");
+  const next = document.getElementById("sim-next");
+  const lock = document.getElementById("sim-lock");
+  const foot = document.getElementById("sim-foot");
+  const runBtn = document.getElementById("sim-run");
+  const modeBtns = document.querySelectorAll("[data-lock]");
+  let withLock = true, timers = [];
+
+  const badge = th => th === "main" ? '<span class="badge b-main">main</span>' : `<span class="badge b-bg">${th}</span>`;
+
+  // 每一步：线程、文字、样式；可选的状态变化
+  const locked = [
+    { th:"T1",   t:"withLock → 拿到锁 🔒", c:"good", lock:"T1 持有" },
+    { th:"T2",   t:"withLock → 锁被占用，阻塞等待…", c:"wait" },
+    { th:"main", t:"withLock → 锁被占用，阻塞等待…", c:"wait" },
+    { th:"T1",   t:"读 nextID = 7 · append #7 · nextID = 8", c:"good", slot:["#7 T1","b"], next:8 },
+    { th:"T1",   t:"闭包返回 → 解锁", c:"good", lock:"空闲" },
+    { th:"T2",   t:"拿到锁 · 读 nextID = 8 · append #8 · nextID = 9 · 解锁", c:"good", slot:["#8 T2","b"], next:9, lock:"T2 持有" },
+    { th:"main", t:"拿到锁 · 读 nextID = 9 · append #9 · nextID = 10", c:"good", slot:["#9 main","m"], next:10, lock:"main 持有" },
+    { th:"main", t:"解锁", c:"good", lock:"空闲" },
+  ];
+  const unlocked = [
+    { th:"T1",   t:"读 nextID → 7", c:"bad" },
+    { th:"T2",   t:"读 nextID → 7（T1 还没写回）", c:"bad" },
+    { th:"main", t:"读 nextID → 7", c:"bad" },
+    { th:"T1",   t:"entries.append(#7)：开始扩容数组…", c:"bad", slot:["#7 T1","b"] },
+    { th:"T2",   t:"entries.append(#7)：同时扩容，写进同一个槽位", c:"bad", overwrite:["#7 T2","dup"] },
+    { th:"main", t:"entries.append(#7)", c:"bad", slot:["#7 main","dup"] },
+    { th:"T1",   t:"nextID = 7 + 1 → 8", c:"bad", next:8 },
+    { th:"T2",   t:"nextID = 7 + 1 → 8（覆盖）", c:"bad", next:8 },
+    { th:"main", t:"nextID = 7 + 1 → 8（覆盖）", c:"bad", next:8, badNext:true },
+  ];
+
+  function reset(){
+    timers.forEach(clearTimeout); timers = [];
+    ops.innerHTML = "";
+    slots.innerHTML = '<span class="slot old">#5</span><span class="slot old">#6</span>';
+    next.textContent = "7"; next.classList.remove("bad");
+    lock.textContent = withLock ? "空闲" : "（没有锁）";
+    foot.className = "sim-foot";
+    foot.innerHTML = "已有 #5、#6 两条日志。期望结果：新增 #7、#8、#9，nextID 变为 10。";
+  }
+
+  function run(){
+    reset();
+    runBtn.disabled = true;
+    const steps = withLock ? locked : unlocked;
+    let lastSlot = null;
+    steps.forEach((s, i) => timers.push(setTimeout(() => {
+      const li = document.createElement("li");
+      li.className = s.c;
+      li.innerHTML = badge(s.th) + `<span>${s.t}</span>`;
+      ops.appendChild(li);
+      if (s.slot) { lastSlot = document.createElement("span"); lastSlot.className = "slot " + s.slot[1]; lastSlot.textContent = s.slot[0]; slots.appendChild(lastSlot); }
+      if (s.overwrite && lastSlot) { lastSlot.classList.add("lost"); const n = document.createElement("span"); n.className = "slot " + s.overwrite[1]; n.textContent = s.overwrite[0]; slots.appendChild(n); lastSlot = n; }
+      if (s.next) next.textContent = s.next;
+      if (s.badNext) next.classList.add("bad");
+      if (s.lock) lock.textContent = s.lock;
+    }, 150 + i * 650)));
+    timers.push(setTimeout(() => {
+      runBtn.disabled = false;
+      if (withLock) {
+        foot.className = "sim-foot ok";
+        foot.innerHTML = "<b>✅ 3 次调用 → 3 条日志，id 连续，nextID = 10。</b>等锁的线程只阻塞了一瞬间，日志顺序就是拿到锁的顺序。";
+      } else {
+        foot.className = "sim-foot ko";
+        foot.innerHTML = "<b>❌ T1 的日志被覆盖丢失，剩下两条 id 都是 #7，nextID = 8（应为 10）。</b>id 重复会让 SwiftUI List 显示错乱；真实情况下，并发扩容数组还可能直接崩溃。";
+      }
+    }, 150 + steps.length * 650 + 200));
+  }
+
+  modeBtns.forEach(b => b.addEventListener("click", () => {
+    withLock = b.dataset.lock === "1";
+    modeBtns.forEach(x => x.classList.toggle("on", x === b));
+    runBtn.disabled = false;
+    reset();
+  }));
+  runBtn.addEventListener("click", run);
+  reset();
+})();
+
+/* ---------- 附：三种时钟 ---------- */
+(function(){
+  const rows = { date: document.querySelector('.crow[data-k="date"] .cval'), cont: document.querySelector('.crow[data-k="cont"] .cval'), susp: document.querySelector('.crow[data-k="susp"] .cval') };
+  const foot = document.getElementById("clock-foot");
+  let v = { date: 0, cont: 0, susp: 0 };
+  const fmt = s => { const neg = s < 0; s = Math.abs(s); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60;
+    return (neg ? "−" : "") + (h ? h + " h " : "") + (h || m ? m + " min " : "") + x + " s"; };
+  const msgs = {
+    run:   "正常运行：三个时钟走得一样快。",
+    sleep: "<b>休眠</b>：Date 和 ContinuousClock 都把这 10 分钟算进去；SuspendingClock 在休眠期间暂停，只算进程真正运行的时间。",
+    back:  "<b>改系统时间</b>：只有 Date 跟着往回跳，测出的时长可能变成负数。两个单调时钟不受影响，这就是计时不用 Date 的原因。",
+    reset: "三个时钟同时从 start 开始计时。点上面的事件，看它们测出的时长有什么不同。"
+  };
+  function show(changed){
+    for (const k in rows) {
+      rows[k].textContent = fmt(v[k]);
+      rows[k].className = "cval" + (v[k] < 0 ? " bad" : "");
+      const row = rows[k].parentElement; row.classList.remove("flash");
+      if (changed.includes(k)) { void row.offsetWidth; row.classList.add("flash"); }
+    }
+  }
+  document.querySelectorAll("[data-ev]").forEach(b => b.addEventListener("click", () => {
+    const ev = b.dataset.ev; let changed = [];
+    if (ev === "run")   { v.date += 5; v.cont += 5; v.susp += 5; changed = ["date","cont","susp"]; }
+    if (ev === "sleep") { v.date += 600; v.cont += 600; changed = ["date","cont"]; }
+    if (ev === "back")  { v.date -= 3600; changed = ["date"]; }
+    if (ev === "reset") { v = { date: 0, cont: 0, susp: 0 }; }
+    foot.innerHTML = msgs[ev]; show(changed);
+  }));
+})();
+
+/* ---------- Q7：主线程等锁时间线 ---------- */
+(function(){
+  const lanes = { main: document.getElementById("lt-main"), t: document.getElementById("lt-t"), t2: document.getElementById("lt-t2") };
+  const foot = document.getElementById("lt-foot");
+  const btns = document.querySelectorAll("[data-lt]");
+  if (!lanes.main) return;
+  const FRAME = 16.67, TOTAL = 100;
+  const S = {
+    long: {
+      blocks: [["t","lockheld",5,45,"🔒 解码 40 ms"],["main","blocked",12,45,"withLock 阻塞等锁"],["main","mainwork",45,47,""]],
+      blockedMain: [12,45],
+      text: "<b>❌ 主线程从 12 ms 阻塞到 45 ms</b>，16.7 ms 和 33.3 ms 两帧都没能按时出（红点）。从主线程的调用点看，它只是读了一个同步属性。"
+    },
+    short: {
+      blocks: [["t","work",5,45,"锁外解码 40 ms"],["t","lockheld",45,45.6,""],["main","mainwork",12,13,""]],
+      blockedMain: null,
+      text: "<b>✅ 慢工作在锁外</b>：T 只在 45 ms 处持锁一瞬间做赋值。主线程 12 ms 读取时锁是空闲的（读到的是旧数据），立即返回；之后再读就是新数据。所有帧按时。"
+    },
+    try: {
+      blocks: [["t","lockheld",5,45,"🔒 解码 40 ms"],["main","skip",12,13.5,""],["main","mainwork",50,51.5,""]],
+      blockedMain: null,
+      text: "<b>✅ withLockIfAvailable</b>：12 ms 时锁正忙，立即返回 nil，这次跳过；50 ms 重试时拿到新数据。主线程从不阻塞，代价是数据晚到，而且要自己安排重试。"
+    },
+    conc: {
+      blocks: [["t","lockheld",5,45,"🔒 解码 40 ms"],["main","mainwork",12,13,""],["t2","blocked",13,45,"T2 替主线程等锁"],["main","mainwork",46,47.5,""]],
+      blockedMain: null,
+      text: "<b>✅ @concurrent 读取</b>：主线程在 12 ms <code>await</code> 后挂起、继续出帧；被阻塞的变成了后台线程 T2。数据 46 ms 回到主线程。问题被转移了，没有被消除：T 仍然持锁 40 ms。"
+    }
+  };
+  function draw(key){
+    const sc = S[key];
+    Object.values(lanes).forEach(l => l.innerHTML = "");
+    sc.blocks.forEach(([lane, cls, a, b, label], i) => {
+      const d = document.createElement("div");
+      d.className = "lt-blk " + cls;
+      d.style.left = (a / TOTAL * 100) + "%";
+      d.style.width = ((b - a) / TOTAL * 100) + "%";
+      d.style.animationDelay = (i * 0.12) + "s";
+      d.textContent = label;
+      lanes[lane].appendChild(d);
+    });
+    for (let k = 1; k * FRAME <= TOTAL; k++) {
+      const t = k * FRAME;
+      const miss = sc.blockedMain && t > sc.blockedMain[0] && t < sc.blockedMain[1];
+      const f = document.createElement("div");
+      f.className = "lt-frame " + (miss ? "miss" : "ok");
+      f.style.left = (t / TOTAL * 100) + "%";
+      f.style.animationDelay = (0.3 + k * 0.06) + "s";
+      f.title = (miss ? "掉帧 " : "出帧 ") + t.toFixed(1) + " ms";
+      lanes.main.appendChild(f);
+    }
+    foot.innerHTML = sc.text;
+    btns.forEach(b => b.classList.toggle("on", b.dataset.lt === key));
+  }
+  btns.forEach(b => b.addEventListener("click", () => draw(b.dataset.lt)));
+  draw("long");
+})();
+
+/* ---------- 滚动渐显 + 目录高亮 ---------- */
+(function(){
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll("article.demo").forEach(a => io.observe(a));
+
+  const links = [...document.querySelectorAll(".rail a")];
+  const targets = links.map(a => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  const spy = new IntersectionObserver(es => {
+    es.forEach(e => {
+      if (!e.isIntersecting) return;
+      links.forEach(l => l.classList.toggle("on", l.getAttribute("href") === "#" + e.target.id));
+    });
+  }, { rootMargin: "-30% 0px -65% 0px" });
+  targets.forEach(t => spy.observe(t));
+})();
+</script>
+</body>
+</html>
