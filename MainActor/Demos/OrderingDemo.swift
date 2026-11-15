@@ -35,36 +35,36 @@ struct OrderingDemo: View {
         console.clear()
         console.log("1 同步代码开始")
 
-        DispatchQueue.main.async { console.log("DispatchQueue.main.async") }
-        Task { console.log("Task { }（继承 MainActor，入队）") }
-        Task.immediate { console.log("Task.immediate（立即同步开始执行）") }
-        RunLoop.main.perform { console.log("RunLoop.main.perform") }
-        OperationQueue.main.addOperation { console.log("OperationQueue.main.addOperation") }
-        Task.detached { console.log("Task.detached（不继承 actor → 后台）") }
-        DispatchQueue.global().async { console.log("DispatchQueue.global().async（后台）") }
+        DispatchQueue.main.async { console.log("2 DispatchQueue.main.async") }
+        Task { console.log("3 Task { }（继承 MainActor，入队）") }
+        Task.immediate { console.log("4 Task.immediate（立即同步开始执行）") }
+        RunLoop.main.perform { console.log("5 RunLoop.main.perform") }
+        OperationQueue.main.addOperation { console.log("6 OperationQueue.main.addOperation") }
+        Task.detached { console.log("7 Task.detached（不继承 actor → 后台）") }
+        DispatchQueue.global().async { console.log("8 DispatchQueue.global().async（后台）") }
 
         mainActorSyncFunction(console)
-        console.log("3 同步代码结束")
+        console.log("10 同步代码结束")
     }
 
     private func mainActorSyncFunction(_ console: Console) {
-        console.log("2 调用 @MainActor 同步函数（直接执行，不排队）")
+        console.log("9 调用 @MainActor 同步函数（直接执行，不排队）")
     }
 
     private func scheduleFromAsyncContext() async {
         let console = console
         console.clear()
-        console.log("A 在 MainActor 的 async 函数中")
+        console.log("1 A 在 MainActor 的 async 函数中")
 
-        Task { @MainActor in console.log("Task { @MainActor }（入队，稍后执行）") }
-        DispatchQueue.main.async { console.log("DispatchQueue.main.async（入队，稍后执行）") }
+        Task { @MainActor in console.log("2 Task { @MainActor }（入队，稍后执行）") }
+        DispatchQueue.main.async { console.log("3 DispatchQueue.main.async（入队，稍后执行）") }
 
         // 即使已经在 MainActor 上，await 仍是潜在挂起点：上面排队的任务可能先于 B 执行
-        await MainActor.run { console.log("B await MainActor.run") }
-        console.log("C MainActor.run 返回后")
+        await MainActor.run { console.log("4 B await MainActor.run") }
+        console.log("5 C MainActor.run 返回后")
 
         try? await Task.sleep(for: .milliseconds(10))
-        console.log("D await Task.sleep 之后")
+        console.log("6 D await Task.sleep 之后")
     }
 }
 

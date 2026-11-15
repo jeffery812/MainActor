@@ -401,7 +401,7 @@ footer{margin-top:90px;padding-top:24px;border-top:1px solid var(--rule);font:12
 <section class="part" id="scaffold">
   <div class="part-head"><span class="pn">00</span><h2>先读懂脚手架</h2><p>Support/ · build settings</p></div>
 
-  <p>13 个页面共用同一套基础设施。不先理解这几处，后面很多写法（满屏的 <code>nonisolated</code>、反复出现的 <code>let console = console</code>）都会显得莫名其妙。</p>
+  <p>13 个页面共用同一套基础设施。不先理解这几处，后面很多写法（满屏的 <code>nonisolated</code>、反复出现的 <a href="#console-copy"><code>let console = console</code></a>）都会显得莫名其妙。</p>
 
   <h3>编译设置决定了"默认在哪儿跑"</h3>
   <table>
@@ -446,7 +446,78 @@ final class Console {                       // 默认隔离 → @MainActor，因
     <li><b>实验代码放在 <code>nonisolated enum</code> 命名空间里</b>（<code>GCDExperiments</code>、<code>FakeAPI</code>、<code>Bridges</code>、<code>Probe</code>……）。在默认 MainActor 隔离下，不加 <code>nonisolated</code> 的静态函数都属于主线程；把实验抽到非隔离命名空间，被测代码才不会被"默认值"悄悄绑在主线程上，也能从后台闭包里直接调用。</li>
   </ul>
 
-  <div class="note"><b>反复出现的 <code>let console = console</code></b>：View 的方法里，闭包引用 <code>console</code> 实际捕获的是 <code>self</code>（一个 MainActor 隔离的 View）。在 <code>Task.detached</code>、<code>DispatchQueue.global().async</code> 这种 <code>@Sendable</code>、非隔离的闭包里访问 <code>self.console</code> 是跨隔离访问。先复制到局部常量，闭包就只捕获一个 Sendable 的 <code>Console</code> 引用。<code>blockMainThread()</code> 这种只在主线程同步执行的函数就没有这样写。</div>
+  <h3 id="console-copy">反复出现的 <code>let console = console</code></h3>
+  <p>很多演示函数的第一行都是这句，看起来像是多余的。以 #01 <code>OrderingDemo</code> 为例：</p>
+<pre><code class="swift">@State private var console = Console()
+
+private func scheduleFromSyncContext() {
+    let console = console          // ← 这一行
+    console.clear()
+    console.log("1 同步代码开始")
+
+    DispatchQueue.main.async { console.log("DispatchQueue.main.async") }
+    Task { console.log("Task { }（继承 MainActor，入队）") }
+    RunLoop.main.perform { console.log("RunLoop.main.perform") }
+    OperationQueue.main.addOperation { console.log("OperationQueue.main.addOperation") }
+    Task.detached { console.log("Task.detached（不继承 actor → 后台）") }
+    DispatchQueue.global().async { console.log("DispatchQueue.global().async（后台）") }
+    …
+}</code></pre>
+
+  <div class="qa">
+    <div class="q"><span>C1</span>直接写 <code>console</code> 有什么问题？</div>
+    <div class="a">
+      <p>闭包里写 <code>console</code>，实际是 <code>self.console</code>。闭包捕获的是整个 View，等闭包<b>真正运行</b>时才去调用 <code>console</code> 的 getter 取值。</p>
+      <ul class="why">
+        <li><b>这个 getter 属于 MainActor。</b><code>@State</code> 是属性包装器，<code>console</code> 其实是一个计算属性（<code>wrappedValue</code> 的 getter）。在"默认 MainActor 隔离"下，它只能在主线程上同步调用。</li>
+        <li><b>有些闭包会在后台运行。</b><code>Task.detached</code>、<code>DispatchQueue.global().async</code> 的闭包本来就在后台。<code>RunLoop.main.perform</code>、<code>OperationQueue.main.addOperation</code> 虽然实际在主线程执行，但它们的闭包签名只是 <code>@Sendable</code>，编译器并不知道会在主线程跑。</li>
+        <li>所以在这些闭包里读 <code>self.console</code>，就是在非隔离的上下文里同步访问 MainActor 的属性。这属于跨隔离访问，编译器会报诊断。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C2</span>编译器具体怎么说？（本机实测）</div>
+    <div class="a">
+      <p>用同样的 <code>@State</code> 写法、默认 MainActor 隔离，在 Xcode 26 / Swift 6.2 下 typecheck，两种语言模式各编译一次：</p>
+      <table>
+        <tr><th>闭包里直接写 <code>console</code></th><th>Swift 5 模式（本工程）</th><th>Swift 6 模式</th></tr>
+        <tr><td><code>DispatchQueue.main.async { }</code></td><td>无诊断</td><td>无诊断：编译器特殊处理，把它当作 MainActor 闭包</td></tr>
+        <tr><td><code>Task { }</code></td><td>无诊断</td><td>无诊断：继承 MainActor</td></tr>
+        <tr><td><code>RunLoop.main.perform { }</code></td><td>无诊断</td><td>⚠️ can not be referenced from a Sendable closure</td></tr>
+        <tr><td><code>OperationQueue.main.addOperation { }</code></td><td>无诊断</td><td>⚠️ 同上</td></tr>
+        <tr><td><code>DispatchQueue.global().async { }</code></td><td>无诊断</td><td>⚠️ 同上</td></tr>
+        <tr><td><code>Task.detached { }</code></td><td>⚠️ cannot be accessed from outside of the actor; this is an error in the Swift 6 language mode</td><td>❌ <b>error</b>：main actor-isolated property 'console' cannot be accessed from outside of the actor</td></tr>
+        <tr><td>先写 <code>let console = console</code></td><td>无诊断</td><td>无诊断</td></tr>
+      </table>
+      <p class="dim">Swift 6 模式下，三个 GCD / Foundation API 只报警告而不是错误，是因为这些 SDK 接口带着 <code>@preconcurrency</code>。警告只说明编译器暂时放宽了检查，不代表这样写是安全的：闭包运行时确实会在后台读 MainActor 的属性。</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C3</span>为什么复制到局部常量就没问题了？</div>
+    <div class="a">
+      <p><code>let console = console</code> 这一行在<b>函数体里</b>执行，此时就在 MainActor 上，同步调用 getter 是合法的。之后闭包捕获的是这个局部常量，而不是 <code>self</code>。这个常量只是一个 <code>Console</code> 对象的引用，可以安全地交给后台闭包：</p>
+      <ul class="why">
+        <li><b>它可以跨线程传递。</b><code>Console</code> 是 MainActor 隔离的类，这样的类自动就是 <code>Sendable</code>，所以能被捕获进 <code>@Sendable</code> 闭包。</li>
+        <li><b>在后台也能直接调用。</b><code>log</code> 被标成了 <code>nonisolated</code>：它只是把消息追加进 Mutex 保护的 <code>LogBuffer</code>，再用 <code>Task { @MainActor in … }</code> 通知主线程刷新，所以任何线程都能直接调用，不需要 <code>await</code>（见 <a href="#logging">#00+ 深读</a>）。</li>
+      </ul>
+      <p>这一行把两件事分开了：在主线程上把值取出来；后台闭包只拿到一个可以跨线程传递的引用。</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C4</span>既然有些闭包直接写也不报错，为什么还要统一写？</div>
+    <div class="a">
+      <ul class="why">
+        <li><b>不用逐个判断。</b>同一个函数里既有 MainActor 闭包，也有后台闭包，哪个会报诊断还取决于 API 有没有 <code>@preconcurrency</code>。函数开头统一复制一份，所有闭包就都安全了。</li>
+        <li><b>以后切到 Swift 6 不用再改。</b>现在 Swift 5 模式下只有 <code>Task.detached</code> 那一处报警告，但这是 Swift 6 下的错误，其他三处在 Swift 6 下也会报警告。</li>
+        <li><b>可以直接当参数传。</b><code>mainActorSyncFunction(console)</code> 把同一个引用传给同步函数。</li>
+        <li><b>只有用到后台闭包的函数才这样写。</b><code>blockMainThread()</code> 全程在主线程同步执行，没有逃逸到后台的闭包，就直接用 <code>console</code>。</li>
+      </ul>
+      <div class="note"><b>为什么 <code>@State</code> 才会这样？</b>如果 <code>console</code> 是 View 上普通的存储属性（<code>let</code> / <code>var</code>，类型 Sendable），SE-0434 允许在同一模块里从非隔离上下文同步读取它，实测上面 6 种闭包在两种模式下都不报诊断。问题出在 <code>@State</code> 把它变成了一个 MainActor 的计算属性。</div>
+    </div>
+  </div>
 </section>
 
 <!-- ====================================================== -->
