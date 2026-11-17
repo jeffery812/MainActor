@@ -173,6 +173,7 @@ pre .t{color:#cfe8c0}
 table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:14px}
 th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
 th{font:600 11px/1.4 var(--mono);letter-spacing:.12em;color:var(--paper-faint);text-transform:uppercase}
+th code{text-transform:none;letter-spacing:0}
 td:first-child{white-space:nowrap}
 
 /* ---------- 每个演示 = 一行日志 ---------- */
@@ -235,6 +236,7 @@ article.demo.in{opacity:1;transform:none}
 .qa .q{font:900 20px/1.4 var(--serif);margin-bottom:10px;display:flex;gap:12px;align-items:baseline}
 .qa .q span{font:800 13px/1 var(--display);color:var(--ink);background:var(--bg);padding:4px 7px;border-radius:3px;letter-spacing:.02em;flex:none}
 .qa .a>p{color:var(--paper)}
+.qa .a h4{margin:22px 0 8px;font:700 16px/1.45 var(--sans);color:var(--paper)}
 
 /* ---------- 深读：交互模拟 ---------- */
 .sim{margin:26px 0 10px;border:1px solid var(--rule);border-radius:6px;background:var(--ink-2);overflow:hidden}
@@ -479,7 +481,7 @@ private func scheduleFromSyncContext() {
   <div class="qa">
     <div class="q"><span>C2</span>编译器具体怎么说？（本机实测）</div>
     <div class="a">
-      <p>用同样的 <code>@State</code> 写法、默认 MainActor 隔离，在 Xcode 26 / Swift 6.2 下 typecheck，两种语言模式各编译一次：</p>
+      <p>用同样的 <code>@State</code> 写法、默认 MainActor 隔离，用本机编译器（Swift 6.4）typecheck，两种语言模式各编译一次：</p>
       <table>
         <tr><th>闭包里直接写 <code>console</code></th><th>Swift 5 模式（本工程）</th><th>Swift 6 模式</th></tr>
         <tr><td><code>DispatchQueue.main.async { }</code></td><td>无诊断</td><td>无诊断：编译器特殊处理，把它当作 MainActor 闭包</td></tr>
@@ -516,6 +518,138 @@ private func scheduleFromSyncContext() {
         <li><b>只有用到后台闭包的函数才这样写。</b><code>blockMainThread()</code> 全程在主线程同步执行，没有逃逸到后台的闭包，就直接用 <code>console</code>。</li>
       </ul>
       <div class="note"><b>为什么 <code>@State</code> 才会这样？</b>如果 <code>console</code> 是 View 上普通的存储属性（<code>let</code> / <code>var</code>，类型 Sendable），SE-0434 允许在同一模块里从非隔离上下文同步读取它，实测上面 6 种闭包在两种模式下都不报诊断。问题出在 <code>@State</code> 把它变成了一个 MainActor 的计算属性。</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C5</span>局部的 <code>console</code> 和 <code>self.console</code> 是同一个东西，为什么一个要 <code>await</code>、一个不用？</div>
+    <div class="a">
+      <p>因为 <code>console.log(…)</code> 这一行其实做了<b>两件事</b>，需要 MainActor 的只是其中一件：</p>
+<pre><code class="swift">Task.detached {
+    let ref = self.console   // ① 读 View 的属性，拿到 Console 对象的引用
+    ref.log("7 …")           // ② 对这个对象调用 log
+}</code></pre>
+      <table>
+        <tr><th>步骤</th><th>访问的是什么</th><th>按谁的规则检查</th><th>能否在后台做</th></tr>
+        <tr><td>① <code>self.console</code></td><td><b>View 的属性</b>（<code>@State</code> 的 getter）</td><td>View 的隔离：MainActor</td><td>❌ 必须在主线程</td></tr>
+        <tr><td>② <code>ref.log(…)</code></td><td><b>Console 对象的方法</b></td><td>Console 的规则：<code>log</code> 是 <code>nonisolated</code></td><td>✅ 任何线程</td></tr>
+      </table>
+      <p>被 MainActor 保护的，是"View 身上的 <code>console</code> 属性"这条<b>访问路径</b>，不是 Console 对象本身。<code>let console = console</code> 把第 ① 步提前到函数体里，在主线程上做掉；闭包里只剩第 ② 步：</p>
+<pre><code class="swift">private func scheduleFromSyncContext() {   // 运行在主线程（MainActor）上
+    let console = self.console              // ① 在主线程上读属性：合法
+    Task.detached {
+        console.log("7 …")                  // 只剩 ②：在后台也合法
+    }
+}</code></pre>
+      <p>Swift 的隔离检查不是按"对象属于谁"判断的，而是按<b>你通过什么途径访问</b>判断的。拿到引用以后，对对象做什么，仍然按 Console 类自己的规则检查：<code>log</code> 是 nonisolated，哪里都能调用；它的 <code>entries</code> 是 MainActor 隔离的，在后台访问照样报错 <code>main actor-isolated property 'entries' cannot be accessed from outside of the actor</code>。局部常量没有绕过任何保护，只是把"读 View 属性"这一步放到了合法的地方。</p>
+      <div class="note"><b>打个比方</b>：View 的 <code>console</code> 属性是主办公室里的一本通讯录，只能在主办公室翻；Console 对象是一栋房子，引用是它的地址；<code>log</code> 是门口的信箱，谁都能投信；<code>entries</code> 是屋里的东西，只有主线程这位管理员能动。不写 <code>let</code>，等于后台员工出发后再回头翻通讯录；写了 <code>let</code>，等于出发前在主办公室把地址抄在纸条上带走。到了地方，投信没问题，进屋动东西照样得找管理员。</div>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C6</span>新的 <code>console</code> 是副本还是引用？</div>
+    <div class="a">
+      <p><b>是引用。</b><code>Console</code> 是 <code>final class</code>，类是引用类型，变量里存的是指向堆上对象的引用。<code>let console = console</code> 只复制了引用（引用计数 +1），堆上仍然只有一个 Console 对象：</p>
+      <ul class="why">
+        <li><b>后台写的日志界面上看得到。</b><code>console.clear()</code>、<code>console.log(…)</code> 改的都是 View 显示的那个对象。</li>
+        <li><b><code>let</code> 不代表对象不能改。</b>它只表示这个局部常量不能再指向别的对象，对象内部的数据照样可以变。</li>
+        <li><b>如果 Console 是 struct，这招就失效了。</b>那样会真的复制一份，后台往副本里写日志，界面上什么都看不到。整个设计依赖它是类。</li>
+        <li><b>生命周期会被延长。</b>每个闭包都强引用这个对象，闭包运行完之前它不会被释放，即使用户已经离开页面。这里的闭包都很快执行完，没有问题；<code>Console.log</code> 内部刷新界面时用 <code>[weak self]</code>，是为了不让日志任务反过来延长 Console 的寿命。</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C7</span>为什么说 MainActor 隔离的类"自动是 Sendable"？</div>
+    <div class="a">
+      <p>Sendable 防的是：同一个对象被多个线程<b>同时</b>访问。普通的类不安全：主线程和后台线程拿到同一个引用，可以同时改它的 <code>var</code>。</p>
+      <p>MainActor 隔离的类不一样：它的可变状态<b>只能在主线程上访问</b>，编译器在每个访问点都检查。在主线程上可以直接访问；在后台只能 <code>await</code>，先切到主线程再访问；不 <code>await</code> 直接访问就是编译错误。所以不管引用被复制给多少个线程，<b>真正动手读写状态的永远只有主线程一个</b>，而主线程是串行的。后台拿着引用，能直接做的只有使用 <code>nonisolated</code> 成员，而编译器保证这些成员本身是安全的。</p>
+      <p>引用传来传去不会带来风险，所以 Swift 规定（SE-0316）：标了全局 actor 的类型自动遵循 <code>Sendable</code>。本机实测（Swift 6 模式，默认 MainActor 隔离）：</p>
+<pre><code class="swift">final class Console {                    // 默认 MainActor 隔离
+    var entries: [String] = []
+    nonisolated func log(_ s: String) {}
+}
+nonisolated final class PlainBox { var entries: [String] = [] }
+
+func requireSendable&lt;T: Sendable&gt;(_: T) {}
+
+requireSendable(Console())               // ✅ 自动是 Sendable
+requireSendable(PlainBox())              // ❌ type 'PlainBox' does not conform to the 'Sendable' protocol
+
+let c = Console()
+Task.detached { c.log("ok") }            // ✅ 引用带到后台，调用 nonisolated 方法
+Task.detached { _ = c.entries }          // ❌ main actor-isolated property 'entries' cannot be accessed from outside of the actor</code></pre>
+      <p class="dim">同理，<code>actor</code> 类型永远是 Sendable。让类成为 Sendable 的其他办法：所有存储属性都是 Sendable 的 <code>let</code>；像 <code>LogBuffer</code> 那样用 <code>Mutex</code> 保护可变状态；实在证明不了，才用 <code>@unchecked Sendable</code> 由自己担保。</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C8</span>另一种写法：捕获列表 <code>[console]</code></div>
+    <div class="a">
+      <p>捕获列表是闭包开头方括号里的一组名字。意思是：<b>在创建闭包的那一刻就把这些值求出来，作为常量存进闭包</b>，闭包运行时用存下来的值，而不是到时候再去外面读。</p>
+<pre><code class="swift">Task.detached { [console] in
+    console.log("7 Task.detached")
+}
+DispatchQueue.global().async { [console] in
+    console.log("8 global")
+}</code></pre>
+      <p>在方法里，闭包中写 <code>console</code> 实际是 <code>self.console</code>：</p>
+      <table>
+        <tr><th>写法</th><th>闭包里存了什么</th><th>什么时候读 <code>self.console</code></th></tr>
+        <tr><td><code>{ console.log("…") }</code></td><td><code>self</code></td><td><b>闭包运行时</b>（可能在后台）</td></tr>
+        <tr><td><code>{ [console] in console.log("…") }</code></td><td>Console 对象的引用</td><td><b>创建闭包时</b>（在主线程）</td></tr>
+      </table>
+      <p>它和 <code>let console = console</code> 效果完全一样，只是作用于单个闭包。<b>捕获列表在创建闭包的上下文里求值</b>，在 MainActor 上创建闭包，就是在主线程上读属性，所以合法；之后闭包在哪运行都不影响这一步。</p>
+      <p>不写捕获列表和写了的区别，本机实测：</p>
+<pre><code class="swift">var n = 1
+let a = { print(n) }          // 捕获变量 n 本身
+let b = { [n] in print(n) }   // 创建时把 n 的值存进闭包
+n = 2
+a()   // 2：运行时去读变量
+b()   // 1：用的是创建时的快照
+
+final class Box { var v = 1 }
+var box = Box()
+let c = { [box] in print(box.v) }
+box.v = 2      // 改的是同一个对象 → c() 打印 2（引用类型，快照的是引用）
+box = Box()    // 变量改指向新对象 → c() 仍然打印 2（闭包还拿着旧对象）</code></pre>
+      <table>
+        <tr><th>写法</th><th>含义</th></tr>
+        <tr><td><code>[console]</code></td><td>捕获当前值，<b>强引用</b></td></tr>
+        <tr><td><code>[weak self]</code></td><td>弱引用，闭包里 <code>self</code> 是可选值，对象释放后为 <code>nil</code>，常用来避免循环引用</td></tr>
+        <tr><td><code>[unowned self]</code></td><td>不增加引用计数也不可选，对象释放后访问会崩溃</td></tr>
+        <tr><td><code>[c = self.console]</code></td><td>起个新名字，也可以是任意表达式，如 <code>[count = items.count]</code></td></tr>
+        <tr><td><code>[console, weak self]</code></td><td>多个用逗号分隔，可以混用</td></tr>
+      </table>
+      <p class="dim">常见的 <code>[weak self]</code> 就是捕获列表的一种：同样在创建闭包时捕获 <code>self</code>，只是捕获成弱引用。</p>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="q"><span>C9</span>实际项目里一般用哪种？</div>
+    <div class="a">
+      <p>三种写法本质相同：<b>在主线程上把引用取出来，闭包或函数只带走引用</b>。下面三种都在 Swift 6 模式、默认 MainActor 隔离下编译过，没有任何诊断。</p>
+      <table>
+        <tr><th>场景</th><th>推荐写法</th></tr>
+        <tr><td>只有一两个后台闭包</td><td>捕获列表 <code>{ [console] in … }</code>：最常见，意图一目了然</td></tr>
+        <tr><td>一个函数里有很多闭包都要用（如 <code>OrderingDemo</code>）</td><td>函数开头 <code>let console = console</code>，最好加一句注释</td></tr>
+        <tr><td>真实业务代码</td><td>别在 View 里开后台闭包：写成 <code>@concurrent</code> 函数，<b>把需要的东西当参数传进去</b></td></tr>
+      </table>
+<pre><code class="swift">@concurrent
+static func work(_ console: Console) async {
+    console.log("在后台做事")
+}
+
+func onTap() async {
+    await Self.work(console)   // 参数在调用处求值：在主线程上读属性，再传过去
+}</code></pre>
+      <p>参数写法的好处：依赖写在函数签名上；可以 <code>await</code> 拿返回值，回到 MainActor 再更新状态；不需要 <code>Task.detached</code>，取消和优先级都能正常传递。</p>
+      <table>
+        <tr><th>不推荐</th><th>问题</th></tr>
+        <tr><td><code>await self.console</code> / <code>await MainActor.run { … }</code></td><td>为了读一个引用多切换一次线程；GCD 这类同步闭包里写不了 <code>await</code></td></tr>
+        <tr><td><code>nonisolated(unsafe)</code>、<code>@unchecked Sendable</code></td><td>只是让编译器不再报错，问题还在</td></tr>
+        <tr><td>忽略 Swift 5 模式下的警告</td><td>运行时确实是在后台读 MainActor 的属性，切到 Swift 6 模式会变成错误</td></tr>
+      </table>
     </div>
   </div>
 </section>
@@ -822,8 +956,54 @@ final class Console {                        // 默认隔离 → 整个类是 @M
     func clear()   { buffer.reset(); entries = [] }  // MainActor
 }</code></pre>
 
+  <div class="qa" id="console-isolated">
+    <div class="q"><span>Q9</span>"Console 是 MainActor 隔离的类"，如何理解？</div>
+    <div class="a">
+      <p>一句话：<b>这个类的成员默认都归 MainActor 管，只有已经在 MainActor（主线程）上的代码才能直接使用它们。</b></p>
+
+      <h4>1. 源码里没写 <code>@MainActor</code>，标注从哪来</h4>
+      <p>工程开启了 <i>Default Actor Isolation = MainActor</i>，模块里所有没写隔离标注的类型，编译器都当作写了 <code>@MainActor</code>。所以源码里的 <code>@Observable final class Console</code> 实际等同于：</p>
+<pre><code class="swift">@MainActor @Observable
+final class Console { … }</code></pre>
+
+      <h4>2. 每个成员归谁管</h4>
+      <table class="breaks">
+        <tr><th>成员</th><th>隔离</th><th>能在哪直接用</th></tr>
+        <tr><td><code>private(set) var entries</code></td><td>MainActor</td><td>只有主线程上的代码</td></tr>
+        <tr><td><code>func refresh()</code></td><td>MainActor</td><td>只有主线程上的代码</td></tr>
+        <tr><td><code>func clear()</code></td><td>MainActor</td><td>只有主线程上的代码</td></tr>
+        <tr><td><code>init()</code>（隐式）</td><td>MainActor</td><td>只有主线程上的代码</td></tr>
+        <tr><td><code>nonisolated let buffer</code></td><td><b>不属于任何 actor</b></td><td>任何线程</td></tr>
+        <tr><td><code>nonisolated func log</code></td><td><b>不属于任何 actor</b></td><td>任何线程</td></tr>
+      </table>
+      <p>所以"整个类是 MainActor 的"，更准确地说是：<b>类上的标注给所有成员定了默认归属，单个成员可以用 <code>nonisolated</code> 退出。</b><code>buffer</code> 和 <code>log</code> 就是专门为后台线程开的两个口子。</p>
+
+      <h4>3. 隔离带来的两条保证</h4>
+      <ul class="why">
+        <li><b>编译期：限制谁能直接访问。</b>主线程上的代码（View 的 <code>body</code>、按钮回调、其他 MainActor 函数）可以直接读写 <code>entries</code>、调用 <code>clear()</code>；后台的 async 代码必须写 <code>await console.clear()</code>，先切到主线程再调用；后台的同步代码（GCD 闭包等）没法 <code>await</code>，所以不能调用，编译器报错（Swift 5 模式下有些地方只给警告）。</li>
+        <li><b>运行期：通过正当途径调用时，代码一定在主线程上运行。</b><code>await console.clear()</code> 时，任务先被挪到 MainActor 的执行器上，而 MainActor 的执行器就是主线程。</li>
+      </ul>
+      <p>两条合起来，<b><code>entries</code> 只会被主线程读写</b>。主线程一次只做一件事，所以不需要加锁，也不会有数据竞争。这也是 SwiftUI 的要求：界面读的数据必须在主线程上修改。</p>
+
+      <h4>4. 容易误解的地方</h4>
+      <ul class="why">
+        <li><b>它不是说"对象住在主线程上"。</b>对象和别的对象一样在堆内存里，引用可以传给任何线程。隔离管的是"谁能访问它的哪些成员"，不管对象放在哪。这也是它能自动成为 Sendable 的原因（见 <a href="#console-copy">C7</a>）：引用传到哪都没关系，受保护的成员只有主线程能碰。</li>
+        <li><b>它不是一个运行时的锁。</b>没有任何代码在每次访问时检查"现在是不是主线程"。保护主要靠编译器在调用处卡住；绕过编译器的路径（比如 Swift 5 模式下只给警告的 GCD 闭包），运行时照样会在后台执行。实测中，<code>@MainActor</code> 的同步函数被 GCD 闭包调用时，确实在后台线程上运行了。</li>
+        <li><b><code>nonisolated</code> 成员不受这些保护。</b>所以 <code>log</code> 不碰 <code>entries</code>：它只往 <code>buffer</code> 写，而 <code>buffer</code> 自己用 <code>Mutex</code> 保证线程安全。</li>
+      </ul>
+
+      <h4>5. 从 <code>log</code> 的实现看这个设计</h4>
+<pre><code class="swift">nonisolated func log(_ message: String) {
+    buffer.append(message)                              // 任何线程：写进 Mutex 保护的缓冲
+    Task { @MainActor [weak self] in self?.refresh() }  // 交给主线程：读缓冲，更新 entries
+}</code></pre>
+      <p><code>log</code> 可能在任何线程上被调用，所以它只做线程安全的事：写缓冲。真正修改 MainActor 状态 <code>entries</code> 的 <code>refresh()</code>，用 <code>Task { @MainActor in … }</code> 交回主线程去做。</p>
+      <div class="note"><b>一句话：</b>MainActor 隔离的类，就是把这个类的状态和方法都划给主线程管。编译器保证别的线程只能"排队请主线程代办"，不能直接动手；只有标了 <code>nonisolated</code> 的成员，才对所有线程开放。</div>
+    </div>
+  </div>
+
   <div class="qa">
-    <div class="q"><span>Q9</span><code>buffer</code> 为什么要 <code>nonisolated</code>？</div>
+    <div class="q"><span>Q10</span><code>buffer</code> 为什么要 <code>nonisolated</code>？</div>
     <div class="a">
       <p>Console 整个类是 MainActor 隔离的，它的存储属性默认也是 MainActor 隔离的，<code>let</code> 也不例外。而 <code>log</code> 是 <code>nonisolated</code> 函数，可能在任意线程上运行。在 <code>log</code> 里写 <code>buffer.append(...)</code> 就是"从非隔离上下文读取 MainActor 属性"，编译器会要求 <code>await</code>，同步调用就不成立了。</p>
       <p><code>nonisolated let buffer</code> 告诉编译器：这个属性不归 MainActor 管，任何线程都可以直接读。这件事之所以安全，是因为两个条件同时成立：</p>
@@ -836,7 +1016,7 @@ final class Console {                        // 默认隔离 → 整个类是 @M
   </div>
 
   <div class="qa">
-    <div class="q"><span>Q10</span>为什么用快照刷新，而不是每次 Task 里追加一条？</div>
+    <div class="q"><span>Q11</span>为什么用快照刷新，而不是每次 Task 里追加一条？</div>
     <div class="a">
       <p>每次 <code>log</code> 都会启动一个 <code>Task { @MainActor }</code>，但<b>非结构化 Task 的执行顺序没有保证</b>（#01 演示过）。如果写成 <code>Task { @MainActor in entries.append(entry) }</code>，屏幕上的顺序就可能和真实顺序不同。</p>
       <p>现在的 <code>refresh()</code> 不管自己是第几个被执行，都把 buffer 的<b>完整快照</b>复制过来。顺序由 buffer（也就是 Mutex）决定，与 Task 的执行顺序无关；多个 refresh 重复执行也没有副作用，最后一次总能显示全部日志。</p>
@@ -849,7 +1029,7 @@ final class Console {                        // 默认隔离 → 整个类是 @M
   </div>
 
   <div class="qa">
-    <div class="q"><span>Q11</span>主线程被阻塞时，日志会不会乱？</div>
+    <div class="q"><span>Q12</span>主线程被阻塞时，日志会不会乱？</div>
     <div class="a">
       <p>不会，这正是"记录"和"显示"分开的好处。#02 里主线程被 <code>Thread.sleep</code> 卡住 2 秒，期间后台线程照样调用 <code>log</code>，条目、时间、线程号都同步写进了 buffer。主线程恢复后，排队的 <code>refresh</code> 才执行，一次性显示出来，时间戳仍然是事件发生时的真实时间。如果记录也要等主线程，这 2 秒内的日志时间就全是错的。</p>
     </div>
@@ -872,7 +1052,7 @@ final class Console {                        // 默认隔离 → 整个类是 @M
   <p><code>LogBuffer.State</code> 里有一行 <code>var start = ContinuousClock.now</code>，每条日志的 <code>elapsed</code> 都是用它算出来的。整个工程凡是要计时的地方，用的都是 <code>ContinuousClock</code>，没有用 <code>Date</code>。</p>
 
   <div class="qa">
-    <div class="q"><span>Q12</span><code>ContinuousClock</code> 是什么？</div>
+    <div class="q"><span>Q13</span><code>ContinuousClock</code> 是什么？</div>
     <div class="a">
       <p>Swift 5.7（SE-0329）给标准库加了一套时间类型，代替过去 <code>Date</code>、<code>DispatchTime</code>、<code>CFAbsoluteTime</code>、<code>mach_absolute_time</code> 各管一摊的局面：</p>
       <div class="cards">
@@ -904,7 +1084,7 @@ final class Console {                        // 默认隔离 → 整个类是 @M
   </div>
 
   <div class="qa">
-    <div class="q"><span>Q13</span>为什么计时不用 <code>Date</code>？</div>
+    <div class="q"><span>Q14</span>为什么计时不用 <code>Date</code>？</div>
     <div class="a">
       <p><code>Date</code> 表示"日历上的某一时刻"，适合显示、存储、和服务器对时，但<b>不适合测量时长</b>：用户手动改时间、网络校时，都会让 <code>Date()</code> 突然跳动，两次 <code>Date()</code> 相减可能得到偏大甚至负的结果。日志的 <code>elapsed</code> 一旦为负，"谁先谁后"就无从谈起。单调时钟没有这个问题。</p>
       <p>至于选 <code>ContinuousClock</code> 还是 <code>SuspendingClock</code>：演示里的实验都在几秒内跑完，期间设备不会休眠，两者测得的结果相同。<code>ContinuousClock</code> 是 <code>Task.sleep(for:)</code> 的默认时钟，用它和标准库保持一致。如果关心的是"进程真正运行了多久"（比如性能测量时希望排除休眠），就用 <code>SuspendingClock</code>。</p>
