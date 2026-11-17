@@ -27,6 +27,7 @@ MainActor、DispatchQueue、RunLoop、Task、GCD、OperationQueue、actor 等概
 - 6 个交互动画：RunLoop Mode 与滚动、调度时机回放、阻塞 vs 挂起、线程爆炸 vs 协作式线程池、结构化并发与取消、actor 重入
 - 在 iPhone 17 Pro 模拟器上的实测数据
 - `Task {}` 闭包与 nonisolated async 函数隔离继承的对比实验（§7.3）
+- `nonisolated` 用法大全（§9.3）：`nonisolated`、`nonisolated(nonsending)`、`@concurrent`、`nonisolated(unsafe)` 各写法的含义与选择，同步函数加 `nonisolated` 改变的是"谁能直接调用"而不是在哪个线程运行，以及常见误区
 
 两个 WWDC 页和 Kodeco 页的示例代码是根据原文描述重建的示意，页面上已注明；SwiftLee 页引用的是原文代码；视频 transcript 保存在 [`wwdc2025-268.txt`](wwdc2025-268.txt) 和 [`wwdc2023-10170.txt`](wwdc2023-10170.txt)。
 
@@ -76,7 +77,8 @@ GitHub Pages 会把根目录的 `index.html` 作为首页。之后每次推送�
 
 [`MainActor.html`](MainActor.html)（在线：<https://jeffery812.github.io/MainActor/MainActor.html>）解释每个演示**为什么这样写**：
 
-- 编译设置如何决定代码默认在哪个线程上运行，以及满屏的 `nonisolated`、反复出现的 `let console = console` 从何而来
+- 编译设置如何决定代码默认在哪个线程上运行，以及满屏的 `nonisolated` 从何而来
+- 反复出现的 `let console = console`（C1–C9）：为什么加了这一行，后台闭包里就不需要 `await`；新变量是拷贝还是引用；MainActor 隔离的类为什么自动是 `Sendable`；另一种写法捕获列表 `[console]`；实际项目里推荐哪种写法
 - 13 个演示逐一拆解：看什么、控制变量是什么、关键代码和看似多余的写法为什么必不可少
-- 日志系统 `Console` / `LogBuffer` 深读：`Sendable`、`nonisolated let`、`Mutex`、`ContinuousClock`，以及 Mutex 与主线程的四个追问（为什么不需要 `await`、主线程能否用锁、持锁太久怎么办、调用方不知道里面有锁怎么办）
+- 日志系统 `Console` / `LogBuffer` 深读：「MainActor 隔离的类」到底是什么意思（哪些成员归主线程、编译期与运行期各保证什么、常见误解），`Sendable`、`nonisolated let`、`Mutex`、`ContinuousClock`，以及 Mutex 与主线程的四个追问（为什么不需要 `await`、主线程能否用锁、持锁太久怎么办、调用方不知道里面有锁怎么办）
 - 4 个交互示意：阻塞 vs 挂起、3 个线程同时写日志（有无 Mutex）、三种时钟测时长（`Date` / `ContinuousClock` / `SuspendingClock`）、主线程等锁时的掉帧时间线
