@@ -10,9 +10,9 @@ import SwiftUI
 /// 同步方法：actor 保证同一时间只有一个调用在执行
 actor SerialWorker {
     func work(_ name: String, console: Console) {
-        console.log("\(name) 开始（actor 内）")
+        console.log("1 \(name) 开始（actor 内）")
         Work.spin(seconds: 0.2)
-        console.log("\(name) 结束")
+        console.log("2 \(name) 结束")
     }
 }
 
@@ -23,16 +23,16 @@ actor NaiveImageCache {
 
     func image(for key: String, console: Console) async -> String {
         if let cached = cache[key] {
-            console.log("命中缓存")
+            console.log("1 命中缓存")
             return cached
         }
         downloadCount += 1
         let number = downloadCount
-        console.log("开始下载 #\(number)（await 期间 actor 可处理其他调用）")
+        console.log("2 开始下载 #\(number)（await 期间 actor 可处理其他调用）")
         try? await Task.sleep(for: .milliseconds(500))
         let image = "image-\(key)"
         cache[key] = image
-        console.log("下载 #\(number) 完成，写入缓存")
+        console.log("3 下载 #\(number) 完成，写入缓存")
         return image
     }
 }
@@ -45,17 +45,17 @@ actor DedupImageCache {
 
     func image(for key: String, console: Console) async -> String {
         if let cached = cache[key] {
-            console.log("命中缓存")
+            console.log("1 命中缓存")
             return cached
         }
         if let task = inFlight[key] {
-            console.log("复用进行中的下载")
+            console.log("2 复用进行中的下载")
             return await task.value
         }
         downloadCount += 1
         let number = downloadCount
         let task = Task {
-            console.log("开始下载 #\(number)")
+            console.log("3 开始下载 #\(number)")
             try? await Task.sleep(for: .milliseconds(500))
             return "image-\(key)"
         }
@@ -63,7 +63,7 @@ actor DedupImageCache {
         let image = await task.value
         cache[key] = image
         inFlight[key] = nil
-        console.log("下载 #\(number) 完成，写入缓存")
+        console.log("4 下载 #\(number) 完成，写入缓存")
         return image
     }
 }
@@ -97,7 +97,7 @@ struct ActorReentrancyDemo: View {
                     group.addTask { await worker.work("调用\(i)", console: console) }
                 }
             }
-            console.log("全部完成")
+            console.log("3 全部完成")
         }
     }
 
@@ -111,7 +111,7 @@ struct ActorReentrancyDemo: View {
                     group.addTask { _ = await cache.image(for: "avatar", console: console) }
                 }
             }
-            console.log("朴素缓存：总下载次数 = \(await cache.downloadCount)")
+            console.log("4 朴素缓存：总下载次数 = \(await cache.downloadCount)")
         }
     }
 
@@ -125,7 +125,7 @@ struct ActorReentrancyDemo: View {
                     group.addTask { _ = await cache.image(for: "avatar", console: console) }
                 }
             }
-            console.log("去重缓存：总下载次数 = \(await cache.downloadCount)")
+            console.log("5 去重缓存：总下载次数 = \(await cache.downloadCount)")
         }
     }
 }

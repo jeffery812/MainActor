@@ -47,62 +47,62 @@ struct BlockingDemo: View {
     }
 
     private func blockMainThread() {
-        console.log("主线程 Thread.sleep(2s) 开始")
+        console.log("1 主线程 Thread.sleep(2s) 开始")
         Thread.sleep(forTimeInterval: 2)
-        console.log("Thread.sleep 结束")
+        console.log("2 Thread.sleep 结束")
     }
 
     private func taskInheritingMainActor() {
         let console = console
         Task {
-            console.log("Task { } 开始同步计算")
+            console.log("1 Task { } 开始同步计算")
             let n = Work.spin(seconds: 2)
-            console.log("Task { } 计算完成（\(n) 次迭代）")
+            console.log("2 Task { } 计算完成（\(n) 次迭代）")
         }
     }
 
     private func callNonsending() {
         let console = console
         Task {
-            console.log("调用 nonsending 函数前")
+            console.log("1 调用 nonsending 函数前")
             let n = await Work.spinNonsending(seconds: 2, console: console)
-            console.log("nonsending 返回（\(n) 次迭代）")
+            console.log("3 nonsending 返回（\(n) 次迭代）")
         }
     }
 
     private func callConcurrent() {
         let console = console
         Task {
-            console.log("调用 @concurrent 函数前")
+            console.log("1 调用 @concurrent 函数前")
             let n = await Work.spinConcurrent(seconds: 2, console: console)
-            console.log("@concurrent 返回，已回到 MainActor（\(n) 次迭代）")
+            console.log("3 @concurrent 返回，已回到 MainActor（\(n) 次迭代）")
         }
     }
 
     private func detached() {
         let console = console
         Task.detached {
-            console.log("Task.detached 开始同步计算")
+            console.log("1 Task.detached 开始同步计算")
             let n = Work.spin(seconds: 2)
-            await MainActor.run { console.log("MainActor.run 回到主线程（\(n) 次迭代）") }
+            await MainActor.run { console.log("2 MainActor.run 回到主线程（\(n) 次迭代）") }
         }
     }
 
     private func gcdGlobal() {
         let console = console
         DispatchQueue.global(qos: .userInitiated).async {
-            console.log("DispatchQueue.global 开始计算")
+            console.log("1 DispatchQueue.global 开始计算")
             let n = Work.spin(seconds: 2)
-            DispatchQueue.main.async { console.log("DispatchQueue.main.async 回到主线程（\(n) 次迭代）") }
+            DispatchQueue.main.async { console.log("2 DispatchQueue.main.async 回到主线程（\(n) 次迭代）") }
         }
     }
 
     private func taskSleep() {
         let console = console
         Task {
-            console.log("await Task.sleep(2s) 开始（挂起）")
+            console.log("1 await Task.sleep(2s) 开始（挂起）")
             try? await Task.sleep(for: .seconds(2))
-            console.log("Task.sleep 结束，恢复执行")
+            console.log("2 Task.sleep 结束，恢复执行")
         }
     }
 }

@@ -27,14 +27,14 @@ nonisolated enum Work {
     /// 从 MainActor 调用 → 仍然在主线程跑，会卡 UI。
     nonisolated(nonsending)
     static func spinNonsending(seconds: Double, console: Console) async -> Int {
-        console.log("nonisolated(nonsending) async 函数内部")
+        console.log("2 nonisolated(nonsending) async 函数内部")
         return spin(seconds: seconds)
     }
 
     /// @concurrent：总是在全局并发执行器（后台线程池）上执行。
     @concurrent
     static func spinConcurrent(seconds: Double, console: Console) async -> Int {
-        console.log("@concurrent async 函数内部")
+        console.log("2 @concurrent async 函数内部")
         return spin(seconds: seconds)
     }
 }

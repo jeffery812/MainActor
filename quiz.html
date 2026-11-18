@@ -123,9 +123,21 @@ html[data-theme="dark"] .stamp{mix-blend-mode:screen}
 .q .no small{display:block;font:600 10.5px/1 var(--mono);letter-spacing:.16em;color:var(--ink-3);margin-top:10px}
 .q .no .multi{color:var(--red)}
 .q .stem{font-weight:600;font-size:17.5px;margin:0 0 4px}
+.q .stem p + p{font-weight:400;font-size:15.5px;color:var(--ink-2)}
 .q .stem p{margin:0 0 8px}
 .q .ctx{font-size:13.5px;color:var(--ink-3);margin:0 0 10px}
-.q .ctx::before{content:"出自 ";}
+.q .ctx::before{content:"代码出自 ";}
+.env{font-size:13.5px;line-height:1.8;color:var(--ink-2);background:var(--sheet);border:1px dashed var(--rule-2);border-radius:6px;padding:10px 14px;margin:0 0 12px}
+.env b{color:var(--ink)}
+.q .stem p code,.env code{font-size:.82em}
+.srcbox{margin:10px 0 14px;border:1px solid var(--rule);border-radius:6px;background:var(--sheet)}
+.srcbox summary{cursor:pointer;padding:8px 12px;font:500 12px/1.4 var(--mono);color:var(--ink-2);list-style:none;display:flex;gap:8px;align-items:center}
+.srcbox summary::-webkit-details-marker{display:none}
+.srcbox summary::before{content:"▸";color:var(--red);transition:transform .15s}
+.srcbox[open] summary::before{transform:rotate(90deg)}
+.srcbox summary::after{content:"背景代码 · 点击折叠";margin-left:auto;font-size:10.5px;color:var(--ink-3);letter-spacing:.06em}
+.srcbox:not([open]) summary::after{content:"背景代码 · 点击展开"}
+.srcbox pre{margin:0;border-radius:0 0 6px 6px;box-shadow:none}
 
 /* red-pen verdict */
 .mark{position:absolute;left:2px;top:66px;font:400 46px/1 var(--brush);color:var(--red);opacity:0;transform:rotate(-10deg) scale(.6);pointer-events:none}
@@ -335,20 +347,192 @@ const PARTS = [
 const G = 'index.html#';
 const M = 'MainActor.html#';
 
+/* ----------------------------------------------------------------------
+   题目引用的工程代码（原文）。每道用到它们的题都会完整附上，不需要读过工程。
+   ---------------------------------------------------------------------- */
+const ENV = `<div class="env"><b>编译设置</b>（会影响答案）：
+<code>SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor</code>，没写隔离标注的类型和函数都默认是 <code>@MainActor</code>，SwiftUI 的 View 及其方法也在 MainActor 上；
+<code>SWIFT_APPROACHABLE_CONCURRENCY = YES</code>，包含 <code>NonisolatedNonsendingByDefault</code>：没有其他标注的 <code>nonisolated</code> async 函数在<b>调用方</b>的 actor 上执行；
+<code>SWIFT_VERSION = 5.0</code>（Swift 6.2 编译器，未开启 Swift 6 语言模式）。</div>`;
+
+const CONSOLE_NOTE = `<p><code>Console</code> 是一个日志对象：<code>console.log("…")</code> 在<b>被调用的那一刻</b>记下当前线程和时间，写进一个用 <code>Mutex</code> 保护的缓冲区，再安排主线程刷新界面。所以界面上日志的顺序就是代码真实执行的顺序。<code>log</code> 是 <code>nonisolated</code> 的同步函数，任何线程都可以直接调用，不需要 <code>await</code>。每条日志开头的数字是这句 <code>log</code> 在代码里的编号，方便对照界面上实际打印的先后顺序。</p>`;
+
+const SRC_CONSOLE = String.raw`import SwiftUI
+import Synchronization
+
+/// 一条日志：记录发生时所在的线程与相对时间
+nonisolated struct LogEntry: Identifiable, Sendable {
+    let id: Int
+    let elapsed: Duration
+    let message: String
+    let isMainThread: Bool
+    let threadID: UInt32
+}
+
+nonisolated enum ThreadInfo {
+    /// 同步函数：读取"此刻"所在的线程
+    static func current() -> (isMain: Bool, id: UInt32) {
+        (pthread_main_np() != 0, pthread_mach_thread_np(pthread_self()))
+    }
+}
+
+/// 用 Mutex 保护的日志缓冲区，任何线程都可以写入
+nonisolated final class LogBuffer: Sendable {
+    private struct State: Sendable {
+        var entries: [LogEntry] = []
+        var nextID = 0
+        var start = ContinuousClock.now
+    }
+
+    private let state = Mutex(State())
+
+    func append(_ message: String) {
+        let thread = ThreadInfo.current()
+        state.withLock { state in
+            state.entries.append(LogEntry(
+                id: state.nextID,
+                elapsed: state.start.duration(to: .now),
+                message: message,
+                isMainThread: thread.isMain,
+                threadID: thread.id
+            ))
+            state.nextID += 1
+        }
+    }
+
+    func snapshot() -> [LogEntry] {
+        state.withLock { $0.entries }
+    }
+
+    func reset() {
+        state.withLock { state in
+            state.entries.removeAll()
+            state.start = .now
+        }
+    }
+}
+
+/// 供 SwiftUI 显示的日志模型。
+/// 没写隔离标注 → 按编译设置默认是 @MainActor。
+/// log 是 nonisolated 的，可以在任意线程上同步调用。
+@Observable
+final class Console {
+    private(set) var entries: [LogEntry] = []   // 界面显示的就是它
+
+    nonisolated let buffer = LogBuffer()
+
+    nonisolated func log(_ message: String) {
+        buffer.append(message)
+        Task { @MainActor [weak self] in self?.refresh() }
+    }
+
+    func refresh() {
+        entries = buffer.snapshot()
+    }
+
+    func clear() {
+        buffer.reset()
+        entries = []
+    }
+}`;
+
+const SRC_WORK = String.raw`import Foundation
+
+nonisolated enum Work {
+    /// 同步的 CPU 忙等，模拟耗时计算（会占住当前线程）
+    @discardableResult
+    static func spin(seconds: Double) -> Int {
+        let end = ContinuousClock.now + .milliseconds(Int(seconds * 1000))
+        var iterations = 0
+        while ContinuousClock.now < end { iterations &+= 1 }
+        return iterations
+    }
+
+    /// nonisolated(nonsending)：在调用方的 actor 上执行
+    nonisolated(nonsending)
+    static func spinNonsending(seconds: Double, console: Console) async -> Int {
+        console.log("2 nonisolated(nonsending) async 函数内部")
+        return spin(seconds: seconds)
+    }
+
+    /// @concurrent：总是在全局并发执行器（后台线程池）上执行
+    @concurrent
+    static func spinConcurrent(seconds: Double, console: Console) async -> Int {
+        console.log("2 @concurrent async 函数内部")
+        return spin(seconds: seconds)
+    }
+}`;
+
+const SRC_ORDERING = String.raw`import SwiftUI
+
+struct OrderingDemo: View {
+    @State private var console = Console()
+
+    var body: some View {
+        // DemoScreen 是一个通用布局：上半部分放按钮，下半部分逐行显示 console 里的日志。
+        // DemoButton 是一个普通按钮，闭包在用户点击时执行（在主线程 / MainActor 上）。
+        DemoScreen(title: "执行时机", summary: "（页面说明文字）", console: console) {
+            DemoButton(title: "从同步上下文调度") {
+                scheduleFromSyncContext()
+            }
+        }
+    }
+
+    private func scheduleFromSyncContext() {
+        let console = console
+        console.clear()
+        console.log("1 同步代码开始")
+
+        DispatchQueue.main.async { console.log("2 DispatchQueue.main.async") }
+        Task { console.log("3 Task { }（继承 MainActor，入队）") }
+        Task.immediate { console.log("4 Task.immediate（立即同步开始执行）") }
+        RunLoop.main.perform { console.log("5 RunLoop.main.perform") }
+        OperationQueue.main.addOperation { console.log("6 OperationQueue.main.addOperation") }
+        Task.detached { console.log("7 Task.detached（不继承 actor → 后台）") }
+        DispatchQueue.global().async { console.log("8 DispatchQueue.global().async（后台）") }
+
+        mainActorSyncFunction(console)
+        console.log("10 同步代码结束")
+    }
+
+    private func mainActorSyncFunction(_ console: Console) {
+        console.log("9 调用 @MainActor 同步函数（直接执行，不排队）")
+    }
+}`;
+
+const CTX_CONSOLE = ['MainActor/Support/Console.swift（日志部分；界面组件与本题无关，未列出）', SRC_CONSOLE];
+const CTX_WORK = ['MainActor/Support/Work.swift（节选：本题用到的 Work 全部成员）', SRC_WORK];
+const CTX_ORDERING = ['MainActor/Demos/OrderingDemo.swift', SRC_ORDERING];
+
 const QUESTIONS = [
 /* ---------------- I ---------------- */
 {
   part: 0,
   ctx: 'MainActor/Demos/RunLoopModeDemo.swift',
-  stem: `<p>演示工程用两个 Combine 定时器驱动两个计数器，唯一的区别是注册的 RunLoop mode：</p>`,
-  code: String.raw`Timer.publish(every: 0.1, on: .main, in: .default)
-    .autoconnect()
-    .sink { [weak self] _ in self?.timerDefault += 1 }
-    .store(in: &cancellables)
-Timer.publish(every: 0.1, on: .main, in: .common)
-    .autoconnect()
-    .sink { [weak self] _ in self?.timerCommon += 1 }
-    .store(in: &cancellables)`,
+  stem: `<p>一个 SwiftUI 页面：上半部分用两个 <code>Text</code> 分别显示两个计数器 <code>timerDefault</code> 和 <code>timerCommon</code>，下半部分是一个可以上下拖动的 <code>List</code>。两个计数器由下面这个模型驱动，页面出现时调用一次 <code>start()</code>：</p>`,
+  code: String.raw`import SwiftUI
+import Combine
+
+@Observable
+final class TickModel {
+    var timerDefault = 0
+    var timerCommon = 0
+
+    @ObservationIgnored private var cancellables: Set<AnyCancellable> = []
+
+    func start() {
+        // Timer.publish 在主线程的 RunLoop 上创建一个定时器，每 0.1 秒发出一个值。
+        // 参数 in: 决定定时器注册在 RunLoop 的哪个 mode 下。两个定时器只有这一处不同。
+        Timer.publish(every: 0.1, on: .main, in: .default)
+            .autoconnect()
+            .sink { [weak self] _ in self?.timerDefault += 1 }
+            .store(in: &cancellables)
+        Timer.publish(every: 0.1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in self?.timerCommon += 1 }
+            .store(in: &cancellables)
+    }
+}`,
   after: `<p>用户按住列表拖动 3 秒再松手。<code>timerDefault</code> 会怎样？</p>`,
   options: [
     '照常每 0.1 秒加 1，和 <code>timerCommon</code> 一样',
@@ -361,6 +545,7 @@ Timer.publish(every: 0.1, on: .main, in: .common)
   <p>本机实测：<code>.default</code> 的 Timer 在 tracking 期间触发 0 次，回到 default 后<b>也没有补发</b>。</p>`,
   src: [['§3 RunLoop', G+'s3-1'], ['§11.4 定时方式', G+'s11-4'], ['#3 RunLoop Mode 与滚动', M+'d3']],
 },
+
 {
   part: 0,
   stem: `<p>关于主线程上的 <code>RunLoop.main</code>、<code>DispatchQueue.main</code>、<code>MainActor</code>，哪种说法正确？</p>`,
@@ -377,6 +562,7 @@ Timer.publish(every: 0.1, on: .main, in: .common)
   <li><code>MainActor</code>：工牌上的规定。已经在主线程上就直接执行；从别处来，就把任务放进主队列。</li></ul>`,
   src: [['§12.1 三层结构', G+'s12-1']],
 },
+
 {
   part: 0,
   multi: true,
@@ -393,27 +579,14 @@ Timer.publish(every: 0.1, on: .main, in: .common)
   <p><code>RunLoop.main.perform</code> 默认只在 <code>.default</code> mode 执行；<code>receive(on: RunLoop.main)</code> 底层也是 RunLoop 的 default mode。两者都推迟到松手后。实测和这一结论一致。要在滚动时也更新 UI，用 <code>receive(on: DispatchQueue.main)</code> 或 <code>perform(inModes: [.common])</code>。</p>`,
   src: [['§12.3 滚动期间的差异', G+'s12-3'], ['§11.3 切到主线程的方式', G+'s11-3']],
 },
+
 {
   part: 0,
-  ctx: 'MainActor/Demos/OrderingDemo.swift（按钮回调，运行在 MainActor 上）',
-  stem: `<p>"执行时机"演示在同一个同步函数里用多种方式安排日志，日志前面的数字是代码顺序：</p>`,
-  code: String.raw`private func scheduleFromSyncContext() {
-    let console = console
-    console.clear()
-    console.log("1 同步代码开始")
-
-    DispatchQueue.main.async { console.log("2 DispatchQueue.main.async") }
-    Task { console.log("3 Task { }（继承 MainActor，入队）") }
-    Task.immediate { console.log("4 Task.immediate（立即同步开始执行）") }
-    RunLoop.main.perform { console.log("5 RunLoop.main.perform") }
-    OperationQueue.main.addOperation { console.log("6 OperationQueue.main.addOperation") }
-    Task.detached { console.log("7 Task.detached（不继承 actor → 后台）") }
-    DispatchQueue.global().async { console.log("8 DispatchQueue.global().async（后台）") }
-
-    mainActorSyncFunction(console)   // 里面打印 "9 调用 @MainActor 同步函数"
-    console.log("10 同步代码结束")
-}`,
-  after: `<p>关于日志顺序，哪种说法是<b>有保证</b>的？</p>`,
+  ctx: 'MainActor/Demos/OrderingDemo.swift',
+  env: true,
+  stem: `<p>下面是一个 SwiftUI 页面的完整代码。点击按钮时，<code>scheduleFromSyncContext()</code> 在主线程上运行，用 8 种方式"安排"打印日志，每条日志前面的数字是它在代码里的位置。</p>`+CONSOLE_NOTE,
+  codes: [CTX_CONSOLE, CTX_ORDERING],
+  after: `<p>点击按钮后，关于日志顺序，哪种说法是<b>有保证</b>的？</p>`,
   options: [
     '严格按代码顺序 1 → 10 输出',
     '1、4、9、10 按这个顺序最先出现在主线程上；2、3、5、6 要等函数返回后才执行，它们之间的先后不应依赖；7、8 在后台，可能插在任何位置（甚至在 9 之前）',
@@ -427,10 +600,16 @@ Timer.publish(every: 0.1, on: .main, in: .common)
   <li><b>7、8</b>：在后台线程，和主线程并行。实测里 detached 偶尔出现在 2 和 3 之间，也有排在 main.async 之后的。</li></ul>`,
   src: [['§12.2 执行顺序示例', G+'s12-2'], ['§17 实测', G+'s17'], ['#1 执行时机', M+'d1']],
 },
+
 {
   part: 0,
-  stem: `<p>在 MainActor 上执行下面的代码，<code>load()</code> 是一个会真正挂起的网络请求。打印顺序是？</p>`,
-  code: String.raw`@MainActor func onTap() {
+  stem: `<p>在 MainActor 上调用 <code>onTap()</code>，打印顺序是？</p>`,
+  code: String.raw`func load() async {
+    // 真正的网络请求：await 时任务会挂起，等响应回来再继续
+    _ = try? await URLSession.shared.data(from: URL(string: "https://example.com")!)
+}
+
+@MainActor func onTap() {
     print("A")
     Task.immediate {
         print("B")
@@ -454,21 +633,39 @@ Timer.publish(every: 0.1, on: .main, in: .common)
 /* ---------------- II ---------------- */
 {
   part: 1,
-  ctx: 'MainActor/Demos/BlockingDemo.swift（工程开启了默认 MainActor 隔离，这是 View 里的方法）',
-  stem: '',
-  code: String.raw`private func taskInheritingMainActor() {
-    let console = console
-    Task {
-        console.log("Task { } 开始同步计算")
-        let n = Work.spin(seconds: 2)      // 同步 CPU 忙等 2 秒
-        console.log("Task { } 计算完成（\(n) 次迭代）")
+  ctx: 'MainActor/Demos/BlockingDemo.swift',
+  env: true,
+  stem: `<p>一个 SwiftUI 页面顶部有一个逐帧旋转的图标：主线程被占住时，图标会停住。页面上有一个按钮，点击时调用 <code>taskInheritingMainActor()</code>。</p>`+CONSOLE_NOTE+`<p><code>Work.spin(seconds:)</code> 是一个同步的 CPU 忙等函数，会占住当前线程指定的秒数。用到的代码全部如下：</p>`,
+  codes: [CTX_CONSOLE, CTX_WORK],
+  code: String.raw`import SwiftUI
+
+struct BlockingDemo: View {
+    @State private var console = Console()
+
+    var body: some View {
+        // 布局：上半部分是旋转图标和按钮，下半部分逐行显示 console 里的日志
+        DemoScreen(title: "阻塞 vs 挂起", summary: "（页面说明文字）", console: console) {
+            Spinner()     // 逐帧旋转的图标
+            DemoButton(title: "❌ Task { 同步计算 }") {
+                taskInheritingMainActor()
+            }
+        }
+    }
+
+    private func taskInheritingMainActor() {
+        let console = console
+        Task {
+            console.log("1 Task { } 开始同步计算")
+            let n = Work.spin(seconds: 2)
+            console.log("2 Task { } 计算完成（\(n) 次迭代）")
+        }
     }
 }`,
-  after: `<p>点按钮后，界面会怎样？</p>`,
+  after: `<p>点按钮后，旋转图标会怎样？</p>`,
   options: [
-    '不卡：<code>Task {}</code> 会把工作放到后台线程',
-    '卡住约 2 秒：<code>Task {}</code> 继承了 MainActor，同步计算就在主线程上跑',
-    '只卡一瞬间：Task 会在忙等中途自动让出主线程',
+    '照常转：<code>Task {}</code> 会把工作放到后台线程',
+    '停住约 2 秒：<code>Task {}</code> 继承了 MainActor，同步计算就在主线程上跑',
+    '只停一瞬间：Task 会在忙等中途自动让出主线程',
     '编译错误：MainActor 上不允许同步计算',
   ],
   answer: [1],
@@ -476,6 +673,7 @@ Timer.publish(every: 0.1, on: .main, in: .common)
   <p>这是常见陷阱：<b><code>Task {}</code> 不等于"去后台"</b>。CPU 密集工作应放进 <code>@concurrent</code> 函数，或者用 <code>Task.detached</code>。</p>`,
   src: [['§14 常见陷阱', G+'s14'], ['§7.3 Task', G+'s7-3'], ['#2 阻塞 vs 挂起', M+'d2']],
 },
+
 {
   part: 1,
   stem: `<p>在 MainActor 上分别执行下面两段代码，各等 2 秒：</p>`,
@@ -494,30 +692,45 @@ Task { try? await Task.sleep(for: .seconds(2)) }   // ②`,
   <p>演示 App 第 2 页用一个逐帧旋转的图标展示了这个区别：<code>Thread.sleep</code> 时图标停住，<code>Task.sleep</code> 时照常转。</p>`,
   src: [['§7.1 async/await', G+'s7-1'], ['#2 阻塞 vs 挂起', M+'d2']],
 },
+
 {
   part: 1,
-  ctx: 'MainActor/Support/Work.swift 与 BlockingDemo.swift',
-  stem: `<p>工程里有两个函数体完全一样的 async 函数：</p>`,
-  code: String.raw`nonisolated enum Work {
-    /// nonisolated(nonsending)：在调用方的 actor 上执行
-    nonisolated(nonsending)
-    static func spinNonsending(seconds: Double, console: Console) async -> Int {
-        console.log("nonisolated(nonsending) async 函数内部")
-        return spin(seconds: seconds)          // 同步忙等
+  ctx: 'MainActor/Support/Work.swift 与 MainActor/Demos/BlockingDemo.swift',
+  env: true,
+  stem: `<p>一个 SwiftUI 页面顶部有一个逐帧旋转的图标（主线程被占住时会停住），下面有两个按钮。两个按钮分别调用两个<b>函数体完全一样</b>的 async 函数，区别只在函数前的标注。</p>`+CONSOLE_NOTE,
+  codes: [CTX_CONSOLE, CTX_WORK],
+  code: String.raw`import SwiftUI
+
+struct BlockingDemo: View {
+    @State private var console = Console()
+
+    var body: some View {
+        DemoScreen(title: "阻塞 vs 挂起", summary: "（页面说明文字）", console: console) {
+            Spinner()     // 逐帧旋转的图标
+            DemoButton(title: "❌ await nonisolated(nonsending) 函数") { callNonsending() }
+            DemoButton(title: "✅ await @concurrent 函数") { callConcurrent() }
+        }
     }
 
-    /// @concurrent：总是在全局并发执行器（后台线程池）上执行
-    @concurrent
-    static func spinConcurrent(seconds: Double, console: Console) async -> Int {
-        console.log("@concurrent async 函数内部")
-        return spin(seconds: seconds)
+    private func callNonsending() {
+        let console = console
+        Task {
+            console.log("1 调用 nonsending 函数前")
+            let n = await Work.spinNonsending(seconds: 2, console: console)
+            console.log("3 nonsending 返回（\(n) 次迭代）")
+        }
     }
-}
 
-// 两个按钮分别执行（都在 MainActor 上）：
-Task { let n = await Work.spinNonsending(seconds: 2, console: console) }
-Task { let n = await Work.spinConcurrent(seconds: 2, console: console) }`,
-  after: `<p>哪个按钮会让界面卡 2 秒？</p>`,
+    private func callConcurrent() {
+        let console = console
+        Task {
+            console.log("1 调用 @concurrent 函数前")
+            let n = await Work.spinConcurrent(seconds: 2, console: console)
+            console.log("3 @concurrent 返回，已回到 MainActor（\(n) 次迭代）")
+        }
+    }
+}`,
+  after: `<p>分别点两个按钮，哪个会让旋转图标停住约 2 秒？</p>`,
   options: [
     '两个都卡：调用方都是 MainActor',
     '两个都不卡：async 函数都在后台执行',
@@ -530,6 +743,7 @@ Task { let n = await Work.spinConcurrent(seconds: 2, console: console) }`,
   <p>本机实测：从 MainActor 调用，前者 10/10 在主线程，后者 10/10 在后台线程。</p>`,
   src: [['§9.3 nonisolated 用法大全', G+'s9-3'], ['#2 阻塞 vs 挂起', M+'d2']],
 },
+
 {
   part: 1,
   stem: `<p>提交 100 个任务，每个任务都用 <code>usleep</code> 阻塞 100ms。分别用 <code>DispatchQueue.global().async</code> 和 <code>withTaskGroup</code> 的 <code>addTask</code> 实现，在 12 核机器上实测：GCD 用了 64 个线程、约 210ms；TaskGroup 只用了 12 个线程、约 927ms。这说明了什么？</p>`,
@@ -544,6 +758,7 @@ Task { let n = await Work.spinConcurrent(seconds: 2, console: console) }`,
   <p>这个实验故意违反了这个前提，所以协作池变慢了。正确的做法是把阻塞换成挂起（<code>Task.sleep</code>、异步 I/O）。在 async 上下文里阻塞，轻则饿死线程池，重则死锁。</p>`,
   src: [['§7.2 协作式线程池', G+'s7-2'], ['§5.7 DispatchSemaphore', G+'s5-7'], ['§14 常见陷阱', G+'s14']],
 },
+
 {
   part: 1,
   stem: `<p>下面这行代码<b>在主线程上</b>执行，会发生什么？</p>`,
@@ -565,7 +780,9 @@ Task { let n = await Work.spinConcurrent(seconds: 2, console: console) }`,
 {
   part: 2,
   stem: `<p>工程开启了 Approachable Concurrency（包含 <code>NonisolatedNonsendingByDefault</code>）。下面的函数没有任何其他标注：</p>`,
-  code: String.raw`nonisolated func decode(_ data: Data) async -> Image { … }
+  code: String.raw`nonisolated func decode(_ data: Data) async -> Image {
+    // 把图片数据解码成 Image（纯 CPU 计算）
+}
 
 // 在 MainActor 上调用：
 let image = await decode(data)`,
@@ -581,6 +798,7 @@ let image = await decode(data)`,
   <p>所以<b>单写 <code>nonisolated</code> 不能当作"去后台"</b>。如果 <code>decode</code> 是 CPU 密集的，应该标 <code>@concurrent</code>。</p>`,
   src: [['§9.3 nonisolated 用法大全', G+'s9-3'], ['§7.16 Executor', G+'s7-16']],
 },
+
 {
   part: 2,
   stem: '',
@@ -591,9 +809,11 @@ let image = await decode(data)`,
     }
 }
 
-// 在某个 MainActor 函数里：
-DispatchQueue.global().async {
-    print(vm.format(1))
+@MainActor func setup() {
+    let vm = VM()
+    DispatchQueue.global().async {      // 这个闭包在 GCD 的后台线程上运行
+        print(vm.format(1))
+    }
 }`,
   after: `<p>关于 <code>vm.format(1)</code> 这次调用，哪种说法正确？</p>`,
   options: [
@@ -608,6 +828,7 @@ DispatchQueue.global().async {
   <p>另外，捕获 <code>vm</code> 本身没问题：MainActor 隔离的类自动是 Sendable。</p>`,
   src: [['§9.3 同步函数的 nonisolated', G+'s9-3']],
 },
+
 {
   part: 2,
   stem: `<p>老工程打开 <code>NonisolatedNonsendingByDefault</code> 后，原本在后台跑的 <code>nonisolated func resize(_ image: Image) async -> Image</code> 开始卡主线程。最合适的修复是？</p>`,
@@ -624,10 +845,15 @@ DispatchQueue.global().async {
   <li><code>Task {}</code> 继承调用方的隔离，还是在主线程。</li></ul>`,
   src: [['§9.3 常见误区', G+'s9-3']],
 },
+
 {
   part: 2,
   stem: `<p>在一个<b>没有</b>开启默认 MainActor 隔离的工程里，有这样一个模型：</p>`,
-  code: String.raw`@Observable
+  code: String.raw`import Observation
+
+struct Item { let name: String }
+
+@Observable
 final class Model {
     var items: [Item] = []
 }`,
@@ -646,12 +872,25 @@ final class Model {
   <p>开启默认 MainActor 隔离的工程里，模型默认就是 <code>@MainActor</code>，这个问题自然消失。</p>`,
   src: [['§8.6 状态更新的线程要求', G+'s8-6'], ['§14 常见陷阱', G+'s14']],
 },
+
 {
   part: 2,
-  stem: `<p>某个旧框架的文档保证代理回调一定在主线程上调用。代码这样写：</p>`,
-  code: String.raw`func didFinish() {                 // 编译器不知道它在主线程
-    MainActor.assumeIsolated {
-        self.label = "done"            // label 是 MainActor 属性
+  stem: `<p>一个旧框架通过代理协议回调。协议本身没有任何隔离标注，但框架文档保证回调<b>一定在主线程上</b>调用。代码这样写：</p>`,
+  code: String.raw`// 旧框架提供的协议（没有隔离标注）
+protocol DownloaderDelegate: AnyObject {
+    func didFinish()
+}
+
+@MainActor
+final class Controller: DownloaderDelegate {
+    var label = ""                       // MainActor 隔离的属性
+
+    // 协议没有隔离标注，所以实现它的方法要写成 nonisolated；
+    // 编译器因此不知道调用时是否在主线程上
+    nonisolated func didFinish() {
+        MainActor.assumeIsolated {
+            self.label = "done"
+        }
     }
 }`,
   after: `<p>关于 <code>MainActor.assumeIsolated</code>，哪种说法正确？</p>`,
@@ -683,6 +922,7 @@ final class Model {
   <p>对比：<code>Task.detached {}</code> 三者都不继承；<code>async let</code> 和 TaskGroup 子任务继承优先级和 TaskLocal，会随父任务取消，但不继承 actor 隔离。</p>`,
   src: [['§11.2 Task 对比表', G+'s11-2'], ['§7.3 Task', G+'s7-3'], ['#4 Task 继承了什么', M+'d4']],
 },
+
 {
   part: 3,
   stem: `<p>父任务里同时启动了四个子工作，每个都 <code>try await Task.sleep(for: .seconds(1))</code>：一个 <code>async let</code>、一个 TaskGroup 子任务、一个 <code>Task { }</code>、一个 <code>Task.detached { }</code>。父任务在 300ms 时被取消。结果是？</p>`,
@@ -697,10 +937,15 @@ final class Model {
   <p><code>Task {}</code> 和 <code>Task.detached {}</code> 都是非结构化任务，不在树上，需要保存句柄自己 <code>cancel()</code>。本机实测：前两者约 301ms 被取消，后两者约 1006ms 正常完成。</p>`,
   src: [['§7.7 取消', G+'s7-7'], ['§17 实测', G+'s17'], ['#4 Task 继承了什么', M+'d4']],
 },
+
 {
   part: 3,
   stem: '',
-  code: String.raw`let t = Task.detached {
+  code: String.raw`func heavyStep(_ i: Int) {
+    // 一小段纯 CPU 计算，没有 await，也不检查取消
+}
+
+let t = Task.detached {
     for i in 0..<10_000_000 {
         heavyStep(i)          // 同步计算，没有 await，也不检查取消
     }
@@ -721,10 +966,16 @@ t.cancel()`,
   <li>用 <code>withTaskCancellationHandler</code> 在挂起时响应。</li></ul>`,
   src: [['§7.7 取消', G+'s7-7']],
 },
+
 {
   part: 3,
-  stem: `<p><code>fetch(_:)</code> 是一个 async 函数，每次耗时约 1 秒，三次调用互不依赖。</p>`,
-  code: String.raw`// 写法 ①
+  stem: `<p>三次 <code>fetch</code> 调用互不依赖：</p>`,
+  code: String.raw`func fetch(_ id: Int) async -> String {
+    try? await Task.sleep(for: .seconds(1))     // 模拟耗时约 1 秒的网络请求
+    return "result \(id)"
+}
+
+// 写法 ①
 let a = await fetch(1)
 let b = await fetch(2)
 let c = await fetch(3)
@@ -746,19 +997,35 @@ let results = await [a, b, c]`,
   <p>本机实测：顺序 await 3027ms，async let 1010ms。<code>async let</code> 如果离开作用域还没被 await，会被隐式取消并等待它结束。</p>`,
   src: [['§7.5 async let', G+'s7-5'], ['§7.6 TaskGroup', G+'s7-6'], ['#5 结构化并发', M+'d5']],
 },
+
 {
   part: 3,
   stem: `<p>SwiftUI 视图里加载数据，有两种写法：</p>`,
-  code: String.raw`// 写法 ①
-.onAppear {
-    Task { await model.load() }
+  code: String.raw`@MainActor @Observable
+final class Model {
+    var items: [String] = []
+    func load() async {
+        try? await Task.sleep(for: .seconds(5))   // 模拟耗时 5 秒的加载
+        items = ["a", "b", "c"]
+    }
 }
 
-// 写法 ②
-.task {
-    await model.load()
+struct DetailView: View {
+    @State private var model = Model()
+
+    var body: some View {
+        List(model.items, id: \.self) { Text($0) }
+            // 写法 ①
+            .onAppear {
+                Task { await model.load() }
+            }
+            // 写法 ②（二选一，替换上面的 onAppear）
+            // .task {
+            //     await model.load()
+            // }
+    }
 }`,
-  after: `<p>用户在加载完成前离开页面，区别是什么？</p>`,
+  after: `<p>用户进入 <code>DetailView</code> 后 1 秒就返回上一页（加载还没完成）。两种写法的区别是什么？</p>`,
   options: [
     '没有区别，<code>.task</code> 只是语法糖',
     '② 在视图消失时自动取消任务；① 里的 <code>Task</code> 不会被取消，会一直跑完（并让它捕获的对象活到那时）',
@@ -770,10 +1037,16 @@ let results = await [a, b, c]`,
   <p><code>onAppear { Task {} }</code> 创建的是非结构化任务，没人保存句柄，也就没人取消它。</p>`,
   src: [['§8.1 .task', G+'s8-1'], ['§8.2 搜索防抖', G+'s8-2'], ['#11 .task 与生命周期', M+'d11']],
 },
+
 {
   part: 3,
   stem: `<p>用 continuation 把一个回调式 API 桥接成 async 函数：</p>`,
-  code: String.raw`func load() async throws -> Data {
+  code: String.raw`// 旧的回调式 API：完成时调用 completion，成功给 data，失败给 error
+func legacyLoad(completion: @escaping (Data?, Error?) -> Void) {
+    // 旧框架的内部实现：在某个线程上调用 completion（成功时 data 非 nil，失败时 error 非 nil）
+}
+
+func load() async throws -> Data {
     try await withCheckedThrowingContinuation { cont in
         legacyLoad { data, error in
             if let error { cont.resume(throwing: error) }
@@ -798,7 +1071,9 @@ let results = await [a, b, c]`,
 {
   part: 4,
   ctx: 'MainActor/Demos/ActorReentrancyDemo.swift',
-  stem: '',
+  env: true,
+  stem: `<p>一个图片缓存用 actor 实现。按钮 <code>naive()</code> 让 5 个任务<b>同时</b>请求同一张图片 <code>"avatar"</code>，下载用 <code>Task.sleep</code> 模拟，耗时 500ms。</p>`+CONSOLE_NOTE,
+  codes: [CTX_CONSOLE],
   code: String.raw`/// 朴素缓存：await 期间其他调用可以进入 actor，导致重复下载
 actor NaiveImageCache {
     private var cache: [String: String] = [:]
@@ -806,20 +1081,44 @@ actor NaiveImageCache {
 
     func image(for key: String, console: Console) async -> String {
         if let cached = cache[key] {
-            console.log("命中缓存")
+            console.log("1 命中缓存")
             return cached
         }
         downloadCount += 1
         let number = downloadCount
-        console.log("开始下载 #\(number)（await 期间 actor 可处理其他调用）")
+        console.log("2 开始下载 #\(number)（await 期间 actor 可处理其他调用）")
         try? await Task.sleep(for: .milliseconds(500))
         let image = "image-\(key)"
         cache[key] = image
-        console.log("下载 #\(number) 完成，写入缓存")
+        console.log("3 下载 #\(number) 完成，写入缓存")
         return image
     }
+}
+
+struct ActorReentrancyDemo: View {
+    @State private var console = Console()
+
+    var body: some View {
+        DemoScreen(title: "actor 串行与重入", summary: "（页面说明文字）", console: console) {
+            DemoButton(title: "② 朴素缓存（重入问题）") { naive() }
+        }
+    }
+
+    private func naive() {
+        let console = console
+        console.clear()
+        let cache = NaiveImageCache()
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for _ in 1...5 {
+                    group.addTask { _ = await cache.image(for: "avatar", console: console) }
+                }
+            }
+            console.log("4 朴素缓存：总下载次数 = \(await cache.downloadCount)")
+        }
+    }
 }`,
-  after: `<p>5 个任务<b>同时</b>调用 <code>image(for: "avatar", …)</code>，<code>downloadCount</code> 最终是多少？</p>`,
+  after: `<p>点按钮后，最后一行日志里的<b>总下载次数</b>是多少？</p>`,
   options: [
     '1：actor 保证同一时间只有一个调用在执行，后面 4 个都会命中缓存',
     '5：actor 在 <code>await</code> 处可重入，第一个调用挂起时，其余 4 个也进入了 actor，都发现缓存为空',
@@ -834,6 +1133,7 @@ if let task = inFlight[key] { return await task.value }   // 复用进行中的�
   <p>本机实测：朴素缓存每次下载 5 次，去重缓存每次只下载 1 次。</p>`,
   src: [['§7.10 actor', G+'s7-10'], ['#6 actor 串行与重入', M+'d6']],
 },
+
 {
   part: 4,
   stem: `<p>需要保护一个计数器字典，在 actor 和 <code>Mutex</code>（Synchronization 框架，iOS 18+）之间选择。哪种说法正确？</p>`,
@@ -848,6 +1148,7 @@ if let task = inFlight[key] { return await task.value }   // 复用进行中的�
   <p>主线程可以用锁，只要临界区很短。本机实测（4 线程 × 50,000 次自增）：Atomic 约 15ms，Mutex 约 31ms，NSLock 约 40ms，actor 约 76ms，串行队列 sync 约 590ms。</p>`,
   src: [['§10 锁与同步原语', G+'s10'], ['Mutex 与主线程：四个追问', M+'mutex-main'], ['#10 数据竞争与锁', M+'d10']],
 },
+
 {
   part: 4,
   multi: true,
@@ -872,30 +1173,11 @@ struct Holder { var arr: NSMutableArray }                       // E`,
 /* ---------------- VI ---------------- */
 {
   part: 5,
-  ctx: 'MainActor/Support/Console.swift（工程开启了默认 MainActor 隔离）',
-  stem: `<p>演示工程的日志系统由两个类组成：</p>`,
-  code: String.raw`/// 用 Mutex 保护的日志缓冲区，任何线程都可以写入
-nonisolated final class LogBuffer: Sendable {
-    private let state = Mutex(State())
-    func append(_ message: String) { … }      // 内部 state.withLock { … }
-    func snapshot() -> [LogEntry] { … }
-}
-
-@Observable
-final class Console {
-    private(set) var entries: [LogEntry] = []
-
-    nonisolated let buffer = LogBuffer()
-
-    nonisolated func log(_ message: String) {
-        buffer.append(message)
-        Task { @MainActor [weak self] in self?.refresh() }
-    }
-
-    func refresh() { entries = buffer.snapshot() }
-    func clear()   { buffer.reset(); entries = [] }
-}`,
-  after: `<p>如果删掉 <code>nonisolated let buffer</code> 里的 <code>nonisolated</code>，会怎样？</p>`,
+  ctx: 'MainActor/Support/Console.swift',
+  env: true,
+  stem: `<p>下面是一个线程安全的日志系统：<code>LogBuffer</code> 用 <code>Mutex</code> 保存日志，<code>Console</code> 把日志交给 SwiftUI 显示。</p>`+CONSOLE_NOTE,
+  codes: [CTX_CONSOLE],
+  after: `<p>如果把 <code>Console</code> 里的 <code>nonisolated let buffer = LogBuffer()</code> 改成 <code>let buffer = LogBuffer()</code>（去掉 <code>nonisolated</code>），会怎样？</p>`,
   options: [
     '没有影响，<code>let</code> 常量天生就能从任何线程读取',
     '<code>buffer</code> 变成 MainActor 隔离的属性，<code>log</code> 里同步读取它会被编译器拒绝（需要 <code>await</code>），<code>log</code> 就无法保持同步、可以从任何线程直接调用的特性',
@@ -907,22 +1189,14 @@ final class Console {
   <p><code>nonisolated let</code> 成立需要两个条件：<b><code>let</code></b>（引用永不改变），且<b>类型是 Sendable</b>（拿到引用后调用方法也安全）。LogBuffer 靠 Mutex 满足第二条。</p>`,
   src: [['Q10 buffer 为什么要 nonisolated', M+'console-isolated'], ['§9.3 本工程中的例子', G+'s9-3']],
 },
+
 {
   part: 5,
   ctx: 'MainActor/Demos/OrderingDemo.swift',
-  stem: `<p>View 里的日志对象用 <code>@State</code> 持有，很多演示函数的第一行都是 <code>let console = console</code>：</p>`,
-  code: String.raw`struct OrderingDemo: View {
-    @State private var console = Console()   // Console 见上一题
-
-    private func scheduleFromSyncContext() {
-        let console = console                // ← 这一行
-        console.log("1 同步代码开始")
-        Task.detached { console.log("7 Task.detached（后台）") }
-        DispatchQueue.global().async { console.log("8 global（后台）") }
-        …
-    }
-}`,
-  after: `<p>这一行最主要的作用是什么？</p>`,
+  env: true,
+  stem: `<p>下面是一个 SwiftUI 页面和它用的日志对象。注意 <code>scheduleFromSyncContext()</code> 的第一行 <code>let console = console</code>：它把 View 的属性 <code>console</code> 复制到一个同名的局部常量，后面的闭包用的都是这个局部常量。</p>`+CONSOLE_NOTE,
+  codes: [CTX_CONSOLE, CTX_ORDERING],
+  after: `<p><code>let console = console</code> 这一行最主要的作用是什么？</p>`,
   options: [
     '性能优化：避免每次访问都经过 <code>@State</code> 的 getter',
     '避免循环引用：闭包捕获 <code>self</code> 会导致 View 无法释放',
@@ -935,9 +1209,14 @@ final class Console {
   <p>View 是值类型，没有循环引用的问题。</p>`,
   src: [['C1–C5 let console = console', M+'console-copy']],
 },
+
 {
   part: 5,
-  stem: `<p>接上题，执行完 <code>let console = console</code> 后，局部的 <code>console</code> 与 <code>self.console</code> 是什么关系？</p>`,
+  ctx: 'MainActor/Demos/OrderingDemo.swift',
+  env: true,
+  stem: `<p>下面是一个 SwiftUI 页面和它用的日志对象。<code>scheduleFromSyncContext()</code> 的第一行把 View 的属性 <code>console</code>（用 <code>@State</code> 持有的 <code>Console</code> 对象）复制到一个同名的局部常量。</p>`,
+  codes: [CTX_CONSOLE, CTX_ORDERING],
+  after: `<p>执行完 <code>let console = console</code> 后，局部的 <code>console</code> 与 <code>self.console</code> 是什么关系？</p>`,
   options: [
     '深拷贝：局部变量是一个新的 Console，有自己的 entries',
     '同一个 Console 对象的两个引用：Console 是 class，复制的只是引用；局部变量上调用 <code>log</code>，界面上显示的就是这个对象的日志',
@@ -949,9 +1228,10 @@ final class Console {
   <p>局部常量和 <code>self.console</code> 的区别在于<b>取值的时机和上下文</b>：前者在 MainActor 上一次取好，后者每次在闭包运行的上下文里重新取。</p>`,
   src: [['C5–C6 拷贝还是引用', M+'console-copy']],
 },
+
 {
   part: 5,
-  stem: `<p>另一种写法是捕获列表 <code>{ [console] in … }</code>。先看一个通用的例子，运行后打印什么？</p>`,
+  stem: `<p>闭包可以写捕获列表，例如 <code>{ [n, box] in … }</code>。下面的代码运行后打印什么？</p>`,
   code: String.raw`final class Box { var v = 1 }
 
 var n = 1
@@ -972,12 +1252,17 @@ f()`,
   <ul><li><code>n</code> 是值类型，捕获的是当时的值 1，之后改 <code>n</code> 不影响闭包。</li>
   <li><code>box</code> 是引用类型，捕获的是当时的引用；对象内部的 <code>v</code> 后来改成 2，闭包读到的就是 2。</li></ul>
   <p>没有捕获列表时，闭包捕获的是变量本身，会看到 <code>n</code> 的最新值 2。本机实测输出 <code>1 2</code>。</p>
-  <p>所以 <code>Task.detached { [console] in … }</code> 和先写 <code>let console = console</code> 效果相同：<code>self.console</code> 在创建闭包时就已经在 MainActor 上取好了。</p>`,
+  <p>在 SwiftUI View 里，<code>Task.detached { [console] in console.log("…") }</code> 和先写 <code>let console = console</code> 效果相同：<code>self.console</code> 在创建闭包时就已经在 MainActor 上取好了，后台闭包里拿到的只是一个对象引用。</p>`,
   src: [['C8 捕获列表', M+'console-copy']],
 },
+
 {
   part: 5,
-  stem: `<p>工程开启了 Default Actor Isolation = MainActor，所以源码里的 <code>@Observable final class Console</code> 实际是一个 MainActor 隔离的类（代码见第 25 题）。下面关于它的说法，哪一项是<b>错误</b>的？</p>`,
+  ctx: 'MainActor/Support/Console.swift',
+  env: true,
+  stem: `<p>下面的 <code>Console</code> 源码里没有写 <code>@MainActor</code>，但按上面的编译设置，它是一个 <b>MainActor 隔离的类</b>。</p>`,
+  codes: [CTX_CONSOLE],
+  after: `<p>下面关于 <code>Console</code> 的说法，哪一项是<b>错误</b>的？</p>`,
   options: [
     '它等同于写了 <code>@MainActor @Observable final class Console</code>',
     '<code>entries</code>、<code>refresh()</code>、<code>clear()</code> 只有已在 MainActor 上的代码能同步访问，其他上下文要 <code>await</code>',
@@ -989,19 +1274,14 @@ f()`,
   <p>隔离也不是运行时的锁：保护主要靠编译器在调用处检查，加上"通过 <code>await</code> 调用时一定在 MainActor 的执行器（主线程）上运行"。绕过编译器的路径（如 Swift 5 模式下只报警告的 GCD 闭包）在运行时照样会在后台执行。</p>`,
   src: [['Q9 MainActor 隔离的类', M+'console-isolated']],
 },
+
 {
   part: 5,
   ctx: 'MainActor/Support/Console.swift',
-  stem: '',
-  code: String.raw`nonisolated func log(_ message: String) {
-    buffer.append(message)                              // 任何线程：写进 Mutex 保护的缓冲
-    Task { @MainActor [weak self] in self?.refresh() }  // 交给主线程刷新
-}
-
-func refresh() {
-    entries = buffer.snapshot()                         // 复制完整快照
-}`,
-  after: `<p>为什么 <code>refresh()</code> 每次都复制 buffer 的完整快照，而不是在 Task 里写 <code>entries.append(entry)</code> 只追加这一条？</p>`,
+  env: true,
+  stem: `<p>看下面 <code>Console</code> 的 <code>log</code> 和 <code>refresh</code>：每次 <code>log</code> 都启动一个 <code>Task { @MainActor }</code>，在主线程上调用 <code>refresh()</code>，把缓冲区的<b>完整快照</b>复制给界面显示的 <code>entries</code>。</p>`,
+  codes: [CTX_CONSOLE],
+  after: `<p>为什么 <code>refresh()</code> 每次都复制完整快照，而不是在 Task 里只追加这一条（<code>entries.append(entry)</code>）？</p>`,
   options: [
     '因为数组 append 不是线程安全的',
     '因为非结构化 Task 的执行顺序没有保证，逐条追加可能让屏幕顺序和真实顺序不同；复制快照时顺序由 Mutex 决定，多执行几次也没有副作用',
@@ -1093,7 +1373,10 @@ function render() {
         <div class="no">${String(n).padStart(2, '0')}<small class="${q.multi ? 'multi' : ''}">${q.multi ? '多选' : '单选'}</small><span class="mark"></span></div>
         <div class="body">
           ${q.ctx ? `<div class="ctx">${q.ctx}</div>` : ''}
+          ${q.env ? ENV : ''}
           <div class="stem">${q.stem || ''}</div>
+          ${q.codes ? q.codes.map(([label, src]) => `
+            <details class="srcbox" open><summary>${label}</summary><pre><code>${highlight(src)}</code></pre></details>`).join('') : ''}
           ${q.code ? `<pre data-label="swift"><code>${highlight(q.code)}</code></pre>` : ''}
           ${q.after ? `<div class="stem">${q.after}</div>` : ''}
           <ul class="opts">${PERM[i].map((k, d) => `
