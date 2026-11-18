@@ -20,6 +20,8 @@ MainActor、DispatchQueue、RunLoop、Task、GCD、OperationQueue、actor 等概
 
 另有一个单独的网页 [`MainActor.html`](MainActor.html)：演示工程逐页导读，👉 **<https://jeffery812.github.io/MainActor/MainActor.html>**。侧栏切换器底部的「演示工程导读 ↗」也链接到它，详见下文[演示工程](#演示工程)。
 
+还有一份自测卷 [`quiz.html`](quiz.html)：从指南和导读中挑出 30 道题（27 道单选、3 道多选），每题附解析和原文出处，引用的工程代码都附了原文。分练习（选完即判）和考试（交卷后判）两种模式，进度保存在浏览器里。👉 **<https://jeffery812.github.io/MainActor/quiz.html>**。侧栏切换器和导读侧栏都有入口。
+
 并发全景指南的内容：
 
 - 各概念的说明、对比表和代码示例

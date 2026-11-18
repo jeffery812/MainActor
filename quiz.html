@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swift 并发 · 三十问 — 自测卷</title>
+<meta name="description" content="30 道题检验 Swift 并发全景指南与演示工程导读中的知识点：RunLoop、主队列、MainActor、Task、nonisolated、actor、Sendable 等。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,800;1,6..96,500;1,6..96,700&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;900&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4efe2;
+  --paper-2:#ece5d3;
+  --sheet:#fbf8f0;
+  --ink:#1b1a17;
+  --ink-2:#4a463d;
+  --ink-3:#8b8473;
+  --rule:#d8cfb8;
+  --rule-2:#c6bb9f;
+  --pencil:#3b3a36;
+  --red:#c8261d;
+  --red-soft:rgba(200,38,29,.08);
+  --ok:#1f6b47;
+  --ok-soft:rgba(31,107,71,.08);
+  --code-bg:#1d1c19;
+  --code-ink:#ebe4d2;
+  --c-kw:#f0a35e;
+  --c-attr:#e28fb6;
+  --c-str:#b5cf7f;
+  --c-com:#8a8574;
+  --c-num:#8fc3e8;
+  --serif:"Noto Serif SC","Songti SC",serif;
+  --display:"Bodoni Moda","Noto Serif SC",serif;
+  --mono:"Spline Sans Mono",ui-monospace,Menlo,monospace;
+  --brush:"Ma Shan Zheng","Kaiti SC","STKaiti",cursive;
+}
+html[data-theme="dark"]{
+  --paper:#16150f;
+  --paper-2:#1d1b14;
+  --sheet:#1f1d16;
+  --ink:#ece5d2;
+  --ink-2:#bdb49e;
+  --ink-3:#857d6a;
+  --rule:#36322a;
+  --rule-2:#4a4538;
+  --pencil:#d9d2bf;
+  --red:#ff6a55;
+  --red-soft:rgba(255,106,85,.10);
+  --ok:#6cc596;
+  --ok-soft:rgba(108,197,150,.10);
+  --code-bg:#0e0d0a;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font:400 16.5px/1.85 var(--serif);
+  background-image:
+    radial-gradient(circle at 18% 12%,rgba(0,0,0,.025),transparent 40%),
+    radial-gradient(circle at 82% 70%,rgba(0,0,0,.03),transparent 45%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+a{color:inherit;text-decoration-color:var(--rule-2);text-underline-offset:3px}
+a:hover{text-decoration-color:var(--red)}
+code{font:500 .84em/1 var(--mono);background:var(--paper-2);padding:.15em .38em;border-radius:3px;overflow-wrap:anywhere}
+::selection{background:var(--red);color:#fff}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px;display:grid;grid-template-columns:minmax(0,1fr) 268px;gap:56px}
+main{min-width:0}
+
+/* ---------- top bar ---------- */
+.topbar{max-width:1180px;margin:0 auto;padding:18px 28px 0;display:flex;justify-content:space-between;align-items:center;font:500 12px/1 var(--mono);letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+.topbar nav{display:flex;gap:18px;flex-wrap:wrap}
+.topbar a{text-decoration:none}
+.topbar a:hover{color:var(--red)}
+.theme-btn{background:none;border:1px solid var(--rule-2);color:var(--ink-2);font:inherit;letter-spacing:inherit;padding:6px 10px;border-radius:999px;cursor:pointer}
+.theme-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ---------- masthead ---------- */
+.mast{position:relative;padding:54px 0 34px;border-bottom:3px double var(--ink);margin-bottom:12px}
+.mast .kicker{font:600 12px/1 var(--mono);letter-spacing:.32em;color:var(--red);text-transform:uppercase;display:flex;gap:14px;align-items:center}
+.mast .kicker::after{content:"";flex:0 0 64px;height:1px;background:var(--red)}
+.mast h1{margin:18px 0 6px;font:800 clamp(46px,7vw,86px)/.98 var(--display);letter-spacing:-.02em}
+.mast h1 em{font-style:italic;font-weight:500;color:var(--red)}
+.mast h1 .cn{font-family:var(--serif);font-weight:900;letter-spacing:.02em}
+.mast .lede{max-width:620px;color:var(--ink-2);margin:16px 0 26px}
+.fields{display:grid;grid-template-columns:repeat(4,auto);gap:10px 28px;justify-content:start;font:500 13px/1.4 var(--mono);color:var(--ink-2)}
+.fields div{display:flex;gap:8px;align-items:baseline}
+.fields b{font-weight:600;color:var(--ink);border-bottom:1px solid var(--ink);padding:0 6px;min-width:46px;text-align:center}
+.modes{display:flex;gap:0;margin-top:26px;border:1.5px solid var(--ink);border-radius:999px;width:max-content;overflow:hidden}
+.modes button{border:0;background:transparent;color:var(--ink);font:600 13px/1 var(--serif);padding:10px 18px;cursor:pointer;letter-spacing:.06em}
+.modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.modes-note{font-size:13px;color:var(--ink-3);margin:10px 0 0}
+
+/* the stamp */
+.stamp{position:absolute;right:6px;top:58px;width:168px;height:168px;border:4px solid var(--red);border-radius:50%;
+  display:grid;place-items:center;color:var(--red);transform:rotate(-14deg) scale(.4);opacity:0;pointer-events:none;
+  font-family:var(--brush);text-align:center;mix-blend-mode:multiply}
+html[data-theme="dark"] .stamp{mix-blend-mode:screen}
+.stamp::before{content:"";position:absolute;inset:7px;border:1.5px solid var(--red);border-radius:50%}
+.stamp .s-num{font-size:64px;line-height:.9}
+.stamp .s-of{font:600 12px/1 var(--mono);letter-spacing:.2em;display:block;margin-top:4px}
+.stamp .s-word{font-size:22px;display:block;margin-top:6px}
+.stamp.on{animation:stamp .55s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes stamp{0%{opacity:0;transform:rotate(-30deg) scale(2.2)}60%{opacity:.95}100%{opacity:.92;transform:rotate(-14deg) scale(1)}}
+
+/* ---------- parts ---------- */
+.part{margin:56px 0 0}
+.part-h{display:flex;align-items:baseline;gap:16px;border-bottom:1px solid var(--ink);padding-bottom:10px;margin-bottom:6px}
+.part-h .roman{font:italic 700 40px/1 var(--display);color:var(--red)}
+.part-h h2{margin:0;font:900 22px/1.3 var(--serif);letter-spacing:.04em}
+.part-h small{margin-left:auto;font:500 12px/1 var(--mono);color:var(--ink-3);letter-spacing:.08em}
+
+/* ---------- question ---------- */
+.q{position:relative;display:grid;grid-template-columns:62px minmax(0,1fr);gap:0 18px;padding:34px 0 30px;border-bottom:1px dashed var(--rule-2);
+  opacity:0;transform:translateY(14px);animation:rise .6s ease forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.q.hidden{display:none}
+.q .no{font:800 44px/1 var(--display);letter-spacing:-.03em;color:var(--ink);position:relative;padding-top:2px}
+.q .no small{display:block;font:600 10.5px/1 var(--mono);letter-spacing:.16em;color:var(--ink-3);margin-top:10px}
+.q .no .multi{color:var(--red)}
+.q .stem{font-weight:600;font-size:17.5px;margin:0 0 4px}
+.q .stem p{margin:0 0 8px}
+.q .ctx{font-size:13.5px;color:var(--ink-3);margin:0 0 10px}
+.q .ctx::before{content:"出自 ";}
+
+/* red-pen verdict */
+.mark{position:absolute;left:2px;top:66px;font:400 46px/1 var(--brush);color:var(--red);opacity:0;transform:rotate(-10deg) scale(.6);pointer-events:none}
+.q.graded .mark{animation:ink .45s ease-out forwards}
+@keyframes ink{to{opacity:1;transform:rotate(-10deg) scale(1)}}
+
+/* code */
+pre{margin:12px 0 16px;background:var(--code-bg);color:var(--code-ink);border-radius:6px;padding:16px 18px;overflow-x:auto;
+  font:400 13.2px/1.7 var(--mono);box-shadow:0 1px 0 rgba(0,0,0,.08),0 12px 24px -18px rgba(0,0,0,.5);position:relative}
+pre[data-label]::before{content:attr(data-label);position:absolute;top:0;right:12px;transform:translateY(-50%);background:var(--red);color:#fff;
+  font:600 10px/1 var(--mono);letter-spacing:.14em;padding:4px 8px;border-radius:2px;text-transform:uppercase}
+pre code{background:none;padding:0;font:inherit;white-space:pre;color:inherit}
+.t-kw{color:var(--c-kw)}
+.t-at{color:var(--c-attr)}
+.t-st{color:var(--c-str)}
+.t-cm{color:var(--c-com);font-style:italic}
+.t-nu{color:var(--c-num)}
+
+/* options */
+.opts{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.opt{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr) 26px;gap:12px;align-items:start;text-align:left;
+  background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:11px 14px 11px 12px;cursor:pointer;
+  font:400 15.5px/1.7 var(--serif);color:var(--ink);transition:border-color .15s,background .15s,transform .15s}
+.opt:hover:not(:disabled){border-color:var(--ink);transform:translateX(3px)}
+.opt:disabled{cursor:default}
+.opt .letter{width:28px;height:28px;border:1.5px solid var(--ink-2);border-radius:50%;display:grid;place-items:center;
+  font:600 13px/1 var(--mono);color:var(--ink-2);margin-top:1px;transition:background .15s,color .15s}
+.q[data-multi="1"] .opt .letter{border-radius:5px}
+.opt[aria-pressed="true"]{border-color:var(--ink)}
+.opt[aria-pressed="true"] .letter{background:var(--pencil);border-color:var(--pencil);color:var(--paper)}
+.opt .tick{font:400 26px/1 var(--brush);color:var(--red);opacity:0;margin-top:-2px}
+.opt.is-right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.is-right .tick{opacity:1;color:var(--ok)}
+.opt.is-wrong{background:var(--red-soft);border-color:var(--red)}
+.opt.is-wrong .txt{text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px}
+.opt.is-wrong .tick{opacity:1}
+.opt.is-missed{border-style:dashed;border-color:var(--ok)}
+.opt.is-missed .tick{opacity:1;color:var(--ok)}
+
+.confirm{margin-top:12px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font:600 13px/1 var(--serif);
+  padding:9px 18px;border-radius:999px;cursor:pointer;letter-spacing:.08em}
+.confirm:hover:not(:disabled){background:var(--ink);color:var(--paper)}
+.confirm:disabled{opacity:.35;cursor:default}
+
+/* explanation: a margin note in red pen */
+.note{display:none;margin:18px 0 0;padding:16px 18px 14px 20px;border-left:3px solid var(--red);background:var(--sheet);border-radius:0 6px 6px 0;font-size:15px;line-height:1.85;color:var(--ink-2)}
+.q.graded .note{display:block;animation:rise .4s ease both}
+.note .verdict{font:400 22px/1 var(--brush);color:var(--red);margin-right:10px}
+.note .verdict.ok{color:var(--ok)}
+.note p{margin:0 0 10px}
+.note ul{margin:4px 0 10px;padding-left:20px}
+.note li{margin:2px 0}
+.note b{color:var(--ink);font-weight:600}
+.note .src{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;font:500 12px/1 var(--mono)}
+.note .src a{border:1px solid var(--rule-2);padding:5px 9px;border-radius:999px;text-decoration:none;color:var(--ink-2)}
+.note .src a:hover{border-color:var(--red);color:var(--red)}
+.note pre{font-size:12.5px}
+
+/* ---------- answer sheet ---------- */
+aside{position:relative}
+.sheet{position:sticky;top:22px;margin-top:64px;background:var(--sheet);border:1.5px solid var(--ink);border-radius:4px;padding:16px 16px 14px;
+  box-shadow:6px 6px 0 var(--paper-2)}
+.sheet h3{margin:0 0 2px;font:900 15px/1.3 var(--serif);letter-spacing:.2em;text-align:center}
+.sheet .sub{text-align:center;font:500 10px/1 var(--mono);letter-spacing:.24em;color:var(--ink-3);margin-bottom:12px}
+.grid{display:grid;grid-template-columns:1fr;gap:1px;max-height:calc(100vh - 290px);overflow-y:auto;padding-right:4px;scrollbar-width:thin}
+.row{display:grid;grid-template-columns:26px repeat(5,18px) 1fr;gap:5px;align-items:center;padding:2px 4px;border-radius:3px;cursor:pointer;font:500 11px/1 var(--mono)}
+.row:hover{background:var(--paper-2)}
+.row .n{color:var(--ink-3)}
+.row .b{width:16px;height:16px;border:1px solid var(--ink-3);border-radius:50%;display:grid;place-items:center;font-size:8.5px;color:var(--ink-3)}
+.row.multi .b{border-radius:3px}
+.row .b.f{background:var(--pencil);border-color:var(--pencil);color:transparent}
+.row .b.r{box-shadow:0 0 0 2px var(--ok)}
+.row.bad .b.f:not(.r){background:var(--red);border-color:var(--red)}
+.row .v{justify-self:end;font:400 15px/1 var(--brush)}
+.row.ok .v{color:var(--ok)}
+.row.bad .v{color:var(--red)}
+.row.bad .n{color:var(--red)}
+.row.part-gap{margin-top:7px}
+.prog{margin:12px 0 10px;height:4px;background:var(--paper-2);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--ink);transition:width .3s}
+.count{display:flex;justify-content:space-between;font:500 11px/1 var(--mono);color:var(--ink-3);letter-spacing:.06em}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.actions button{border:1.5px solid var(--ink);background:transparent;color:var(--ink);font:600 12.5px/1 var(--serif);padding:9px 6px;border-radius:3px;cursor:pointer;letter-spacing:.06em}
+.actions button.primary{grid-column:1/-1;background:var(--red);border-color:var(--red);color:#fff;font-size:14px;padding:11px}
+.actions button:hover{filter:brightness(1.08)}
+.actions button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.actions button:disabled{opacity:.35;cursor:default}
+
+/* ---------- report ---------- */
+.report{display:none;margin:48px 0 0;border:1.5px solid var(--ink);background:var(--sheet);padding:26px 28px;border-radius:4px;position:relative}
+.report.on{display:block;animation:rise .5s ease both}
+.report h2{margin:0 0 4px;font:900 22px/1.3 var(--serif)}
+.report .big{font:800 72px/1 var(--display);letter-spacing:-.03em}
+.report .big small{font:500 20px/1 var(--display);color:var(--ink-3)}
+.report .comment{font:400 26px/1.4 var(--brush);color:var(--red);margin:8px 0 18px}
+.bars{display:grid;gap:10px;margin:8px 0 16px}
+.bar{display:grid;grid-template-columns:150px 1fr 48px;gap:12px;align-items:center;font-size:14px}
+.bar .track{height:8px;background:var(--paper-2);border-radius:4px;overflow:hidden}
+.bar .track i{display:block;height:100%;background:var(--ink);border-radius:4px;width:0;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.bar .track i.low{background:var(--red)}
+.bar span:last-child{font:600 12px/1 var(--mono);text-align:right;color:var(--ink-2)}
+.wrongs{font-size:14.5px;color:var(--ink-2)}
+.wrongs a{margin-right:10px;white-space:nowrap}
+
+footer{margin:70px 0 0;padding:26px 0 60px;border-top:3px double var(--ink);font-size:13.5px;color:var(--ink-3);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+/* ---------- mobile ---------- */
+.mbar{display:none}
+@media (max-width:960px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:0;padding:0 18px}
+  aside{position:fixed;inset:auto 0 0 0;z-index:20;pointer-events:none}
+  .sheet{position:relative;top:auto;margin:0;border-radius:12px 12px 0 0;border-width:1.5px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.18);
+    transform:translateY(100%);transition:transform .3s ease;pointer-events:auto;max-height:78vh}
+  aside.open .sheet{transform:none}
+  .grid{max-height:44vh;grid-template-columns:1fr 1fr;column-gap:12px}
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:21;background:var(--ink);color:var(--paper);padding:12px 18px;
+    justify-content:space-between;align-items:center;font:500 13px/1 var(--mono);letter-spacing:.06em}
+  .mbar button{background:var(--red);color:#fff;border:0;border-radius:999px;font:600 13px/1 var(--serif);padding:9px 16px}
+  aside.open + .mbar{display:none}
+  body{padding-bottom:56px}
+  .stamp{width:118px;height:118px;top:30px;right:0}
+  .stamp .s-num{font-size:44px}.stamp .s-word{font-size:16px}
+  .fields{grid-template-columns:repeat(2,auto)}
+  .q{grid-template-columns:44px minmax(0,1fr);gap:0 12px}
+  .q .no{font-size:32px}
+  .bar{grid-template-columns:110px 1fr 40px}
+  .topbar{padding:14px 18px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <nav>
+    <a href="index.html#guide">← 并发全景指南</a>
+    <a href="MainActor.html">演示工程导读</a>
+  </nav>
+  <button class="theme-btn" id="themeBtn" type="button">夜读</button>
+</div>
+
+<div class="wrap">
+<main>
+  <header class="mast">
+    <div class="kicker">Self-test · Swift Concurrency</div>
+    <h1><span class="cn">Swift 并发</span><br><em>thirty</em> questions</h1>
+    <p class="lede">30 道题，覆盖<a href="index.html#guide">并发全景指南</a>与<a href="MainActor.html">演示工程导读</a>里最重要的知识点：主线程上的三层调度、阻塞与挂起、<code>nonisolated</code> 家族、Task 与结构化并发、actor 与 Sendable，以及演示工程里反复出现的写法。题目引用的工程代码都附了原文，不需要先读工程。</p>
+    <div class="fields">
+      <div>题量 <b>30</b></div>
+      <div>单选 <b id="fSingle">–</b></div>
+      <div>多选 <b id="fMulti">–</b></div>
+      <div>得分 <b id="fScore">—</b></div>
+    </div>
+    <div class="modes" role="group" aria-label="模式">
+      <button type="button" data-mode="practice" aria-pressed="true">练习：选完即判</button>
+      <button type="button" data-mode="exam" aria-pressed="false">考试：交卷后判</button>
+    </div>
+    <p class="modes-note" id="modeNote">多选题选好后点「确认」。进度保存在本机浏览器里。</p>
+    <div class="stamp" id="stamp" aria-hidden="true"><div><span class="s-num" id="stampNum">0</span><span class="s-of">/ 30</span><span class="s-word" id="stampWord"></span></div></div>
+  </header>
+
+  <div id="paper"></div>
+
+  <section class="report" id="report" aria-live="polite">
+    <h2>成绩单</h2>
+    <div class="big"><span id="rScore">0</span><small> / 30</small></div>
+    <div class="comment" id="rComment"></div>
+    <div class="bars" id="rBars"></div>
+    <div class="wrongs" id="rWrongs"></div>
+  </section>
+
+  <footer>
+    <span>题目依据 <a href="index.html#guide">index.html</a> 与 <a href="MainActor.html">MainActor.html</a>；实测数据来自 iPhone 17 Pro 模拟器（iOS 26），不是 API 保证。</span>
+    <span>每题解析末尾附有原文出处。</span>
+  </footer>
+</main>
+
+<aside id="aside">
+  <div class="sheet">
+    <h3>答 题 卡</h3>
+    <div class="sub">ANSWER SHEET</div>
+    <div class="grid" id="grid"></div>
+    <div class="prog"><i id="progBar"></i></div>
+    <div class="count"><span id="progTxt">已答 0 / 30</span><span id="rightTxt"></span></div>
+    <div class="actions">
+      <button type="button" class="primary" id="submitBtn">交 卷</button>
+      <button type="button" id="wrongBtn" aria-pressed="false">只看错题</button>
+      <button type="button" id="resetBtn">重 做</button>
+    </div>
+  </div>
+</aside>
+<div class="mbar" id="mbar"><span id="mProg">已答 0 / 30</span><button type="button" id="mOpen">答题卡</button></div>
+</div>
+
+<script>
+/* ======================================================================
+   题库
+   ====================================================================== */
+const PARTS = [
+  { roman: 'I',   title: '主线程上的三层：RunLoop、主队列、MainActor' },
+  { roman: 'II',  title: '阻塞、挂起与线程' },
+  { roman: 'III', title: 'nonisolated 家族与隔离' },
+  { roman: 'IV',  title: 'Task 与结构化并发' },
+  { roman: 'V',   title: 'actor、锁与 Sendable' },
+  { roman: 'VI',  title: '演示工程：Console 与 let console = console' },
+];
+
+const G = 'index.html#';
+const M = 'MainActor.html#';
+
+const QUESTIONS = [
+/* ---------------- I ---------------- */
+{
+  part: 0,
+  ctx: 'MainActor/Demos/RunLoopModeDemo.swift',
+  stem: `<p>演示工程用两个 Combine 定时器驱动两个计数器，唯一的区别是注册的 RunLoop mode：</p>`,
+  code: String.raw`Timer.publish(every: 0.1, on: .main, in: .default)
+    .autoconnect()
+    .sink { [weak self] _ in self?.timerDefault += 1 }
+    .store(in: &cancellables)
+Timer.publish(every: 0.1, on: .main, in: .common)
+    .autoconnect()
+    .sink { [weak self] _ in self?.timerCommon += 1 }
+    .store(in: &cancellables)`,
+  after: `<p>用户按住列表拖动 3 秒再松手。<code>timerDefault</code> 会怎样？</p>`,
+  options: [
+    '照常每 0.1 秒加 1，和 <code>timerCommon</code> 一样',
+    '拖动期间停住；松手后把漏掉的约 30 次一次性补上',
+    '拖动期间停住；松手后接着计数，漏掉的不补',
+    '拖动期间以更低的频率继续计数',
+  ],
+  answer: [2],
+  explain: `<p>拖动时主 RunLoop 切换到 <code>UITrackingRunLoopMode</code>（<code>.tracking</code>）。只注册在 <code>.default</code> 的 Timer 在这个 mode 下不触发；<code>.common</code> 是包含 default 和 tracking 的"模式集合"，所以 <code>timerCommon</code> 照常计数。</p>
+  <p>本机实测：<code>.default</code> 的 Timer 在 tracking 期间触发 0 次，回到 default 后<b>也没有补发</b>。</p>`,
+  src: [['§3 RunLoop', G+'s3-1'], ['§11.4 定时方式', G+'s11-4'], ['#3 RunLoop Mode 与滚动', M+'d3']],
+},
+{
+  part: 0,
+  stem: `<p>关于主线程上的 <code>RunLoop.main</code>、<code>DispatchQueue.main</code>、<code>MainActor</code>，哪种说法正确？</p>`,
+  options: [
+    '它们是三个平行的调度器，各自轮流占用主线程',
+    'MainActor 是一条规则："这段代码只能在主线程运行"，由编译器检查；需要跳到主线程时，运行时把任务放进主队列，主队列又由主 RunLoop 每一圈排空',
+    'DispatchQueue.main 是建立在 MainActor 之上的封装',
+    'MainActor 有自己专用的 RunLoop，和 RunLoop.main 互不相干',
+  ],
+  answer: [1],
+  explain: `<p>三者是<b>上下叠在一起的三层</b>，不是并列的调度器：</p>
+  <ul><li><code>RunLoop.main</code>：主线程上一直在转的循环，最底层。</li>
+  <li><code>DispatchQueue.main</code>：这个循环每一圈都会处理的任务队列（"收件筐"）。</li>
+  <li><code>MainActor</code>：工牌上的规定。已经在主线程上就直接执行；从别处来，就把任务放进主队列。</li></ul>`,
+  src: [['§12.1 三层结构', G+'s12-1']],
+},
+{
+  part: 0,
+  multi: true,
+  stem: `<p>用户正在拖动 ScrollView（主 RunLoop 处于 <code>UITrackingRunLoopMode</code>）。下面这些提交到主线程的闭包，哪些<b>在拖动期间</b>就会执行？</p>`,
+  options: [
+    '<code>DispatchQueue.main.async { … }</code>',
+    '<code>Task { @MainActor in … }</code>',
+    '<code>OperationQueue.main.addOperation { … }</code>',
+    '<code>RunLoop.main.perform { … }</code>（默认 mode）',
+    'Combine 的 <code>.receive(on: RunLoop.main)</code> 下游',
+  ],
+  answer: [0, 1, 2],
+  explain: `<p>主队列在 tracking mode 下照常排空，所以走主队列的三种（main.async、MainActor 任务、OperationQueue.main）都照常执行。</p>
+  <p><code>RunLoop.main.perform</code> 默认只在 <code>.default</code> mode 执行；<code>receive(on: RunLoop.main)</code> 底层也是 RunLoop 的 default mode。两者都推迟到松手后。实测和这一结论一致。要在滚动时也更新 UI，用 <code>receive(on: DispatchQueue.main)</code> 或 <code>perform(inModes: [.common])</code>。</p>`,
+  src: [['§12.3 滚动期间的差异', G+'s12-3'], ['§11.3 切到主线程的方式', G+'s11-3']],
+},
+{
+  part: 0,
+  ctx: 'MainActor/Demos/OrderingDemo.swift（按钮回调，运行在 MainActor 上）',
+  stem: `<p>"执行时机"演示在同一个同步函数里用多种方式安排日志，日志前面的数字是代码顺序：</p>`,
+  code: String.raw`private func scheduleFromSyncContext() {
+    let console = console
+    console.clear()
+    console.log("1 同步代码开始")
+
+    DispatchQueue.main.async { console.log("2 DispatchQueue.main.async") }
+    Task { console.log("3 Task { }（继承 MainActor，入队）") }
+    Task.immediate { console.log("4 Task.immediate（立即同步开始执行）") }
+    RunLoop.main.perform { console.log("5 RunLoop.main.perform") }
+    OperationQueue.main.addOperation { console.log("6 OperationQueue.main.addOperation") }
+    Task.detached { console.log("7 Task.detached（不继承 actor → 后台）") }
+    DispatchQueue.global().async { console.log("8 DispatchQueue.global().async（后台）") }
+
+    mainActorSyncFunction(console)   // 里面打印 "9 调用 @MainActor 同步函数"
+    console.log("10 同步代码结束")
+}`,
+  after: `<p>关于日志顺序，哪种说法是<b>有保证</b>的？</p>`,
+  options: [
+    '严格按代码顺序 1 → 10 输出',
+    '1、4、9、10 按这个顺序最先出现在主线程上；2、3、5、6 要等函数返回后才执行，它们之间的先后不应依赖；7、8 在后台，可能插在任何位置（甚至在 9 之前）',
+    '1、9、10 最先；4 和 3 一样要排队，排在 10 之后',
+    '7 和 8 一定在 10 之后，因为后台线程要等主线程空闲',
+  ],
+  answer: [1],
+  explain: `<ul><li><b>4</b>：<code>Task.immediate</code> 立即在当前上下文同步开始执行，闭包里没有挂起点，所以紧跟 1 输出。</li>
+  <li><b>9</b>：同为 MainActor 的同步函数直接调用，不排队。</li>
+  <li><b>2、3、5、6</b>：都排到"当前函数返回之后"。本机实测 30 次里主线程顺序稳定，但这只是实现行为，不是保证。</li>
+  <li><b>7、8</b>：在后台线程，和主线程并行。实测里 detached 偶尔出现在 2 和 3 之间，也有排在 main.async 之后的。</li></ul>`,
+  src: [['§12.2 执行顺序示例', G+'s12-2'], ['§17 实测', G+'s17'], ['#1 执行时机', M+'d1']],
+},
+{
+  part: 0,
+  stem: `<p>在 MainActor 上执行下面的代码，<code>load()</code> 是一个会真正挂起的网络请求。打印顺序是？</p>`,
+  code: String.raw`@MainActor func onTap() {
+    print("A")
+    Task.immediate {
+        print("B")
+        await load()
+        print("C")
+    }
+    print("D")
+}`,
+  options: [
+    'A → B → C → D',
+    'A → D → B → C',
+    'A → B → D → …（load 完成后）→ C',
+    'A → D → C → B',
+  ],
+  answer: [2],
+  explain: `<p><code>Task.immediate</code>（Swift 6.2，iOS 26+）在当前上下文<b>同步开始执行</b>，一直跑到第一个真正的挂起点（<code>await load()</code>）为止，然后把控制权交还给调用方，所以 B 在 D 之前。之后的部分像普通 Task 一样排队执行。</p>
+  <p>如果换成 <code>Task { }</code>，闭包会入队，顺序就变成 A → D → B → C。</p>`,
+  src: [['§9.2 Task.immediate', G+'s9-2']],
+},
+
+/* ---------------- II ---------------- */
+{
+  part: 1,
+  ctx: 'MainActor/Demos/BlockingDemo.swift（工程开启了默认 MainActor 隔离，这是 View 里的方法）',
+  stem: '',
+  code: String.raw`private func taskInheritingMainActor() {
+    let console = console
+    Task {
+        console.log("Task { } 开始同步计算")
+        let n = Work.spin(seconds: 2)      // 同步 CPU 忙等 2 秒
+        console.log("Task { } 计算完成（\(n) 次迭代）")
+    }
+}`,
+  after: `<p>点按钮后，界面会怎样？</p>`,
+  options: [
+    '不卡：<code>Task {}</code> 会把工作放到后台线程',
+    '卡住约 2 秒：<code>Task {}</code> 继承了 MainActor，同步计算就在主线程上跑',
+    '只卡一瞬间：Task 会在忙等中途自动让出主线程',
+    '编译错误：MainActor 上不允许同步计算',
+  ],
+  answer: [1],
+  explain: `<p><code>Task {}</code> 继承创建处的 actor 隔离。这里在 MainActor 上创建，闭包也属于 MainActor。<code>Work.spin</code> 是同步忙等，中间没有挂起点，所以会占住主线程 2 秒，动画停住。</p>
+  <p>这是常见陷阱：<b><code>Task {}</code> 不等于"去后台"</b>。CPU 密集工作应放进 <code>@concurrent</code> 函数，或者用 <code>Task.detached</code>。</p>`,
+  src: [['§14 常见陷阱', G+'s14'], ['§7.3 Task', G+'s7-3'], ['#2 阻塞 vs 挂起', M+'d2']],
+},
+{
+  part: 1,
+  stem: `<p>在 MainActor 上分别执行下面两段代码，各等 2 秒：</p>`,
+  code: String.raw`Thread.sleep(forTimeInterval: 2)          // ①
+
+Task { try? await Task.sleep(for: .seconds(2)) }   // ②`,
+  after: `<p>哪种说法正确？</p>`,
+  options: [
+    '两者一样：主线程都要等 2 秒',
+    '① 阻塞：主线程 2 秒内什么都做不了；② 挂起：任务让出主线程，这 2 秒里主线程照常处理触摸和动画',
+    '① 只阻塞当前任务，② 会阻塞整个协作线程池',
+    '② 内部其实也是 sleep 了一个后台线程，只是看起来不卡',
+  ],
+  answer: [1],
+  explain: `<p><b>阻塞</b>占着线程不放；<b>挂起</b>把"之后要做的事"存起来，线程立刻去做别的。<code>Task.sleep</code> 由并发运行时计时，不占用任何线程。</p>
+  <p>演示 App 第 2 页用一个逐帧旋转的图标展示了这个区别：<code>Thread.sleep</code> 时图标停住，<code>Task.sleep</code> 时照常转。</p>`,
+  src: [['§7.1 async/await', G+'s7-1'], ['#2 阻塞 vs 挂起', M+'d2']],
+},
+{
+  part: 1,
+  ctx: 'MainActor/Support/Work.swift 与 BlockingDemo.swift',
+  stem: `<p>工程里有两个函数体完全一样的 async 函数：</p>`,
+  code: String.raw`nonisolated enum Work {
+    /// nonisolated(nonsending)：在调用方的 actor 上执行
+    nonisolated(nonsending)
+    static func spinNonsending(seconds: Double, console: Console) async -> Int {
+        console.log("nonisolated(nonsending) async 函数内部")
+        return spin(seconds: seconds)          // 同步忙等
+    }
+
+    /// @concurrent：总是在全局并发执行器（后台线程池）上执行
+    @concurrent
+    static func spinConcurrent(seconds: Double, console: Console) async -> Int {
+        console.log("@concurrent async 函数内部")
+        return spin(seconds: seconds)
+    }
+}
+
+// 两个按钮分别执行（都在 MainActor 上）：
+Task { let n = await Work.spinNonsending(seconds: 2, console: console) }
+Task { let n = await Work.spinConcurrent(seconds: 2, console: console) }`,
+  after: `<p>哪个按钮会让界面卡 2 秒？</p>`,
+  options: [
+    '两个都卡：调用方都是 MainActor',
+    '两个都不卡：async 函数都在后台执行',
+    '只有 <code>spinNonsending</code> 卡；<code>spinConcurrent</code> 在后台跑，返回后再回到 MainActor',
+    '只有 <code>spinConcurrent</code> 卡，因为它会占满线程池',
+  ],
+  answer: [2],
+  explain: `<p><code>nonisolated(nonsending)</code> 的意思是"<b>在调用方的 actor 上跑</b>"。从 MainActor 调用，函数体就在主线程上执行，同步忙等会卡 UI。</p>
+  <p><code>@concurrent</code> 的意思是"<b>去全局并发执行器（协作池）上跑</b>"。<code>await</code> 时离开主线程，返回后接着的代码回到 MainActor。</p>
+  <p>本机实测：从 MainActor 调用，前者 10/10 在主线程，后者 10/10 在后台线程。</p>`,
+  src: [['§9.3 nonisolated 用法大全', G+'s9-3'], ['#2 阻塞 vs 挂起', M+'d2']],
+},
+{
+  part: 1,
+  stem: `<p>提交 100 个任务，每个任务都用 <code>usleep</code> 阻塞 100ms。分别用 <code>DispatchQueue.global().async</code> 和 <code>withTaskGroup</code> 的 <code>addTask</code> 实现，在 12 核机器上实测：GCD 用了 64 个线程、约 210ms；TaskGroup 只用了 12 个线程、约 927ms。这说明了什么？</p>`,
+  options: [
+    '协作线程池比 GCD 慢，性能敏感的代码应该回到 GCD',
+    '协作线程池的线程数约等于核心数，线程被阻塞时不会补新线程；所以 async 代码里不能阻塞（<code>semaphore.wait()</code>、<code>Thread.sleep</code>、同步 I/O 等），否则会饿死线程池',
+    'TaskGroup 默认把并发数限制为 12，可以通过参数调大',
+    'GCD 的 64 个线程是固定配置，与任务是否阻塞无关',
+  ],
+  answer: [1],
+  explain: `<p>GCD 发现线程被阻塞时会补新线程，阻塞任务一多就会<b>线程爆炸</b>（上限约 64）。协作线程池的设计前提是"任务不会阻塞，只会挂起"，所以线程数固定在核心数附近，从不补线程。</p>
+  <p>这个实验故意违反了这个前提，所以协作池变慢了。正确的做法是把阻塞换成挂起（<code>Task.sleep</code>、异步 I/O）。在 async 上下文里阻塞，轻则饿死线程池，重则死锁。</p>`,
+  src: [['§7.2 协作式线程池', G+'s7-2'], ['§5.7 DispatchSemaphore', G+'s5-7'], ['§14 常见陷阱', G+'s14']],
+},
+{
+  part: 1,
+  stem: `<p>下面这行代码<b>在主线程上</b>执行，会发生什么？</p>`,
+  code: String.raw`DispatchQueue.main.sync {
+    print("hello")
+}`,
+  options: [
+    '立即打印 hello，因为已经在主线程上',
+    '打印 hello，但要等到下一圈 RunLoop',
+    '死锁：sync 要等 block 执行完才返回，而 block 排在主队列里，要等当前代码（也就是 sync 自己）返回后才能执行',
+    '编译器会自动改成 async',
+  ],
+  answer: [2],
+  explain: `<p>对<b>当前所在的串行队列</b>调用 <code>sync</code> 必然死锁。主队列是串行的，主线程正卡在 <code>sync</code> 上等 block，而 block 要等主线程空出来才能执行。GCD 会检测到这种情况并直接崩溃。</p>`,
+  src: [['§5.11 sync vs async', G+'s5-11'], ['§14 常见陷阱', G+'s14']],
+},
+
+/* ---------------- III ---------------- */
+{
+  part: 2,
+  stem: `<p>工程开启了 Approachable Concurrency（包含 <code>NonisolatedNonsendingByDefault</code>）。下面的函数没有任何其他标注：</p>`,
+  code: String.raw`nonisolated func decode(_ data: Data) async -> Image { … }
+
+// 在 MainActor 上调用：
+let image = await decode(data)`,
+  after: `<p><code>decode</code> 的函数体在哪里执行？</p>`,
+  options: [
+    '协作线程池（后台）：nonisolated async 函数总是离开调用方的 actor',
+    '主线程：开启该特性后，nonisolated async 函数默认是 <code>nonisolated(nonsending)</code>，在调用方的 actor 上执行',
+    '随机：由运行时根据负载决定',
+    '编译错误：nonisolated 函数不能被 MainActor 调用',
+  ],
+  answer: [1],
+  explain: `<p>SE-0461 改变了默认行为。以前（Swift 6.0 / 6.1）nonisolated async 函数会切到全局并发执行器；开启 <code>NonisolatedNonsendingByDefault</code> 后，它默认继承调用方的 actor。</p>
+  <p>所以<b>单写 <code>nonisolated</code> 不能当作"去后台"</b>。如果 <code>decode</code> 是 CPU 密集的，应该标 <code>@concurrent</code>。</p>`,
+  src: [['§9.3 nonisolated 用法大全', G+'s9-3'], ['§7.16 Executor', G+'s7-16']],
+},
+{
+  part: 2,
+  stem: '',
+  code: String.raw`@MainActor final class VM {
+    var title = ""
+    nonisolated func format(_ x: Double) -> String {
+        String(format: "%.2f", x)
+    }
+}
+
+// 在某个 MainActor 函数里：
+DispatchQueue.global().async {
+    print(vm.format(1))
+}`,
+  after: `<p>关于 <code>vm.format(1)</code> 这次调用，哪种说法正确？</p>`,
+  options: [
+    '运行时自动切到主线程执行，因为 VM 是 <code>@MainActor</code> 类',
+    '切到协作线程池执行',
+    '在调用方的后台线程上同步执行。<code>nonisolated</code> 不改变在哪个线程运行，只改变"谁能直接调用"：任何上下文都能不经 <code>await</code> 调用它',
+    '编译错误：从后台调用 MainActor 类的方法必须 <code>await</code>',
+  ],
+  answer: [2],
+  explain: `<p><b>同步调用不可能切换线程</b>：切换需要挂起点，同步函数没有。隔离标注是编译期的调用规则，真正的切换发生在调用方的 <code>await</code> 上。</p>
+  <p>去掉 <code>nonisolated</code>，<code>format</code> 就属于 MainActor，从这个后台闭包里同步调用会被编译器拦下。加上之后它不属于任何 actor，代价是函数体里不能碰 <code>title</code> 这样的 MainActor 状态。</p>
+  <p>另外，捕获 <code>vm</code> 本身没问题：MainActor 隔离的类自动是 Sendable。</p>`,
+  src: [['§9.3 同步函数的 nonisolated', G+'s9-3']],
+},
+{
+  part: 2,
+  stem: `<p>老工程打开 <code>NonisolatedNonsendingByDefault</code> 后，原本在后台跑的 <code>nonisolated func resize(_ image: Image) async -> Image</code> 开始卡主线程。最合适的修复是？</p>`,
+  options: [
+    '改成 <code>nonisolated(unsafe)</code>',
+    '给函数加上 <code>@concurrent</code>，保持原来"在后台执行"的行为',
+    '在函数体外面包一层 <code>Task { }</code>',
+    '给函数加上 <code>@MainActor</code>',
+  ],
+  answer: [1],
+  explain: `<p>开启该特性后，nonisolated async 函数改到调用方的 actor 上执行。需要保持后台执行的函数要补上 <code>@concurrent</code>（参数和返回值需要是 Sendable）。</p>
+  <p>迁移时可以用 <code>-enable-upcoming-feature NonisolatedNonsendingByDefault:migrate</code> 编译，编译器会对每个受影响的函数给出提示：<i>will cause nonisolated async global function 'f' to run on the caller's actor; use '@concurrent' to preserve behavior</i>。</p>
+  <ul><li><code>nonisolated(unsafe)</code> 用于变量，只是让编译器不再检查。</li>
+  <li><code>Task {}</code> 继承调用方的隔离，还是在主线程。</li></ul>`,
+  src: [['§9.3 常见误区', G+'s9-3']],
+},
+{
+  part: 2,
+  stem: `<p>在一个<b>没有</b>开启默认 MainActor 隔离的工程里，有这样一个模型：</p>`,
+  code: String.raw`@Observable
+final class Model {
+    var items: [Item] = []
+}`,
+  after: `<p>哪种说法正确？</p>`,
+  options: [
+    '<code>@Observable</code> 宏会自动把类标成 <code>@MainActor</code>',
+    '<code>@Observable</code> 内部有锁，所以多线程修改 <code>items</code> 是安全的',
+    '<code>@Observable</code> 只提供观察能力，不赋予 MainActor 隔离，也不提供线程安全；驱动 UI 的模型应自己标 <code>@MainActor</code>',
+    '从后台修改 <code>items</code> 会和 <code>@Published</code> 一样出现紫色运行时警告',
+  ],
+  answer: [2],
+  explain: `<p>三种状态的机制不同：</p>
+  <ul><li><code>@State</code>：存储可以从任意线程修改，但引用的对象内部是否安全是另一回事。</li>
+  <li><code>@Observable</code>：只负责观察，<b>隔离要自己声明</b>。多线程修改会产生数据竞争，而且不会有 <code>@Published</code> 那样的紫色警告。</li>
+  <li><code>ObservableObject</code> / <code>@Published</code>：发布必须在主线程，从后台改会出现紫色警告。</li></ul>
+  <p>开启默认 MainActor 隔离的工程里，模型默认就是 <code>@MainActor</code>，这个问题自然消失。</p>`,
+  src: [['§8.6 状态更新的线程要求', G+'s8-6'], ['§14 常见陷阱', G+'s14']],
+},
+{
+  part: 2,
+  stem: `<p>某个旧框架的文档保证代理回调一定在主线程上调用。代码这样写：</p>`,
+  code: String.raw`func didFinish() {                 // 编译器不知道它在主线程
+    MainActor.assumeIsolated {
+        self.label = "done"            // label 是 MainActor 属性
+    }
+}`,
+  after: `<p>关于 <code>MainActor.assumeIsolated</code>，哪种说法正确？</p>`,
+  options: [
+    '它会把闭包排到主队列上，稍后执行',
+    '它不切换线程：同步执行闭包，并在运行时断言当前已经在 MainActor 上；如果不在，程序直接崩溃',
+    '它和 <code>await MainActor.run { }</code> 完全等价',
+    '如果当前不在主线程，它会阻塞等待主线程空闲',
+  ],
+  answer: [1],
+  explain: `<p><code>assumeIsolated</code> 不是切换手段，而是<b>告诉编译器"我保证现在已经在 MainActor 上"</b>，并在运行时检查这个保证。它只适合回调线程有保证的场景，用来替代旧代码里的 <code>Thread.isMainThread</code> 检查。</p>
+  <p>不确定回调在哪个线程时，应该用 <code>Task { @MainActor in … }</code> 或 <code>DispatchQueue.main.async</code> 真正切换过去。</p>`,
+  src: [['§11.3 切到主线程的方式', G+'s11-3'], ['§13 迁移对照', G+'s13'], ['#7 桥接旧 API', M+'d7']],
+},
+
+/* ---------------- IV ---------------- */
+{
+  part: 3,
+  multi: true,
+  stem: `<p>在一个任务里用 <code>Task { }</code> 创建新的非结构化任务。新任务会从创建处继承哪些东西？</p>`,
+  options: [
+    'actor 隔离（例如 MainActor）',
+    '任务优先级',
+    'TaskLocal 的值',
+    '父任务的取消：父任务取消时它也被取消',
+  ],
+  answer: [0, 1, 2],
+  explain: `<p><code>Task {}</code> 继承 actor 隔离、优先级和 TaskLocal，但它是<b>非结构化</b>的，不是父任务的子任务，不会随父任务取消。</p>
+  <p>对比：<code>Task.detached {}</code> 三者都不继承；<code>async let</code> 和 TaskGroup 子任务继承优先级和 TaskLocal，会随父任务取消，但不继承 actor 隔离。</p>`,
+  src: [['§11.2 Task 对比表', G+'s11-2'], ['§7.3 Task', G+'s7-3'], ['#4 Task 继承了什么', M+'d4']],
+},
+{
+  part: 3,
+  stem: `<p>父任务里同时启动了四个子工作，每个都 <code>try await Task.sleep(for: .seconds(1))</code>：一个 <code>async let</code>、一个 TaskGroup 子任务、一个 <code>Task { }</code>、一个 <code>Task.detached { }</code>。父任务在 300ms 时被取消。结果是？</p>`,
+  options: [
+    '四个都在约 300ms 被取消',
+    '<code>async let</code> 和 TaskGroup 子任务在约 300ms 被取消；<code>Task {}</code> 和 <code>Task.detached {}</code> 照常在约 1 秒时完成',
+    '只有 <code>Task.detached</code> 继续运行，其余都被取消',
+    '四个都照常运行到 1 秒：取消只对父任务本身有效',
+  ],
+  answer: [1],
+  explain: `<p>取消沿<b>任务树</b>向下传播。<code>async let</code> 和 TaskGroup 子任务是结构化子任务，会被自动取消（<code>Task.sleep</code> 收到取消后立刻抛出 <code>CancellationError</code>）。</p>
+  <p><code>Task {}</code> 和 <code>Task.detached {}</code> 都是非结构化任务，不在树上，需要保存句柄自己 <code>cancel()</code>。本机实测：前两者约 301ms 被取消，后两者约 1006ms 正常完成。</p>`,
+  src: [['§7.7 取消', G+'s7-7'], ['§17 实测', G+'s17'], ['#4 Task 继承了什么', M+'d4']],
+},
+{
+  part: 3,
+  stem: '',
+  code: String.raw`let t = Task.detached {
+    for i in 0..<10_000_000 {
+        heavyStep(i)          // 同步计算，没有 await，也不检查取消
+    }
+    print("done")
+}
+t.cancel()`,
+  after: `<p><code>t.cancel()</code> 之后会怎样？</p>`,
+  options: [
+    '循环立刻停止，不打印 done',
+    '循环在下一次迭代时自动抛出 <code>CancellationError</code>',
+    '循环照常跑完并打印 done：取消是协作式的，只设置一个标志，需要代码自己检查 <code>Task.isCancelled</code> 或调用 <code>try Task.checkCancellation()</code>',
+    '线程被强制终止，可能导致资源泄漏',
+  ],
+  answer: [2],
+  explain: `<p>Swift 的取消是<b>协作式</b>的：<code>cancel()</code> 只是把任务标记为已取消，不会强行打断任何代码。会响应取消的只有：</p>
+  <ul><li>自己检查 <code>Task.isCancelled</code> 或 <code>try Task.checkCancellation()</code>；</li>
+  <li>调用会检查取消的 API，例如 <code>Task.sleep</code>、<code>URLSession</code>；</li>
+  <li>用 <code>withTaskCancellationHandler</code> 在挂起时响应。</li></ul>`,
+  src: [['§7.7 取消', G+'s7-7']],
+},
+{
+  part: 3,
+  stem: `<p><code>fetch(_:)</code> 是一个 async 函数，每次耗时约 1 秒，三次调用互不依赖。</p>`,
+  code: String.raw`// 写法 ①
+let a = await fetch(1)
+let b = await fetch(2)
+let c = await fetch(3)
+
+// 写法 ②
+async let a = fetch(1)
+async let b = fetch(2)
+async let c = fetch(3)
+let results = await [a, b, c]`,
+  after: `<p>两种写法分别大约耗时多久？</p>`,
+  options: [
+    '都约 1 秒：<code>await</code> 本身就会并行',
+    '① 约 3 秒；② 约 1 秒：<code>async let</code> 立即启动子任务，三者并行，到 <code>await</code> 时才等结果',
+    '① 约 1 秒；② 约 3 秒',
+    '都约 3 秒：同一个 actor 上的工作总是串行的',
+  ],
+  answer: [1],
+  explain: `<p>顺序 <code>await</code> 会等上一个完成才开始下一个。<code>async let</code> 在声明处就启动结构化子任务，适合<b>数量固定</b>的并行；数量不定时用 TaskGroup。</p>
+  <p>本机实测：顺序 await 3027ms，async let 1010ms。<code>async let</code> 如果离开作用域还没被 await，会被隐式取消并等待它结束。</p>`,
+  src: [['§7.5 async let', G+'s7-5'], ['§7.6 TaskGroup', G+'s7-6'], ['#5 结构化并发', M+'d5']],
+},
+{
+  part: 3,
+  stem: `<p>SwiftUI 视图里加载数据，有两种写法：</p>`,
+  code: String.raw`// 写法 ①
+.onAppear {
+    Task { await model.load() }
+}
+
+// 写法 ②
+.task {
+    await model.load()
+}`,
+  after: `<p>用户在加载完成前离开页面，区别是什么？</p>`,
+  options: [
+    '没有区别，<code>.task</code> 只是语法糖',
+    '② 在视图消失时自动取消任务；① 里的 <code>Task</code> 不会被取消，会一直跑完（并让它捕获的对象活到那时）',
+    '① 会自动取消，② 不会',
+    '两者都会自动取消，但 ② 更早开始执行',
+  ],
+  answer: [1],
+  explain: `<p><code>.task</code> 把任务的生命周期绑在视图上：视图消失时自动 <code>cancel()</code>。<code>.task(id:)</code> 还会在 id 变化时取消旧任务、启动新任务，可以用来替代 <code>DispatchWorkItem</code> 防抖。</p>
+  <p><code>onAppear { Task {} }</code> 创建的是非结构化任务，没人保存句柄，也就没人取消它。</p>`,
+  src: [['§8.1 .task', G+'s8-1'], ['§8.2 搜索防抖', G+'s8-2'], ['#11 .task 与生命周期', M+'d11']],
+},
+{
+  part: 3,
+  stem: `<p>用 continuation 把一个回调式 API 桥接成 async 函数：</p>`,
+  code: String.raw`func load() async throws -> Data {
+    try await withCheckedThrowingContinuation { cont in
+        legacyLoad { data, error in
+            if let error { cont.resume(throwing: error) }
+            if let data  { cont.resume(returning: data) }
+        }
+    }
+}`,
+  after: `<p>这段代码有什么问题？</p>`,
+  options: [
+    '没有问题',
+    '如果回调同时给了 data 和 error，会 resume 两次导致崩溃；如果两者都是 nil，永远不 resume，调用方会一直挂起',
+    '<code>withCheckedThrowingContinuation</code> 只能在 MainActor 上使用',
+    'resume 必须在主线程上调用',
+  ],
+  answer: [1],
+  explain: `<p>continuation 必须<b>恰好 resume 一次</b>。resume 两次是程序错误（checked 版本会直接报错崩溃）；一次都不 resume，等待它的任务会永远挂起（checked 版本会在 continuation 被释放时打印警告）。</p>
+  <p>稳妥的写法是用 <code>if / else if / else</code> 覆盖所有情况，并给"都为 nil"的情况抛出一个错误。</p>`,
+  src: [['§7.14 Continuation', G+'s7-14'], ['§14 常见陷阱', G+'s14'], ['#7 桥接旧 API', M+'d7']],
+},
+
+/* ---------------- V ---------------- */
+{
+  part: 4,
+  ctx: 'MainActor/Demos/ActorReentrancyDemo.swift',
+  stem: '',
+  code: String.raw`/// 朴素缓存：await 期间其他调用可以进入 actor，导致重复下载
+actor NaiveImageCache {
+    private var cache: [String: String] = [:]
+    private(set) var downloadCount = 0
+
+    func image(for key: String, console: Console) async -> String {
+        if let cached = cache[key] {
+            console.log("命中缓存")
+            return cached
+        }
+        downloadCount += 1
+        let number = downloadCount
+        console.log("开始下载 #\(number)（await 期间 actor 可处理其他调用）")
+        try? await Task.sleep(for: .milliseconds(500))
+        let image = "image-\(key)"
+        cache[key] = image
+        console.log("下载 #\(number) 完成，写入缓存")
+        return image
+    }
+}`,
+  after: `<p>5 个任务<b>同时</b>调用 <code>image(for: "avatar", …)</code>，<code>downloadCount</code> 最终是多少？</p>`,
+  options: [
+    '1：actor 保证同一时间只有一个调用在执行，后面 4 个都会命中缓存',
+    '5：actor 在 <code>await</code> 处可重入，第一个调用挂起时，其余 4 个也进入了 actor，都发现缓存为空',
+    '不确定，可能出现数据竞争导致计数错乱',
+    '0：<code>try?</code> 吞掉了错误，缓存永远不会写入',
+  ],
+  answer: [1],
+  explain: `<p>actor 保证的是<b>同一时间只有一段代码在执行</b>，但 <code>await</code> 会让出 actor，其他调用可以趁机进来，这就是<b>重入</b>。5 个调用都在第一个下载完成前检查了缓存，所以下载了 5 次。<code>downloadCount</code> 本身不会算错，因为 actor 内没有数据竞争。</p>
+  <p>修复：缓存"进行中的 Task"。</p>
+  <pre><code>private var inFlight: [String: Task&lt;String, Never&gt;] = [:]
+if let task = inFlight[key] { return await task.value }   // 复用进行中的下载</code></pre>
+  <p>本机实测：朴素缓存每次下载 5 次，去重缓存每次只下载 1 次。</p>`,
+  src: [['§7.10 actor', G+'s7-10'], ['#6 actor 串行与重入', M+'d6']],
+},
+{
+  part: 4,
+  stem: `<p>需要保护一个计数器字典，在 actor 和 <code>Mutex</code>（Synchronization 框架，iOS 18+）之间选择。哪种说法正确？</p>`,
+  options: [
+    '<code>Mutex.withLock</code> 的闭包里可以 <code>await</code>，等待期间锁会自动释放',
+    'actor 访问需要 <code>await</code>，等待时挂起、不占线程，但有重入问题；<code>Mutex</code> 是同步的，<code>withLock</code> 闭包里不能 <code>await</code>，适合短小的同步临界区，也能在同步代码里使用',
+    '<code>Mutex</code> 不能在主线程上使用',
+    'actor 总是比 Mutex 快，因为不需要加锁',
+  ],
+  answer: [1],
+  explain: `<p>两者各有用途：actor 适合包含异步操作的复杂状态；锁适合"小而快、需要在同步代码中访问"的状态。<code>withLock</code> 的闭包是同步的，编译器会阻止你在里面 <code>await</code>，所以持锁期间不会挂起。</p>
+  <p>主线程可以用锁，只要临界区很短。本机实测（4 线程 × 50,000 次自增）：Atomic 约 15ms，Mutex 约 31ms，NSLock 约 40ms，actor 约 76ms，串行队列 sync 约 590ms。</p>`,
+  src: [['§10 锁与同步原语', G+'s10'], ['Mutex 与主线程：四个追问', M+'mutex-main'], ['#10 数据竞争与锁', M+'d10']],
+},
+{
+  part: 4,
+  multi: true,
+  stem: `<p>以下类型都在同一个模块里，<b>都没有</b>显式写 <code>: Sendable</code>。哪些被编译器视为 Sendable？（Swift 6 模式本机实测）</p>`,
+  code: String.raw`@MainActor final class Console { var entries: [String] = [] }   // A
+actor Cache { var dict: [String: Data] = [:] }                  // B
+struct Point { var x: Double; var y: Double }                   // C
+final class Box { let value: Int = 0 }                          // D
+struct Holder { var arr: NSMutableArray }                       // E`,
+  fixed: true,
+  options: ['A', 'B', 'C', 'D', 'E'],
+  answer: [0, 1, 2],
+  explain: `<ul><li><b>A</b>：全局 actor 隔离的类自动是 Sendable（SE-0316）。可变状态只有 MainActor 能碰，引用传到哪都安全。</li>
+  <li><b>B</b>：actor 永远是 Sendable。</li>
+  <li><b>C</b>：非 public 的 struct，所有存储属性都是 Sendable，就隐式推断为 Sendable。</li>
+  <li><b>D</b>：普通类从不隐式 Sendable，即使是 <code>final</code> 且只有 <code>let</code>，也要显式声明 <code>: Sendable</code>。</li>
+  <li><b>E</b>：<code>NSMutableArray</code> 不是 Sendable，所以 Holder 也不是。</li></ul>
+  <p>实测 D、E 报错：<i>type 'Box' does not conform to the 'Sendable' protocol</i>。</p>`,
+  src: [['§7.13 Sendable', G+'s7-13'], ['C7 隐式 Sendable', M+'console-copy']],
+},
+
+/* ---------------- VI ---------------- */
+{
+  part: 5,
+  ctx: 'MainActor/Support/Console.swift（工程开启了默认 MainActor 隔离）',
+  stem: `<p>演示工程的日志系统由两个类组成：</p>`,
+  code: String.raw`/// 用 Mutex 保护的日志缓冲区，任何线程都可以写入
+nonisolated final class LogBuffer: Sendable {
+    private let state = Mutex(State())
+    func append(_ message: String) { … }      // 内部 state.withLock { … }
+    func snapshot() -> [LogEntry] { … }
+}
+
+@Observable
+final class Console {
+    private(set) var entries: [LogEntry] = []
+
+    nonisolated let buffer = LogBuffer()
+
+    nonisolated func log(_ message: String) {
+        buffer.append(message)
+        Task { @MainActor [weak self] in self?.refresh() }
+    }
+
+    func refresh() { entries = buffer.snapshot() }
+    func clear()   { buffer.reset(); entries = [] }
+}`,
+  after: `<p>如果删掉 <code>nonisolated let buffer</code> 里的 <code>nonisolated</code>，会怎样？</p>`,
+  options: [
+    '没有影响，<code>let</code> 常量天生就能从任何线程读取',
+    '<code>buffer</code> 变成 MainActor 隔离的属性，<code>log</code> 里同步读取它会被编译器拒绝（需要 <code>await</code>），<code>log</code> 就无法保持同步、可以从任何线程直接调用的特性',
+    '<code>LogBuffer</code> 不再是 Sendable',
+    '运行时每次读取 <code>buffer</code> 都会切到主线程',
+  ],
+  answer: [1],
+  explain: `<p>Console 整个类是 MainActor 隔离的，它的存储属性默认也是，<code>let</code> 也不例外。<code>log</code> 是 nonisolated 函数，可能在任何线程运行，从里面读 MainActor 属性属于跨隔离访问。</p>
+  <p><code>nonisolated let</code> 成立需要两个条件：<b><code>let</code></b>（引用永不改变），且<b>类型是 Sendable</b>（拿到引用后调用方法也安全）。LogBuffer 靠 Mutex 满足第二条。</p>`,
+  src: [['Q10 buffer 为什么要 nonisolated', M+'console-isolated'], ['§9.3 本工程中的例子', G+'s9-3']],
+},
+{
+  part: 5,
+  ctx: 'MainActor/Demos/OrderingDemo.swift',
+  stem: `<p>View 里的日志对象用 <code>@State</code> 持有，很多演示函数的第一行都是 <code>let console = console</code>：</p>`,
+  code: String.raw`struct OrderingDemo: View {
+    @State private var console = Console()   // Console 见上一题
+
+    private func scheduleFromSyncContext() {
+        let console = console                // ← 这一行
+        console.log("1 同步代码开始")
+        Task.detached { console.log("7 Task.detached（后台）") }
+        DispatchQueue.global().async { console.log("8 global（后台）") }
+        …
+    }
+}`,
+  after: `<p>这一行最主要的作用是什么？</p>`,
+  options: [
+    '性能优化：避免每次访问都经过 <code>@State</code> 的 getter',
+    '避免循环引用：闭包捕获 <code>self</code> 会导致 View 无法释放',
+    '在 MainActor 上把值取出来：<code>@State</code> 让 <code>console</code> 成为 MainActor 隔离的计算属性，后台闭包里读 <code>self.console</code> 是跨隔离访问；复制成局部常量后，闭包只捕获一个 Sendable 的引用，再调用 nonisolated 的 <code>log</code>，不需要 <code>await</code>',
+    '复制一份独立的 Console，让后台写日志不影响界面',
+  ],
+  answer: [2],
+  explain: `<p>直接写 <code>console</code>，闭包里实际是 <code>self.console</code>，等闭包在后台运行时才去调用 MainActor 的 getter。Swift 5 模式下 <code>Task.detached</code> 那处会给警告，Swift 6 模式下是错误。</p>
+  <p><code>let console = console</code> 在函数体里执行，此时就在 MainActor 上，同步调用 getter 合法。之后闭包捕获的是局部常量。它能跨线程传递，是因为 Console 是 MainActor 隔离的类，自动是 Sendable；后台能直接调用 <code>log</code>，是因为 <code>log</code> 是 nonisolated 的。</p>
+  <p>View 是值类型，没有循环引用的问题。</p>`,
+  src: [['C1–C5 let console = console', M+'console-copy']],
+},
+{
+  part: 5,
+  stem: `<p>接上题，执行完 <code>let console = console</code> 后，局部的 <code>console</code> 与 <code>self.console</code> 是什么关系？</p>`,
+  options: [
+    '深拷贝：局部变量是一个新的 Console，有自己的 entries',
+    '同一个 Console 对象的两个引用：Console 是 class，复制的只是引用；局部变量上调用 <code>log</code>，界面上显示的就是这个对象的日志',
+    '<code>@State</code> 的快照，会在下一次视图更新时失效',
+    '弱引用：View 销毁后局部变量变成 nil',
+  ],
+  answer: [1],
+  explain: `<p>类是引用类型，<code>let console = console</code> 复制的是"地址"，不是对象。两个名字指向堆上同一个 Console，所以后台闭包写的日志会出现在界面上。</p>
+  <p>局部常量和 <code>self.console</code> 的区别在于<b>取值的时机和上下文</b>：前者在 MainActor 上一次取好，后者每次在闭包运行的上下文里重新取。</p>`,
+  src: [['C5–C6 拷贝还是引用', M+'console-copy']],
+},
+{
+  part: 5,
+  stem: `<p>另一种写法是捕获列表 <code>{ [console] in … }</code>。先看一个通用的例子，运行后打印什么？</p>`,
+  code: String.raw`final class Box { var v = 1 }
+
+var n = 1
+let box = Box()
+let f = { [n, box] in print(n, box.v) }
+
+n = 2
+box.v = 2
+f()`,
+  options: [
+    '<code>2 2</code>',
+    '<code>1 1</code>',
+    '<code>1 2</code>',
+    '<code>2 1</code>',
+  ],
+  answer: [2],
+  explain: `<p>捕获列表在<b>闭包创建时</b>求值，并且是在外层上下文（外层的隔离域）里求值：</p>
+  <ul><li><code>n</code> 是值类型，捕获的是当时的值 1，之后改 <code>n</code> 不影响闭包。</li>
+  <li><code>box</code> 是引用类型，捕获的是当时的引用；对象内部的 <code>v</code> 后来改成 2，闭包读到的就是 2。</li></ul>
+  <p>没有捕获列表时，闭包捕获的是变量本身，会看到 <code>n</code> 的最新值 2。本机实测输出 <code>1 2</code>。</p>
+  <p>所以 <code>Task.detached { [console] in … }</code> 和先写 <code>let console = console</code> 效果相同：<code>self.console</code> 在创建闭包时就已经在 MainActor 上取好了。</p>`,
+  src: [['C8 捕获列表', M+'console-copy']],
+},
+{
+  part: 5,
+  stem: `<p>工程开启了 Default Actor Isolation = MainActor，所以源码里的 <code>@Observable final class Console</code> 实际是一个 MainActor 隔离的类（代码见第 25 题）。下面关于它的说法，哪一项是<b>错误</b>的？</p>`,
+  options: [
+    '它等同于写了 <code>@MainActor @Observable final class Console</code>',
+    '<code>entries</code>、<code>refresh()</code>、<code>clear()</code> 只有已在 MainActor 上的代码能同步访问，其他上下文要 <code>await</code>',
+    '<code>buffer</code> 和 <code>log</code> 用 <code>nonisolated</code> 退出了默认隔离，任何线程都能直接使用',
+    'Console 对象存放在主线程上，它的引用不能传给后台线程；运行时每次访问成员都会检查当前是不是主线程',
+  ],
+  answer: [3],
+  explain: `<p>隔离管的是"<b>谁能访问哪些成员</b>"，不管对象放在哪。对象和别的对象一样在堆上，引用可以传给任何线程，这也是它自动是 Sendable 的原因。</p>
+  <p>隔离也不是运行时的锁：保护主要靠编译器在调用处检查，加上"通过 <code>await</code> 调用时一定在 MainActor 的执行器（主线程）上运行"。绕过编译器的路径（如 Swift 5 模式下只报警告的 GCD 闭包）在运行时照样会在后台执行。</p>`,
+  src: [['Q9 MainActor 隔离的类', M+'console-isolated']],
+},
+{
+  part: 5,
+  ctx: 'MainActor/Support/Console.swift',
+  stem: '',
+  code: String.raw`nonisolated func log(_ message: String) {
+    buffer.append(message)                              // 任何线程：写进 Mutex 保护的缓冲
+    Task { @MainActor [weak self] in self?.refresh() }  // 交给主线程刷新
+}
+
+func refresh() {
+    entries = buffer.snapshot()                         // 复制完整快照
+}`,
+  after: `<p>为什么 <code>refresh()</code> 每次都复制 buffer 的完整快照，而不是在 Task 里写 <code>entries.append(entry)</code> 只追加这一条？</p>`,
+  options: [
+    '因为数组 append 不是线程安全的',
+    '因为非结构化 Task 的执行顺序没有保证，逐条追加可能让屏幕顺序和真实顺序不同；复制快照时顺序由 Mutex 决定，多执行几次也没有副作用',
+    '因为 <code>@Observable</code> 只能观察整体赋值，观察不到 append',
+    '因为快照比 append 更省内存',
+  ],
+  answer: [1],
+  explain: `<p>每次 <code>log</code> 都启动一个 <code>Task { @MainActor }</code>，但这些 Task 谁先执行没有保证。<code>refresh()</code> 不管自己是第几个执行，都复制完整、有序的快照，所以结果总是对的。它是<b>幂等</b>的：多执行几次只是多复制几次。</p>
+  <p>"记录"和"显示"分开的另一个好处是：主线程被阻塞时，后台的 <code>log</code> 照样按真实时间写进 buffer，主线程恢复后一次性显示出来。</p>`,
+  src: [['Q11 为什么用快照刷新', M+'console-isolated'], ['Q12 主线程阻塞时', M+'console-isolated']],
+},
+];
+
+/* ======================================================================
+   状态与渲染
+   ====================================================================== */
+const $ = s => document.querySelector(s);
+const KEY = 'swift-concurrency-quiz-v1';
+const LETTERS = 'ABCDE';
+/* 选项按固定种子打乱，避免正确答案集中在某个字母上 */
+function rng(seed) { return () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648; }
+const SEED = 12;
+const PERM = QUESTIONS.map((q, i) => {
+  const p = q.options.map((_, k) => k);
+  if (q.fixed) return p;
+  const r = rng(SEED * 1000 + i * 7919 + 1);
+  for (let k = p.length - 1; k > 0; k--) { const j = Math.floor(r() * (k + 1)); [p[k], p[j]] = [p[j], p[k]]; }
+  return p;
+});
+const ansLetters = i => QUESTIONS[i].answer.map(k => LETTERS[PERM[i].indexOf(k)]).sort().join('');
+const ORDER = [];                       // 显示顺序：按 part 分组
+PARTS.forEach((_, p) => QUESTIONS.forEach((q, i) => { if (q.part === p) ORDER.push(i); }));
+
+let state = load();
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.v === 1) return s; } catch (e) {}
+  return { v: 1, mode: 'practice', picks: {}, locked: {}, submitted: false, wrongOnly: false };
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+
+/* ---- tiny Swift highlighter ---- */
+const KW = new Set('func let var if else for in return await async throws try nonisolated actor class struct enum final private static self Self import guard while case switch default some any true false nil init deinit extension protocol where'.split(' '));
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function highlight(src) {
+  const re = /(\/\/[^\n]*)|("(?:[^"\\\n]|\\.)*")|(@\w+)|(\b\d[\d_.]*\b)|(\b[A-Za-z_]\w*\b)/g;
+  let out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    const t = esc(m[0]);
+    if (m[1]) out += `<span class="t-cm">${t}</span>`;
+    else if (m[2]) out += `<span class="t-st">${t}</span>`;
+    else if (m[3]) out += `<span class="t-at">${t}</span>`;
+    else if (m[4]) out += `<span class="t-nu">${t}</span>`;
+    else if (KW.has(m[0]) || m[0] === 'nonsending' || m[0] === 'unsafe') out += `<span class="t-kw">${t}</span>`;
+    else out += t;
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last));
+}
+
+function isCorrect(i) {
+  const pick = (state.picks[i] || []).slice().sort();
+  const ans = QUESTIONS[i].answer.slice().sort();
+  return pick.length === ans.length && pick.every((v, k) => v === ans[k]);
+}
+function isGraded(i) { return !!(state.submitted || (state.mode === 'practice' && state.locked[i])); }
+function displayNo(i) { return ORDER.indexOf(i) + 1; }
+
+function render() {
+  const paper = $('#paper');
+  paper.innerHTML = '';
+  let delay = 0;
+  PARTS.forEach((part, p) => {
+    const ids = ORDER.filter(i => QUESTIONS[i].part === p);
+    const sec = document.createElement('section');
+    sec.className = 'part';
+    sec.innerHTML = `<div class="part-h"><span class="roman">${part.roman}</span><h2>${part.title}</h2><small>${displayNo(ids[0])}–${displayNo(ids[ids.length - 1])}</small></div>`;
+    ids.forEach(i => {
+      const q = QUESTIONS[i];
+      const n = displayNo(i);
+      const el = document.createElement('article');
+      el.className = 'q';
+      el.id = 'q' + n;
+      el.dataset.idx = i;
+      el.dataset.multi = q.multi ? '1' : '0';
+      el.style.animationDelay = Math.min(delay, 0.6) + 's';
+      delay += 0.04;
+      el.innerHTML = `
+        <div class="no">${String(n).padStart(2, '0')}<small class="${q.multi ? 'multi' : ''}">${q.multi ? '多选' : '单选'}</small><span class="mark"></span></div>
+        <div class="body">
+          ${q.ctx ? `<div class="ctx">${q.ctx}</div>` : ''}
+          <div class="stem">${q.stem || ''}</div>
+          ${q.code ? `<pre data-label="swift"><code>${highlight(q.code)}</code></pre>` : ''}
+          ${q.after ? `<div class="stem">${q.after}</div>` : ''}
+          <ul class="opts">${PERM[i].map((k, d) => `
+            <li><button type="button" class="opt" data-k="${k}" aria-pressed="false">
+              <span class="letter">${LETTERS[d]}</span><span class="txt">${q.options[k]}</span><span class="tick"></span>
+            </button></li>`).join('')}
+          </ul>
+          ${q.multi ? `<button type="button" class="confirm">确认</button>` : ''}
+          <div class="note">
+            <p><span class="verdict"></span><b>答案：${ansLetters(i)}</b></p>
+            ${q.explain}
+            <div class="src">${q.src.map(([t, h]) => `<a href="${h}" target="_blank" rel="noopener">${t} ↗</a>`).join('')}</div>
+          </div>
+        </div>`;
+      sec.appendChild(el);
+    });
+    paper.appendChild(sec);
+  });
+
+  // answer sheet
+  const grid = $('#grid');
+  grid.innerHTML = '';
+  ORDER.forEach((i, pos) => {
+    const q = QUESTIONS[i];
+    const row = document.createElement('div');
+    row.className = 'row' + (q.multi ? ' multi' : '') + (pos > 0 && QUESTIONS[ORDER[pos - 1]].part !== q.part ? ' part-gap' : '');
+    row.dataset.idx = i;
+    row.title = `第 ${pos + 1} 题`;
+    let cells = `<span class="n">${String(pos + 1).padStart(2, '0')}</span>`;
+    for (let d = 0; d < 5; d++) cells += d < q.options.length ? `<span class="b" data-k="${PERM[i][d]}">${LETTERS[d]}</span>` : '<span></span>';
+    row.innerHTML = cells + '<span class="v"></span>';
+    row.addEventListener('click', () => {
+      document.getElementById('q' + (pos + 1)).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('#aside').classList.remove('open');
+    });
+    grid.appendChild(row);
+  });
+
+  const multi = QUESTIONS.filter(q => q.multi).length;
+  $('#fSingle').textContent = QUESTIONS.length - multi;
+  $('#fMulti').textContent = multi;
+  sync();
+}
+
+function sync() {
+  let answered = 0, right = 0, graded = 0;
+  document.querySelectorAll('.q').forEach(el => {
+    const i = +el.dataset.idx;
+    const q = QUESTIONS[i];
+    const pick = state.picks[i] || [];
+    const g = isGraded(i);
+    const ok = g && isCorrect(i);
+    if (pick.length) answered++;
+    if (g) { graded++; if (ok) right++; }
+    el.classList.toggle('graded', g);
+    el.querySelector('.mark').textContent = g ? (ok ? '✓' : '✗') : '';
+    el.querySelector('.mark').style.color = ok ? 'var(--ok)' : 'var(--red)';
+    const v = el.querySelector('.verdict');
+    v.textContent = ok ? '对' : '错';
+    v.classList.toggle('ok', ok);
+    el.querySelectorAll('.opt').forEach(b => {
+      const k = +b.dataset.k;
+      const picked = pick.includes(k), isAns = q.answer.includes(k);
+      b.setAttribute('aria-pressed', picked ? 'true' : 'false');
+      b.disabled = g;
+      b.classList.toggle('is-right', g && picked && isAns);
+      b.classList.toggle('is-wrong', g && picked && !isAns);
+      b.classList.toggle('is-missed', g && !picked && isAns);
+      b.querySelector('.tick').textContent = g ? (isAns ? '✓' : (picked ? '✗' : '')) : '';
+    });
+    const c = el.querySelector('.confirm');
+    if (c) {
+      c.hidden = state.mode !== 'practice' || g;
+      c.disabled = !pick.length;
+    }
+    el.classList.toggle('hidden', state.wrongOnly && !(g && !ok));
+  });
+
+  document.querySelectorAll('.row').forEach(row => {
+    const i = +row.dataset.idx;
+    const q = QUESTIONS[i];
+    const pick = state.picks[i] || [];
+    const g = isGraded(i);
+    const ok = g && isCorrect(i);
+    row.querySelectorAll('.b').forEach(b => {
+      const k = +b.dataset.k;
+      b.classList.toggle('f', pick.includes(k));
+      b.classList.toggle('r', g && q.answer.includes(k));
+    });
+    row.classList.toggle('ok', g && ok);
+    row.classList.toggle('bad', g && !ok);
+    row.querySelector('.v').textContent = g ? (ok ? '✓' : '✗') : '';
+  });
+
+  const total = QUESTIONS.length;
+  $('#progBar').style.width = (answered / total * 100) + '%';
+  $('#progTxt').textContent = `已答 ${answered} / ${total}`;
+  $('#mProg').textContent = `已答 ${answered} / ${total}` + (graded ? ` · 对 ${right}` : '');
+  $('#rightTxt').textContent = graded ? `对 ${right} / ${graded}` : '';
+  $('#fScore').textContent = state.submitted ? right : (graded ? `${right}/${graded}` : '—');
+
+  document.querySelectorAll('.modes button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+  $('#modeNote').textContent = state.mode === 'practice'
+    ? '选完即判，多选题选好后点「确认」。进度保存在本机浏览器里。'
+    : '答完全部题目后交卷，交卷前可以随时改答案。进度保存在本机浏览器里。';
+  const sb = $('#submitBtn');
+  sb.textContent = state.submitted ? '已交卷' : '交 卷';
+  sb.disabled = state.submitted;
+  $('#wrongBtn').setAttribute('aria-pressed', String(state.wrongOnly));
+  $('#wrongBtn').disabled = !graded;
+
+  if (state.submitted) showReport(right); else { $('#report').classList.remove('on'); $('#stamp').classList.remove('on'); }
+}
+
+function comment(score) {
+  if (score >= 28) return ['可以出师', '基本功扎实，可以去读 Swift Evolution 的提案原文了。'];
+  if (score >= 23) return ['掌握良好', '主干都清楚，回头看看错题对应的章节就能补齐。'];
+  if (score >= 16) return ['还需再读', '概念认识了，但默认行为和边界情况还不熟。建议重读 §9.3 和 §11–§12。'];
+  return ['从头再来', '先从 §12 主线程上的三层读起，再看演示工程的 #1、#2 两页。'];
+}
+
+function showReport(right) {
+  const [word, text] = comment(right);
+  $('#stampNum').textContent = right;
+  $('#stampWord').textContent = word;
+  $('#stamp').classList.add('on');
+  $('#rScore').textContent = right;
+  $('#rComment').textContent = `${word}。${text}`;
+  $('#rBars').innerHTML = PARTS.map((part, p) => {
+    const ids = QUESTIONS.map((q, i) => i).filter(i => QUESTIONS[i].part === p);
+    const ok = ids.filter(isCorrect).length;
+    const pct = ok / ids.length * 100;
+    return `<div class="bar"><span>${part.roman}. ${part.title.split('：')[0].split('、')[0]}</span><div class="track"><i class="${pct < 60 ? 'low' : ''}" data-w="${pct}"></i></div><span>${ok}/${ids.length}</span></div>`;
+  }).join('');
+  const wrong = ORDER.filter(i => !isCorrect(i));
+  $('#rWrongs').innerHTML = wrong.length
+    ? '错题：' + wrong.map(i => `<a href="#q${displayNo(i)}">第 ${displayNo(i)} 题</a>`).join('')
+    : '全部答对。';
+  $('#report').classList.add('on');
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    document.querySelectorAll('#rBars i').forEach(i => { i.style.width = i.dataset.w + '%'; })));
+}
+
+/* ---- events ---- */
+$('#paper').addEventListener('click', e => {
+  const opt = e.target.closest('.opt');
+  const conf = e.target.closest('.confirm');
+  const qEl = e.target.closest('.q');
+  if (!qEl) return;
+  const i = +qEl.dataset.idx;
+  const q = QUESTIONS[i];
+  if (isGraded(i)) return;
+  if (opt) {
+    const k = +opt.dataset.k;
+    let pick = state.picks[i] || [];
+    if (q.multi) pick = pick.includes(k) ? pick.filter(x => x !== k) : pick.concat(k);
+    else pick = [k];
+    state.picks[i] = pick;
+    if (!q.multi && state.mode === 'practice') state.locked[i] = true;
+  } else if (conf && (state.picks[i] || []).length) {
+    state.locked[i] = true;
+  } else return;
+  save(); sync();
+});
+
+document.querySelectorAll('.modes button').forEach(b => b.addEventListener('click', () => {
+  if (state.mode === b.dataset.mode) return;
+  if (state.submitted || Object.keys(state.locked).length) {
+    if (!confirm('切换模式会清空当前答题进度，继续吗？')) return;
+  }
+  state = { v: 1, mode: b.dataset.mode, picks: {}, locked: {}, submitted: false, wrongOnly: false };
+  save(); sync();
+}));
+
+$('#submitBtn').addEventListener('click', () => {
+  const left = QUESTIONS.length - Object.values(state.picks).filter(p => p.length).length;
+  if (left && !confirm(`还有 ${left} 题没答，确定交卷吗？`)) return;
+  state.submitted = true;
+  save(); sync();
+  $('#aside').classList.remove('open');
+  scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#resetBtn').addEventListener('click', () => {
+  if (!confirm('清空所有答案，重新开始？')) return;
+  state = { v: 1, mode: state.mode, picks: {}, locked: {}, submitted: false, wrongOnly: false };
+  save(); sync();
+  scrollTo({ top: 0, behavior: 'smooth' });
+});
+$('#wrongBtn').addEventListener('click', () => { state.wrongOnly = !state.wrongOnly; save(); sync(); });
+$('#mOpen').addEventListener('click', () => $('#aside').classList.add('open'));
+document.addEventListener('click', e => {
+  const a = $('#aside');
+  if (a.classList.contains('open') && !e.target.closest('.sheet') && !e.target.closest('#mOpen')) a.classList.remove('open');
+});
+
+/* ---- theme ---- */
+const THEME_KEY = 'swift-concurrency-quiz-theme';
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $('#themeBtn').textContent = t === 'dark' ? '日读' : '夜读';
+}
+applyTheme(localStorage.getItem(THEME_KEY) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+$('#themeBtn').addEventListener('click', () => {
+  const t = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, t); applyTheme(t);
+});
+
+render();
+</script>
+</body>
+</html>
