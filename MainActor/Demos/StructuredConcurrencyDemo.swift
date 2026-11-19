@@ -14,18 +14,18 @@ nonisolated enum DemoError: Error {
 nonisolated enum FakeAPI {
     /// 模拟网络请求：挂起指定时间，可以选择失败
     static func fetch(_ name: String, seconds: Double, console: Console, fail: Bool = false) async throws -> String {
-        console.log("▶︎ \(name) 开始")
+        console.log("1 ▶︎ \(name) 开始")
         do {
             try await Task.sleep(for: .milliseconds(Int(seconds * 1000)))
         } catch {
-            console.log("✖︎ \(name) 被取消")
+            console.log("2 ✖︎ \(name) 被取消")
             throw error
         }
         if fail {
-            console.log("💥 \(name) 抛出错误")
+            console.log("3 💥 \(name) 抛出错误")
             throw DemoError.failed(name)
         }
-        console.log("✔︎ \(name) 完成")
+        console.log("4 ✔︎ \(name) 完成")
         return name
     }
 }
@@ -54,7 +54,7 @@ struct StructuredConcurrencyDemo: View {
         console.clear()
         Task {
             let elapsed = await ContinuousClock().measure { await experiment(console) }
-            console.log("⏱ 总耗时 \(elapsed.msText)")
+            console.log("1 ⏱ 总耗时 \(elapsed.msText)")
         }
     }
 
@@ -100,11 +100,11 @@ struct StructuredConcurrencyDemo: View {
                 group.addTask { try await FakeAPI.fetch("B（2s）", seconds: 2, console: console) }
                 group.addTask { try await FakeAPI.fetch("C（0.5s 后失败）", seconds: 0.5, console: console, fail: true) }
                 for try await name in group {
-                    console.log("收到结果：\(name)")
+                    console.log("1 收到结果：\(name)")
                 }
             }
         } catch {
-            console.log("TaskGroup 抛出：\(error)")
+            console.log("2 TaskGroup 抛出：\(error)")
         }
     }
 }

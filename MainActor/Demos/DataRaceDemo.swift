@@ -53,7 +53,7 @@ nonisolated enum RaceExperiments {
         let start = ContinuousClock.now
         let result = body()
         let mark = result == expected ? "✅" : "❌"
-        console.log("\(mark) \(label)：\(result)，耗时 \(start.duration(to: .now).msText)")
+        console.log("1 \(mark) \(label)：\(result)，耗时 \(start.duration(to: .now).msText)")
     }
 
     /// 用 concurrentPerform 让 4 个线程同时递增
@@ -65,7 +65,7 @@ nonisolated enum RaceExperiments {
 
     static func runLocks(_ console: Console) {
         DispatchQueue.global(qos: .userInitiated).async {
-            console.log("\(workers) 个线程 × \(iterations) 次 += 1，期望 \(expected)")
+            console.log("1 \(workers) 个线程 × \(iterations) 次 += 1，期望 \(expected)")
 
             measure("无保护", console) {
                 let box = UnsafeBox()
@@ -108,7 +108,7 @@ nonisolated enum RaceExperiments {
         }
         let result = await counter.value
         let mark = result == expected ? "✅" : "❌"
-        console.log("\(mark) actor（每次 await 跨隔离调用）：\(result)，耗时 \(start.duration(to: .now).msText)")
+        console.log("1 \(mark) actor（每次 await 跨隔离调用）：\(result)，耗时 \(start.duration(to: .now).msText)")
     }
 }
 

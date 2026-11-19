@@ -46,16 +46,16 @@ struct TaskInheritanceDemo: View {
     private func isolation() {
         let console = console
         console.clear()
-        console.log("按钮回调（MainActor）")
+        console.log("1 按钮回调（MainActor）")
 
-        Task { console.log("Task { }：继承 MainActor → 主线程") }
-        Task.detached { console.log("Task.detached：不继承 → 后台线程") }
-        DispatchQueue.global().async { console.log("DispatchQueue.global：GCD 线程池") }
+        Task { console.log("2 Task { }：继承 MainActor → 主线程") }
+        Task.detached { console.log("3 Task.detached：不继承 → 后台线程") }
+        DispatchQueue.global().async { console.log("4 DispatchQueue.global：GCD 线程池") }
 
         Task {
-            async let child: Void = console.log("async let 子任务：在并发执行器上")
+            async let child: Void = console.log("5 async let 子任务：在并发执行器上")
             await withTaskGroup(of: Void.self) { group in
-                group.addTask { console.log("TaskGroup.addTask 子任务：在并发执行器上") }
+                group.addTask { console.log("6 TaskGroup.addTask 子任务：在并发执行器上") }
             }
             await child
         }
@@ -66,16 +66,16 @@ struct TaskInheritanceDemo: View {
         console.clear()
 
         Task(priority: .low) {
-            console.log("父 Task(priority: .low)：\(Task.currentPriority.name)")
-            Task { console.log("Task { }：\(Task.currentPriority.name)（继承）") }
-            Task.detached { console.log("Task.detached：\(Task.currentPriority.name)（不继承）") }
-            async let child: Void = console.log("async let：\(Task.currentPriority.name)（继承）")
+            console.log("1 父 Task(priority: .low)：\(Task.currentPriority.name)")
+            Task { console.log("2 Task { }：\(Task.currentPriority.name)（继承）") }
+            Task.detached { console.log("3 Task.detached：\(Task.currentPriority.name)（不继承）") }
+            async let child: Void = console.log("4 async let：\(Task.currentPriority.name)（继承）")
             await child
         }
 
         DispatchQueue.global(qos: .utility).async {
             let qos = DispatchQoS.QoSClass(rawValue: qos_class_self()).map { "\($0)" } ?? "unknown"
-            console.log("GCD 没有 TaskPriority，用 QoS 表示：\(qos)")
+            console.log("5 GCD 没有 TaskPriority，用 QoS 表示：\(qos)")
         }
     }
 
@@ -84,12 +84,12 @@ struct TaskInheritanceDemo: View {
         console.clear()
 
         TraceContext.$traceID.withValue("trace-42") {
-            console.log("withValue 作用域内：\(TraceContext.traceID)")
-            Task { console.log("Task { }：\(TraceContext.traceID)（继承）") }
-            Task.detached { console.log("Task.detached：\(TraceContext.traceID)（不继承）") }
-            DispatchQueue.global().async { console.log("DispatchQueue.global：\(TraceContext.traceID)（不继承）") }
+            console.log("1 withValue 作用域内：\(TraceContext.traceID)")
+            Task { console.log("2 Task { }：\(TraceContext.traceID)（继承）") }
+            Task.detached { console.log("3 Task.detached：\(TraceContext.traceID)（不继承）") }
+            DispatchQueue.global().async { console.log("4 DispatchQueue.global：\(TraceContext.traceID)（不继承）") }
         }
-        console.log("withValue 作用域外：\(TraceContext.traceID)")
+        console.log("5 withValue 作用域外：\(TraceContext.traceID)")
     }
 
     private func cancellation() {
@@ -109,7 +109,7 @@ struct TaskInheritanceDemo: View {
 
         Task {
             try? await Task.sleep(for: .milliseconds(300))
-            console.log("⛔️ parent.cancel()")
+            console.log("1 ⛔️ parent.cancel()")
             parent.cancel()
         }
     }
@@ -119,9 +119,9 @@ private nonisolated enum Probe {
     static func sleepAndReport(_ label: String, _ console: Console) async {
         do {
             try await Task.sleep(for: .seconds(1))
-            console.log("\(label)：正常完成（没有被取消）")
+            console.log("1 \(label)：正常完成（没有被取消）")
         } catch {
-            console.log("\(label)：被取消 ✅")
+            console.log("2 \(label)：被取消 ✅")
         }
     }
 }

@@ -458,13 +458,16 @@ private func scheduleFromSyncContext() {
     console.clear()
     console.log("1 同步代码开始")
 
-    DispatchQueue.main.async { console.log("DispatchQueue.main.async") }
-    Task { console.log("Task { }（继承 MainActor，入队）") }
-    RunLoop.main.perform { console.log("RunLoop.main.perform") }
-    OperationQueue.main.addOperation { console.log("OperationQueue.main.addOperation") }
-    Task.detached { console.log("Task.detached（不继承 actor → 后台）") }
-    DispatchQueue.global().async { console.log("DispatchQueue.global().async（后台）") }
-    …
+    DispatchQueue.main.async { console.log("2 DispatchQueue.main.async") }
+    Task { console.log("3 Task { }（继承 MainActor，入队）") }
+    Task.immediate { console.log("4 Task.immediate（立即同步开始执行）") }
+    RunLoop.main.perform { console.log("5 RunLoop.main.perform") }
+    OperationQueue.main.addOperation { console.log("6 OperationQueue.main.addOperation") }
+    Task.detached { console.log("7 Task.detached（不继承 actor → 后台）") }
+    DispatchQueue.global().async { console.log("8 DispatchQueue.global().async（后台）") }
+
+    mainActorSyncFunction(console)
+    console.log("10 同步代码结束")
 }</code></pre>
 
   <div class="qa">
@@ -1127,24 +1130,28 @@ final class Console { … }</code></pre>
     <div class="cols">
       <div>
         <div class="label see">看什么</div>
-        <p class="observe">在<b>同一段同步代码</b>里一口气用 7 种方式安排日志，然后看日志里的真实顺序。<code>1 → Task.immediate → 2 → 3</code> 一定最先；<code>main.async</code>、<code>Task {}</code>、<code>RunLoop.perform</code>、<code>OperationQueue.main</code> 都要等当前函数返回，它们之间的先后不应依赖；<code>detached</code> 和 <code>global</code> 在后台，可能插在任何位置，甚至排在 <code>2</code> 前面。</p>
+        <p class="observe">在<b>同一段同步代码</b>里一口气用 7 种方式安排日志，然后看日志里的真实顺序。<code>1 → 4 → 9 → 10</code> 一定最先（4 是 <code>Task.immediate</code>，9 是直接调用的 MainActor 同步函数）；<code>2</code> <code>main.async</code>、<code>3</code> <code>Task {}</code>、<code>5</code> <code>RunLoop.perform</code>、<code>6</code> <code>OperationQueue.main</code> 都要等当前函数返回，它们之间的先后不应依赖；<code>7</code> <code>detached</code> 和 <code>8</code> <code>global</code> 在后台，可能插在任何位置，甚至排在 <code>9</code>、<code>10</code> 前面。</p>
       </div>
       <div>
         <div class="label how">为什么这样写</div>
         <ul class="why">
           <li>所有调度挤在一个同步函数里，中间没有挂起点，于是"当前代码返回之前"和"之后"界限分明。</li>
-          <li><code>mainActorSyncFunction</code> 是对照组：同为 MainActor，<b>直接调用</b>不排队，所以 <code>2</code> 一定在 <code>3</code> 之前。</li>
+          <li><code>mainActorSyncFunction</code> 是对照组：同为 MainActor，<b>直接调用</b>不排队，所以 <code>9</code> 一定在 <code>10</code> 之前。</li>
           <li><code>Task.immediate</code>（Swift 6.2）放在这里，用来说明它会立即同步开始执行，直到第一个挂起点为止，和 <code>Task {}</code> 的"入队"形成反差。</li>
         </ul>
       </div>
     </div>
 <pre><code class="swift">console.log("1 同步代码开始")
-DispatchQueue.main.async { console.log("DispatchQueue.main.async") }
-Task           { console.log("Task { }（继承 MainActor，入队）") }
-Task.immediate { console.log("Task.immediate（立即同步开始执行）") }
-...
-mainActorSyncFunction(console)        // 直接执行，不排队
-console.log("3 同步代码结束")</code></pre>
+DispatchQueue.main.async { console.log("2 DispatchQueue.main.async") }
+Task           { console.log("3 Task { }（继承 MainActor，入队）") }
+Task.immediate { console.log("4 Task.immediate（立即同步开始执行）") }
+RunLoop.main.perform { console.log("5 RunLoop.main.perform") }
+OperationQueue.main.addOperation { console.log("6 OperationQueue.main.addOperation") }
+Task.detached  { console.log("7 Task.detached（不继承 actor → 后台）") }
+DispatchQueue.global().async { console.log("8 DispatchQueue.global().async（后台）") }
+
+mainActorSyncFunction(console)        // 直接执行，不排队：打印 "9 调用 @MainActor 同步函数"
+console.log("10 同步代码结束")</code></pre>
     <p>第二个按钮换到 <b>async 上下文</b>：先排两个任务，再 <code>await MainActor.run</code>。即使已经在 MainActor 上，<code>await</code> 仍然是<b>潜在挂起点</b>，前面排队的任务可能先于 B 执行。外层 <code>Task { await scheduleFromAsyncContext() }</code> 正是为了得到一个 MainActor 上的 async 环境。</p>
   </div>
 </article>
@@ -1335,7 +1342,7 @@ let image = await task.value</code></pre>
 <pre class="bgc"><code class="swift">AsyncStream { continuation in
     let ticker = StreamTicker(count: count, console: console, continuation: continuation)
     continuation.onTermination = { reason in
-        console.log("onTermination：\(reason)")
+        console.log("1 onTermination：\(reason)")
         ticker.cancel()          // 消费者不要了 → 停掉生产者
     }
     ticker.start()
@@ -1464,7 +1471,7 @@ private nonisolated final class UnsafeBox: @unchecked Sendable {
     </div>
 <pre><code class="swift">.task(id: searchText) {                     // id 变化 → 取消旧任务、启动新任务
     try await Task.sleep(for: .milliseconds(400))   // 被取消就抛错，不会搜索
-    console.log("🔍 .task(id:) 防抖后搜索：「\(searchText)」")
+    console.log("2 🔍 .task(id:) 防抖后搜索：「\(searchText)」")
 }</code></pre>
     <div class="note"><b>小观察</b>：泄漏的那个循环用的是 <code>try? await Task.sleep</code> + <code>while !Task.isCancelled</code>。取消后，sleep 立即抛错但被 <code>try?</code> 吞掉，所以取消之后可能还会多打一行"循环 N"，然后才退出。演示 #12 的 <code>ticks</code> 注释专门提到了这个坑（用 <code>try?</code> 吞错误会多发一个值），对照着读更好理解。</div>
   </div>

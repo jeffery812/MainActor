@@ -13,13 +13,13 @@ nonisolated enum GCDExperiments {
         let group = DispatchGroup()
         for (name, seconds) in [("A", 0.5), ("B", 1.0), ("C", 1.5)] {
             DispatchQueue.global().async(group: group) {
-                console.log("\(name) 开始（\(seconds)s）")
+                console.log("1 \(name) 开始（\(seconds)s）")
                 Thread.sleep(forTimeInterval: seconds)
-                console.log("\(name) 完成")
+                console.log("2 \(name) 完成")
             }
         }
         group.notify(queue: .main) {
-            console.log("group.notify(queue: .main)：全部完成")
+            console.log("3 group.notify(queue: .main)：全部完成")
         }
     }
 
@@ -32,15 +32,15 @@ nonisolated enum GCDExperiments {
             DispatchQueue.global().async(group: group) {
                 semaphore.wait()
                 let now = running.enter()
-                console.log("任务\(i) 开始（同时运行：\(now)）")
+                console.log("1 任务\(i) 开始（同时运行：\(now)）")
                 Thread.sleep(forTimeInterval: 0.6)
                 running.leave()
-                console.log("任务\(i) 结束")
+                console.log("2 任务\(i) 结束")
                 semaphore.signal()
             }
         }
         group.notify(queue: .main) {
-            console.log("峰值并发数 = \(running.peak)（信号量 = 2）")
+            console.log("3 峰值并发数 = \(running.peak)（信号量 = 2）")
         }
     }
 
@@ -50,16 +50,16 @@ nonisolated enum GCDExperiments {
         let concurrent = DispatchQueue(label: "demo.concurrent", attributes: .concurrent)
         for i in 1...3 {
             serial.async {
-                console.log("串行 任务\(i) 开始")
+                console.log("1 串行 任务\(i) 开始")
                 Thread.sleep(forTimeInterval: 0.3)
-                console.log("串行 任务\(i) 结束")
+                console.log("2 串行 任务\(i) 结束")
             }
         }
         for i in 1...3 {
             concurrent.async {
-                console.log("并发 任务\(i) 开始")
+                console.log("3 并发 任务\(i) 开始")
                 Thread.sleep(forTimeInterval: 0.3)
-                console.log("并发 任务\(i) 结束")
+                console.log("4 并发 任务\(i) 结束")
             }
         }
     }
@@ -69,21 +69,21 @@ nonisolated enum GCDExperiments {
         let queue = DispatchQueue(label: "demo.readwrite", attributes: .concurrent)
         for i in 1...3 {
             queue.async {
-                console.log("📖 读\(i) 开始")
+                console.log("1 📖 读\(i) 开始")
                 Thread.sleep(forTimeInterval: 0.3)
-                console.log("📖 读\(i) 结束")
+                console.log("2 📖 读\(i) 结束")
             }
         }
         queue.async(flags: .barrier) {
-            console.log("✍️ barrier 写 开始（独占队列）")
+            console.log("3 ✍️ barrier 写 开始（独占队列）")
             Thread.sleep(forTimeInterval: 0.5)
-            console.log("✍️ barrier 写 结束")
+            console.log("4 ✍️ barrier 写 结束")
         }
         for i in 4...5 {
             queue.async {
-                console.log("📖 读\(i) 开始")
+                console.log("5 📖 读\(i) 开始")
                 Thread.sleep(forTimeInterval: 0.3)
-                console.log("📖 读\(i) 结束")
+                console.log("6 📖 读\(i) 结束")
             }
         }
     }
@@ -91,23 +91,23 @@ nonisolated enum GCDExperiments {
     /// concurrentPerform：同步的并行循环
     static func concurrentPerform(_ console: Console) {
         DispatchQueue.global().async {
-            console.log("concurrentPerform 开始（阻塞当前线程直到全部完成）")
+            console.log("1 concurrentPerform 开始（阻塞当前线程直到全部完成）")
             DispatchQueue.concurrentPerform(iterations: 8) { index in
-                console.log("迭代 \(index)")
+                console.log("2 迭代 \(index)")
                 Work.spin(seconds: 0.2)
             }
-            console.log("concurrentPerform 返回")
+            console.log("3 concurrentPerform 返回")
         }
     }
 
     /// 从后台线程 main.sync 是安全的（主线程上调用会死锁）
     static func mainSyncFromBackground(_ console: Console) {
         DispatchQueue.global().async {
-            console.log("后台线程调用 DispatchQueue.main.sync")
+            console.log("1 后台线程调用 DispatchQueue.main.sync")
             DispatchQueue.main.sync {
-                console.log("main.sync 的 block（主线程）")
+                console.log("2 main.sync 的 block（主线程）")
             }
-            console.log("main.sync 返回，后台线程继续")
+            console.log("3 main.sync 返回，后台线程继续")
         }
     }
 
@@ -116,7 +116,7 @@ nonisolated enum GCDExperiments {
         let threads = ThreadSet()
         let group = DispatchGroup()
         let start = ContinuousClock.now
-        console.log("GCD：提交 100 个各阻塞 100ms 的任务")
+        console.log("1 GCD：提交 100 个各阻塞 100ms 的任务")
         for _ in 0..<100 {
             DispatchQueue.global().async(group: group) {
                 threads.insertCurrent()
@@ -124,7 +124,7 @@ nonisolated enum GCDExperiments {
             }
         }
         group.notify(queue: .global()) {
-            console.log("GCD：用了 \(threads.count) 个线程，耗时 \(start.duration(to: .now).msText)")
+            console.log("2 GCD：用了 \(threads.count) 个线程，耗时 \(start.duration(to: .now).msText)")
         }
     }
 
@@ -133,7 +133,7 @@ nonisolated enum GCDExperiments {
     static func cooperativePool(_ console: Console) async {
         let threads = ThreadSet()
         let start = ContinuousClock.now
-        console.log("TaskGroup：100 个子任务各阻塞 100ms（反面示例）")
+        console.log("1 TaskGroup：100 个子任务各阻塞 100ms（反面示例）")
         await withTaskGroup(of: Void.self) { group in
             for _ in 0..<100 {
                 group.addTask {
@@ -142,7 +142,7 @@ nonisolated enum GCDExperiments {
                 }
             }
         }
-        console.log("协作式线程池：用了 \(threads.count) 个线程，耗时 \(start.duration(to: .now).msText)（CPU 核心数 \(ProcessInfo.processInfo.activeProcessorCount)）")
+        console.log("2 协作式线程池：用了 \(threads.count) 个线程，耗时 \(start.duration(to: .now).msText)（CPU 核心数 \(ProcessInfo.processInfo.activeProcessorCount)）")
     }
 }
 

@@ -65,16 +65,16 @@ final class CombineAsyncLab {
             .filter { $0.isMultiple(of: 2) }
             .map { $0 * 10 }
             .prefix(3)
-            .sink(receiveCompletion: { console.log("[C] 完成：\($0)") },
-                  receiveValue: { console.log("[C] 收到 \($0)") })
+            .sink(receiveCompletion: { console.log("1 [C] 完成：\($0)") },
+                  receiveValue: { console.log("2 [C] 收到 \($0)") })
             .store(in: &cancellables)
 
         // AsyncSequence：消费者用 for await 逐个拉取
         tasks.append(Task {
             for await value in Self.numbers(1...10).filter({ $0.isMultiple(of: 2) }).map({ $0 * 10 }).prefix(3) {
-                console.log("[A] 收到 \(value)")
+                console.log("3 [A] 收到 \(value)")
             }
-            console.log("[A] 完成：for await 循环结束")
+            console.log("4 [A] 完成：for await 循环结束")
         })
     }
 
@@ -87,14 +87,14 @@ final class CombineAsyncLab {
             .autoconnect()
             .scan(0) { count, _ in count + 1 }
             .prefix(5)
-            .sink { console.log("[C] tick \($0)") }
+            .sink { console.log("1 [C] tick \($0)") }
             .store(in: &cancellables)
 
         tasks.append(Task {
             var count = 0
             for await _ in Self.ticks(every: .milliseconds(500)).prefix(5) {
                 count += 1
-                console.log("[A] tick \(count)")
+                console.log("2 [A] tick \(count)")
             }
         })
     }
@@ -106,22 +106,22 @@ final class CombineAsyncLab {
 
         NotificationCenter.default.publisher(for: Self.ping)
             .prefix(3)
-            .sink { console.log("[C] 收到通知 #\($0.userInfo?["n"] ?? "?")（在 post 调用内同步执行）") }
+            .sink { console.log("1 [C] 收到通知 #\($0.userInfo?["n"] ?? "?")（在 post 调用内同步执行）") }
             .store(in: &cancellables)
 
         tasks.append(Task {
             for await note in NotificationCenter.default.notifications(named: Self.ping).prefix(3) {
-                console.log("[A] 收到通知 #\(note.userInfo?["n"] ?? "?")（稍后在 MainActor 上执行）")
+                console.log("2 [A] 收到通知 #\(note.userInfo?["n"] ?? "?")（稍后在 MainActor 上执行）")
             }
-            console.log("[A] 收满 3 个，循环结束")
+            console.log("3 [A] 收满 3 个，循环结束")
         })
 
         tasks.append(Task {
             try? await Task.sleep(for: .milliseconds(100))   // 等监听者开始等待
             for n in 1...4 {
-                console.log("post #\(n)")
+                console.log("4 post #\(n)")
                 NotificationCenter.default.post(name: Self.ping, object: nil, userInfo: ["n": n])
-                console.log("post #\(n) 返回")
+                console.log("5 post #\(n) 返回")
                 try? await Task.sleep(for: .milliseconds(300))
             }
         })
@@ -139,10 +139,10 @@ final class CombineAsyncLab {
         let (stream, continuation) = AsyncStream.makeStream(of: Int.self, bufferingPolicy: .bufferingNewest(2))
         tasks.append(Task {
             for await value in stream {
-                console.log("[A] 处理 \(value)（每个耗时 200ms）")
+                console.log("1 [A] 处理 \(value)（每个耗时 200ms）")
                 try? await Task.sleep(for: .milliseconds(200))
             }
-            console.log("[A] 流结束")
+            console.log("2 [A] 流结束")
         })
 
         tasks.append(Task {
@@ -150,10 +150,10 @@ final class CombineAsyncLab {
             for value in 1...8 {
                 subject.send(value)
                 if case .dropped(let old) = continuation.yield(value) {
-                    console.log("[A] 缓冲已满，丢弃 \(old)")
+                    console.log("3 [A] 缓冲已满，丢弃 \(old)")
                 }
             }
-            console.log("生产者：8 个值已全部发出，没有被慢消费者拖住")
+            console.log("4 生产者：8 个值已全部发出，没有被慢消费者拖住")
             subject.send(completion: .finished)
             continuation.finish()
         })
@@ -163,9 +163,9 @@ final class CombineAsyncLab {
     private nonisolated static func slowCombineConsumer(_ subject: PassthroughSubject<Int, Never>, console: Console) -> AnyCancellable {
         subject
             .receive(on: DispatchQueue(label: "demo.combine.slow"))
-            .sink(receiveCompletion: { _ in console.log("[C] 流结束") },
+            .sink(receiveCompletion: { _ in console.log("1 [C] 流结束") },
                   receiveValue: { value in
-                      console.log("[C] 处理 \(value)（每个耗时 200ms）")
+                      console.log("2 [C] 处理 \(value)（每个耗时 200ms）")
                       Thread.sleep(forTimeInterval: 0.2)
                   })
     }
@@ -178,17 +178,17 @@ final class CombineAsyncLab {
         // Combine：没有保存 AnyCancellable，它被释放的同时订阅就被取消
         _ = Timer.publish(every: 0.3, on: .main, in: .common)
             .autoconnect()
-            .handleEvents(receiveCancel: { console.log("[C] AnyCancellable 被释放 → 订阅立即取消，一个 tick 都收不到") })
-            .sink { _ in console.log("[C] tick（不会出现）") }
+            .handleEvents(receiveCancel: { console.log("1 [C] AnyCancellable 被释放 → 订阅立即取消，一个 tick 都收不到") })
+            .sink { _ in console.log("2 [C] tick（不会出现）") }
 
         // AsyncSequence：没有保存 Task，它照样运行到结束（也就无法从外部取消）
         Task {
             var count = 0
             for await _ in Self.ticks(every: .milliseconds(300)).prefix(3) {
                 count += 1
-                console.log("[A] tick \(count)（没有保存 Task，照样运行）")
+                console.log("3 [A] tick \(count)（没有保存 Task，照样运行）")
             }
-            console.log("[A] 收满 3 个后结束")
+            console.log("4 [A] 收满 3 个后结束")
         }
     }
 
@@ -200,21 +200,21 @@ final class CombineAsyncLab {
         let subscription = Timer.publish(every: 0.3, on: .main, in: .common)
             .autoconnect()
             .scan(0) { count, _ in count + 1 }
-            .handleEvents(receiveCancel: { console.log("[C] 收到取消") })
-            .sink { console.log("[C] tick \($0)") }
+            .handleEvents(receiveCancel: { console.log("1 [C] 收到取消") })
+            .sink { console.log("2 [C] tick \($0)") }
 
         let consumer = Task {
             var count = 0
-            for await _ in Self.ticks(every: .milliseconds(300), onTermination: { console.log("[A] onTermination：\($0)") }) {
+            for await _ in Self.ticks(every: .milliseconds(300), onTermination: { console.log("3 [A] onTermination：\($0)") }) {
                 count += 1
-                console.log("[A] tick \(count)")
+                console.log("4 [A] tick \(count)")
             }
-            console.log("[A] for await 结束（任务已取消）")
+            console.log("5 [A] for await 结束（任务已取消）")
         }
 
         tasks.append(Task {
             try? await Task.sleep(for: .seconds(1))
-            console.log("⛔️ subscription.cancel()  /  consumer.cancel()")
+            console.log("6 ⛔️ subscription.cancel()  /  consumer.cancel()")
             subscription.cancel()   // 等价于释放最后一个对它的引用
             consumer.cancel()
         })
@@ -232,9 +232,9 @@ final class CombineAsyncLab {
                 return value
             }
             .sink(receiveCompletion: { completion in
-                      if case .failure(let error) = completion { console.log("[C] completion: .failure(\(error))") }
+                      if case .failure(let error) = completion { console.log("1 [C] completion: .failure(\(error))") }
                   },
-                  receiveValue: { console.log("[C] 收到 \($0)") })
+                  receiveValue: { console.log("2 [C] 收到 \($0)") })
             .store(in: &cancellables)
 
         // AsyncSequence：用 for try await 迭代，错误用 do / catch 捕获
@@ -245,9 +245,9 @@ final class CombineAsyncLab {
                 continuation.finish(throwing: DemoError.failed("第 3 个值"))
             }
             do {
-                for try await value in stream { console.log("[A] 收到 \(value)") }
+                for try await value in stream { console.log("3 [A] 收到 \(value)") }
             } catch {
-                console.log("[A] catch: \(error)")
+                console.log("4 [A] catch: \(error)")
             }
         })
     }
@@ -261,7 +261,7 @@ final class CombineAsyncLab {
         let counter = PublishedCounter()
         tasks.append(Task {
             for await value in counter.$value.values.prefix(4) {
-                console.log("[C→A] for await counter.$value.values 收到 \(value)")
+                console.log("1 [C→A] for await counter.$value.values 收到 \(value)")
             }
         })
         tasks.append(Task {
@@ -274,8 +274,8 @@ final class CombineAsyncLab {
         // AsyncSequence → Combine：没有内置转换，用 Subject 转发
         let subject = PassthroughSubject<Int, Never>()
         subject
-            .sink(receiveCompletion: { _ in console.log("[A→C] Subject 完成") },
-                  receiveValue: { console.log("[A→C] sink 收到 \($0)") })
+            .sink(receiveCompletion: { _ in console.log("2 [A→C] Subject 完成") },
+                  receiveValue: { console.log("3 [A→C] sink 收到 \($0)") })
             .store(in: &cancellables)
         tasks.append(Task {
             for await value in Self.numbers(1...3) { subject.send(value * 100) }

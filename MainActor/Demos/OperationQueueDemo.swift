@@ -9,9 +9,9 @@ import SwiftUI
 
 nonisolated enum OperationExperiments {
     private static func step(_ name: String, _ seconds: Double, _ console: Console) {
-        console.log("\(name) 开始")
+        console.log("1 \(name) 开始")
         Thread.sleep(forTimeInterval: seconds)
-        console.log("\(name) 完成")
+        console.log("2 \(name) 完成")
     }
 
     /// 依赖：添加顺序与执行顺序无关，由依赖关系决定
@@ -23,7 +23,7 @@ nonisolated enum OperationExperiments {
         let unzip = BlockOperation { step("解压（依赖下载）", 0.4, console) }
         let save = BlockOperation { step("保存（依赖解压）", 0.3, console) }
         let analytics = BlockOperation { step("上报统计（无依赖）", 0.3, console) }
-        let done = BlockOperation { console.log("✅ 全部完成（OperationQueue.main，依赖保存与上报）") }
+        let done = BlockOperation { console.log("1 ✅ 全部完成（OperationQueue.main，依赖保存与上报）") }
 
         unzip.addDependency(download)
         save.addDependency(unzip)
@@ -43,21 +43,21 @@ nonisolated enum OperationExperiments {
         for i in 1...6 {
             let operation = BlockOperation()
             operation.addExecutionBlock { [unowned operation] in
-                console.log("操作\(i) 开始")
+                console.log("1 操作\(i) 开始")
                 for _ in 0..<10 {
                     if operation.isCancelled {
-                        console.log("操作\(i) 检测到 isCancelled，提前退出")
+                        console.log("2 操作\(i) 检测到 isCancelled，提前退出")
                         return
                     }
                     Thread.sleep(forTimeInterval: 0.1)
                 }
-                console.log("操作\(i) 完成")
+                console.log("3 操作\(i) 完成")
             }
             queue.addOperation(operation)
         }
 
         DispatchQueue.global().asyncAfter(deadline: .now() + 1.5) {
-            console.log("⛔️ cancelAllOperations()")
+            console.log("4 ⛔️ cancelAllOperations()")
             queue.cancelAllOperations()
         }
     }
@@ -70,9 +70,9 @@ nonisolated enum OperationExperiments {
         for i in 1...3 {
             queue.addOperation { step("操作\(i)", 0.2, console) }
         }
-        console.log("队列已暂停，添加了 3 个操作，1 秒后恢复")
+        console.log("1 队列已暂停，添加了 3 个操作，1 秒后恢复")
         DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
-            console.log("▶︎ isSuspended = false")
+            console.log("2 ▶︎ isSuspended = false")
             queue.isSuspended = false
         }
     }

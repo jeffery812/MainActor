@@ -451,14 +451,14 @@ nonisolated enum Work {
     /// nonisolated(nonsending)：在调用方的 actor 上执行
     nonisolated(nonsending)
     static func spinNonsending(seconds: Double, console: Console) async -> Int {
-        console.log("2 nonisolated(nonsending) async 函数内部")
+        console.log("nonisolated(nonsending) async 函数内部")
         return spin(seconds: seconds)
     }
 
     /// @concurrent：总是在全局并发执行器（后台线程池）上执行
     @concurrent
     static func spinConcurrent(seconds: Double, console: Console) async -> Int {
-        console.log("2 @concurrent async 函数内部")
+        console.log("@concurrent async 函数内部")
         return spin(seconds: seconds)
     }
 }`;
@@ -717,7 +717,7 @@ struct BlockingDemo: View {
         Task {
             console.log("1 调用 nonsending 函数前")
             let n = await Work.spinNonsending(seconds: 2, console: console)
-            console.log("3 nonsending 返回（\(n) 次迭代）")
+            console.log("2 nonsending 返回（\(n) 次迭代）")
         }
     }
 
@@ -726,7 +726,7 @@ struct BlockingDemo: View {
         Task {
             console.log("1 调用 @concurrent 函数前")
             let n = await Work.spinConcurrent(seconds: 2, console: console)
-            console.log("3 @concurrent 返回，已回到 MainActor（\(n) 次迭代）")
+            console.log("2 @concurrent 返回，已回到 MainActor（\(n) 次迭代）")
         }
     }
 }`,

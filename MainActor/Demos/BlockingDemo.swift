@@ -66,7 +66,7 @@ struct BlockingDemo: View {
         Task {
             console.log("1 调用 nonsending 函数前")
             let n = await Work.spinNonsending(seconds: 2, console: console)
-            console.log("3 nonsending 返回（\(n) 次迭代）")
+            console.log("2 nonsending 返回（\(n) 次迭代）")
         }
     }
 
@@ -75,7 +75,7 @@ struct BlockingDemo: View {
         Task {
             console.log("1 调用 @concurrent 函数前")
             let n = await Work.spinConcurrent(seconds: 2, console: console)
-            console.log("3 @concurrent 返回，已回到 MainActor（\(n) 次迭代）")
+            console.log("2 @concurrent 返回，已回到 MainActor（\(n) 次迭代）")
         }
     }
 

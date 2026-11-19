@@ -29,7 +29,7 @@ nonisolated enum Bridges {
     static func profile(console: Console) async throws -> String {
         try await withCheckedThrowingContinuation { continuation in
             LegacyAPI.fetchProfile { result in
-                console.log("旧 API 回调（GCD 线程）→ continuation.resume")
+                console.log("1 旧 API 回调（GCD 线程）→ continuation.resume")
                 continuation.resume(with: result)
             }
         }
@@ -40,7 +40,7 @@ nonisolated enum Bridges {
         AsyncStream { continuation in
             let ticker = StreamTicker(count: count, console: console, continuation: continuation)
             continuation.onTermination = { reason in
-                console.log("onTermination：\(reason)")
+                console.log("1 onTermination：\(reason)")
                 ticker.cancel()
             }
             ticker.start()
@@ -57,7 +57,7 @@ private nonisolated final class StreamTicker: @unchecked Sendable {
         source.setEventHandler { [unowned self] in
             // DispatchSource 的事件处理在同一个队列上串行执行
             produced += 1
-            console.log("生产者 yield(\(produced))")
+            console.log("2 生产者 yield(\(produced))")
             continuation.yield(produced)
             if produced == count { continuation.finish() }
         }
@@ -96,12 +96,12 @@ struct BridgingDemo: View {
         let console = console
         console.clear()
         Task {
-            console.log("await 前（MainActor）")
+            console.log("1 await 前（MainActor）")
             do {
                 let name = try await Bridges.profile(console: console)
-                console.log("await 返回：\(name)（自动回到 MainActor）")
+                console.log("2 await 返回：\(name)（自动回到 MainActor）")
             } catch {
-                console.log("失败：\(error)")
+                console.log("3 失败：\(error)")
             }
         }
     }
@@ -112,9 +112,9 @@ struct BridgingDemo: View {
         consumer?.cancel()
         consumer = Task {
             for await value in Bridges.ticks(count: 10, console: console) {
-                console.log("消费者收到 \(value)")
+                console.log("1 消费者收到 \(value)")
             }
-            console.log("for await 结束\(Task.isCancelled ? "（任务被取消）" : "（流已 finish）")")
+            console.log("2 for await 结束\(Task.isCancelled ? "（任务被取消）" : "（流已 finish）")")
         }
     }
 
@@ -126,7 +126,7 @@ struct BridgingDemo: View {
             // 但旧 API 保证在主队列回调，所以可以断言隔离后访问 MainActor 状态。
             MainActor.assumeIsolated {
                 status = text
-                console.log("assumeIsolated 内更新了 @State：\(text)")
+                console.log("1 assumeIsolated 内更新了 @State：\(text)")
             }
         }
     }

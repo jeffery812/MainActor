@@ -46,16 +46,16 @@ struct SwiftUITaskDemo: View {
             do {
                 try await Task.sleep(for: .milliseconds(400))
             } catch {
-                console.log(".task(id:)：「\(searchText)」的任务被取消")
+                console.log("1 .task(id:)：「\(searchText)」的任务被取消")
                 return
             }
-            console.log("🔍 .task(id:) 防抖后搜索：「\(searchText)」")
+            console.log("2 🔍 .task(id:) 防抖后搜索：「\(searchText)」")
         }
         .onChange(of: searchText) { _, newValue in
             guard !newValue.isEmpty else { return }
             workItem?.cancel()
             let console = console
-            let item = DispatchWorkItem { console.log("🔍 DispatchWorkItem 防抖后搜索：「\(newValue)」") }
+            let item = DispatchWorkItem { console.log("3 🔍 DispatchWorkItem 防抖后搜索：「\(newValue)」") }
             workItem = item
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: item)
         }
@@ -89,10 +89,10 @@ private struct TaskLifecycleChild: View {
                 do {
                     try await Task.sleep(for: .seconds(1))
                 } catch {
-                    console.log(".task：视图消失，自动取消 ✅")
+                    console.log("1 .task：视图消失，自动取消 ✅")
                     return
                 }
-                console.log(".task 循环 \(i)")
+                console.log("2 .task 循环 \(i)")
             }
         }
         .onAppear {
@@ -102,9 +102,9 @@ private struct TaskLifecycleChild: View {
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .seconds(1))
                     i += 1
-                    console.log("onAppear Task 循环 \(i)（视图消失后仍在运行）")
+                    console.log("3 onAppear Task 循环 \(i)（视图消失后仍在运行）")
                 }
-                console.log("onAppear Task：被手动取消")
+                console.log("4 onAppear Task：被手动取消")
             }
             onLeak(task)
         }
