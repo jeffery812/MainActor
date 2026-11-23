@@ -82,5 +82,6 @@ GitHub Pages 会把根目录的 `index.html` 作为首页。之后每次推送�
 - 编译设置如何决定代码默认在哪个线程上运行，以及满屏的 `nonisolated` 从何而来
 - 反复出现的 `let console = console`（C1–C9）：为什么加了这一行，后台闭包里就不需要 `await`；新变量是拷贝还是引用；MainActor 隔离的类为什么自动是 `Sendable`；另一种写法捕获列表 `[console]`；实际项目里推荐哪种写法
 - 13 个演示逐一拆解：看什么、控制变量是什么、关键代码和看似多余的写法为什么必不可少
+- actor 重入的四个追问（#06 的 Q15–Q18）：actor 和串行 DispatchQueue 的区别（用取钱的例子对比）、怎么写才能避开重入、同步临界区为什么仍不算绝对安全、"同时运行"和"交错执行"的区别
 - 日志系统 `Console` / `LogBuffer` 深读：「MainActor 隔离的类」到底是什么意思（哪些成员归主线程、编译期与运行期各保证什么、常见误解），`Sendable`、`nonisolated let`、`Mutex`、`ContinuousClock`，以及 Mutex 与主线程的四个追问（为什么不需要 `await`、主线程能否用锁、持锁太久怎么办、调用方不知道里面有锁怎么办）
 - 4 个交互示意：阻塞 vs 挂起、3 个线程同时写日志（有无 Mutex）、三种时钟测时长（`Date` / `ContinuousClock` / `SuspendingClock`）、主线程等锁时的掉帧时间线
